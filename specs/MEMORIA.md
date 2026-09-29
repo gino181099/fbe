@@ -13,6 +13,7 @@ Conocimiento estable que no se deduce fácil del código. Leer antes de explorar
 - Saldo del cliente = Σ precio de recorridos − Σ cobros (incluye `kind='ajuste'`). "Cobrado" en reportes = solo `kind='cobro'`; los ajustes (ej. saldo histórico, `source='saldo-historico'` + `period`, script `db:saldar-historico`) descuentan saldo sin contar como cobrado.
 - Combustible por estación: **Axion Sarmiento** (histórica, cuenta corriente) y **Shell Maza**. Saldo estación = gasoil de recorridos + cargas extras − pagos (gastos categoría combustible con `supplier`).
 - Potenciales (T-015): tipo `potencial` ⇔ en el embudo (`lead_stage` sin_contactar/contactado/perdido); "ganado" elige recurrente/especial y activa; perdido = inactivo. Sin recorridos hasta ganarlos. Notas de seguimiento en `client_note`; `auto=true` no se borran, las manuales solo su autor. Prospectos cargados con `db:import-potenciales` (idempotente, simula sin `--aplicar`).
+- Gastos en reportes (T-016): costos directos (chofer + gasoil + adicionales de `trip`) + gastos generales (`expense` **sin** combustible + `fuel_load`); los gastos de combustible son pagos a estación del gasoil ya contado. En 2026 todos los costos están en `trip` (en `expense` y `fuel_load` no hay filas).
 - Permisos: módulos `contactos|ventas|finanzas|usuarios` × `none|view|edit`. Admin (`is_admin`) tiene todo y no se puede editar; nadie edita sus propios permisos. Usuarios nuevos de Google entran `pending`.
 
 ## Datos importados (base SQLite vieja)

@@ -10,7 +10,7 @@ Estados: `Nueva` → `Especificada` (spec escrita, espera aprobación) → `Apro
 Opciones de `/tareas`: `auto` (sin preguntar) · `nocommit` (por defecto hace un commit por tarea) · `revisar` (revisor también en riesgo bajo) · `recomendar`.
 Prioridad: `Alta` · `Media` · `Baja`.
 
-**Próximo ID: T-016**
+**Próximo ID: T-017**
 
 ---
 
@@ -68,6 +68,11 @@ Prioridad: `Alta` · `Media` · `Baja`.
 ---
 
 ## ✅ Hechas
+
+### T-016 · Gráficos e informes de Inicio
+- Estado: Hecha (2026-09-28)
+- Spec: specs/T-016-inicio-graficos-filtros.md
+- Descripción: Gastos ahora incluye los costos de los recorridos (antes daba $0 en 2026) más los gastos generales. Se agregaron filtros desde/hasta y por cliente.
 
 ### T-015 · Tratamiento Clientes Potenciales
 - Estado: Hecha (2026-09-28)

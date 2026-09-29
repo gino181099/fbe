@@ -1,19 +1,23 @@
 import Link from "next/link";
-import { and, count, desc, eq, gte, lte } from "drizzle-orm";
+import { and, asc, count, desc, eq, gte, lte, ne } from "drizzle-orm";
 import { MonthlyChart } from "@/components/monthly-chart";
 import { EmptyState, PageHeader, StatCard } from "@/components/page-header";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { NativeSelect, NativeSelectOption } from "@/components/ui/native-select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { db } from "@/db";
 import { clients, collections, routes, trips, users } from "@/db/schema";
 import { getBalances, sumOf } from "@/lib/balances";
 import { firstDayOfMonth, formatDate, formatMoney, today } from "@/lib/format";
-import { buildMonthlySeries, formatMonth, lastMonths, totalsOf } from "@/lib/monthly";
+import { buildMonthlySeries, formatMonth, resolveRange, totalsOf } from "@/lib/monthly";
 import { can, requireUser } from "@/lib/permissions";
 import { getMonthlyTotals, getTopRoutes } from "@/lib/reports";
 import { cn } from "@/lib/utils";
 
-export default async function DashboardPage() {
+const str = (v: string | string[] | undefined) => (typeof v === "string" && v.trim() ? v.trim() : undefined);
+
+export default async function DashboardPage({ searchParams }: PageProps<"/">) {
   const user = await requireUser();
   const canSales = can(user, "ventas");
   const canFinance = can(user, "finanzas");
@@ -24,8 +28,13 @@ export default async function DashboardPage() {
     new Date(`${start}T12:00:00`),
   );
 
-  const months = lastMonths(end);
-  const periodStart = `${months[0]}-01`;
+  const sp = await searchParams;
+  const desde = str(sp.desde);
+  const hasta = str(sp.hasta);
+  const clienteId = canSales || canFinance ? Number(str(sp.cliente)) || undefined : undefined;
+  const hasFilters = Boolean(desde || hasta || clienteId);
+  const range = resolveRange(desde, hasta, end);
+  const period = `${formatMonth(range.months[0])} – ${formatMonth(range.months[range.months.length - 1])}`;
 
   const [[monthTrips], [monthCollected], recent, balances, clientRows, [pending], monthly, topRoutes] = await Promise.all([
     canSales
@@ -57,19 +66,28 @@ export default async function DashboardPage() {
           .limit(8)
       : [],
     canFinance ? getBalances() : new Map<number, { balance: number }>(),
-    canFinance ? db.select({ id: clients.id, name: clients.name }).from(clients) : [],
+    canSales || canFinance
+      ? db
+          .select({ id: clients.id, name: clients.name })
+          .from(clients)
+          .where(ne(clients.type, "potencial"))
+          .orderBy(asc(clients.name))
+      : [],
     canUsers ? db.select({ n: count() }).from(users).where(eq(users.status, "pending")) : [{ n: 0 }],
     canSales || canFinance
-      ? getMonthlyTotals(periodStart, end, { sales: canSales, finance: canFinance })
-      : { billed: null, collected: null, expenses: null },
-    canSales ? getTopRoutes(periodStart, end) : [],
+      ? getMonthlyTotals(range.from, range.to, { sales: canSales, finance: canFinance }, clienteId)
+      : { billed: null, collected: null, directCosts: null, generalExpenses: null },
+    canSales ? getTopRoutes(range.from, range.to, clienteId) : [],
   ]);
 
-  const monthlyRows = buildMonthlySeries(months, monthly);
+  const clientName = clienteId ? clientRows.find((c) => c.id === clienteId)?.name : undefined;
+  const monthlyRows = buildMonthlySeries(range.months, monthly);
   const monthlyTotals = totalsOf(monthlyRows);
   const hasMonthlyData = monthlyRows.some(
     (r) => (r.billed ?? 0) !== 0 || (r.collected ?? 0) !== 0 || (r.expenses ?? 0) !== 0,
   );
+  const showGeneral = canFinance && !clienteId;
+  const showExpenses = canSales || showGeneral;
   const moneyCell = (v: number | null, negative = false) => (
     <TableCell className={cn("text-right tabular-nums", negative && v != null && v < 0 && "text-destructive")}>
       {formatMoney(v)}
@@ -112,10 +130,44 @@ export default async function DashboardPage() {
         <section className="grid content-start gap-3">
           <div>
             <h2 className="font-medium">Evolución mensual</h2>
-            <p className="text-sm text-muted-foreground">Últimos 12 meses</p>
+            <p className="text-sm text-muted-foreground">
+              {period}
+              {clientName && ` · ${clientName}`}
+            </p>
           </div>
+          <form key={`${range.from}|${range.to}|${clienteId ?? ""}`} className="flex flex-wrap items-end gap-2">
+            <label className="grid gap-1 text-xs text-muted-foreground">
+              Desde
+              <Input type="date" name="desde" defaultValue={range.from} className="w-40" />
+            </label>
+            <label className="grid gap-1 text-xs text-muted-foreground">
+              Hasta
+              <Input type="date" name="hasta" defaultValue={range.to} className="w-40" />
+            </label>
+            <NativeSelect name="cliente" defaultValue={clienteId ?? ""}>
+              <NativeSelectOption value="">Todos los clientes</NativeSelectOption>
+              {clientRows.map((c) => (
+                <NativeSelectOption key={c.id} value={c.id}>
+                  {c.name}
+                </NativeSelectOption>
+              ))}
+            </NativeSelect>
+            <Button type="submit" variant="secondary">
+              Filtrar
+            </Button>
+            {hasFilters && (
+              <Button variant="ghost" asChild>
+                <Link href="/">Limpiar</Link>
+              </Button>
+            )}
+          </form>
+          {clienteId && canSales && canFinance && (
+            <p className="text-sm text-muted-foreground">
+              Con un cliente elegido, Gastos incluye solo los costos directos de sus recorridos.
+            </p>
+          )}
           {!hasMonthlyData ? (
-            <EmptyState>Sin movimientos en los últimos 12 meses.</EmptyState>
+            <EmptyState>Sin movimientos en el período elegido.</EmptyState>
           ) : (
             <>
               <div className="rounded-xl border p-4">
@@ -128,8 +180,10 @@ export default async function DashboardPage() {
                       <TableHead>Mes</TableHead>
                       {canSales && <TableHead className="text-right">Facturado</TableHead>}
                       {canFinance && <TableHead className="text-right">Cobrado</TableHead>}
-                      {canFinance && <TableHead className="text-right">Gastos</TableHead>}
-                      {canSales && canFinance && <TableHead className="text-right">Margen</TableHead>}
+                      {canSales && <TableHead className="text-right">Costos directos</TableHead>}
+                      {showGeneral && <TableHead className="text-right">Gastos generales</TableHead>}
+                      {showExpenses && <TableHead className="text-right">Gastos</TableHead>}
+                      {canSales && <TableHead className="text-right">Margen</TableHead>}
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -138,16 +192,20 @@ export default async function DashboardPage() {
                         <TableCell>{formatMonth(r.month)}</TableCell>
                         {canSales && moneyCell(r.billed)}
                         {canFinance && moneyCell(r.collected)}
-                        {canFinance && moneyCell(r.expenses)}
-                        {canSales && canFinance && moneyCell(r.margin, true)}
+                        {canSales && moneyCell(r.directCosts)}
+                        {showGeneral && moneyCell(r.generalExpenses)}
+                        {showExpenses && moneyCell(r.expenses)}
+                        {canSales && moneyCell(r.margin, true)}
                       </TableRow>
                     ))}
                     <TableRow className="font-semibold">
                       <TableCell>Total</TableCell>
                       {canSales && moneyCell(monthlyTotals.billed)}
                       {canFinance && moneyCell(monthlyTotals.collected)}
-                      {canFinance && moneyCell(monthlyTotals.expenses)}
-                      {canSales && canFinance && moneyCell(monthlyTotals.margin, true)}
+                      {canSales && moneyCell(monthlyTotals.directCosts)}
+                      {showGeneral && moneyCell(monthlyTotals.generalExpenses)}
+                      {showExpenses && moneyCell(monthlyTotals.expenses)}
+                      {canSales && moneyCell(monthlyTotals.margin, true)}
                     </TableRow>
                   </TableBody>
                 </Table>
@@ -160,13 +218,15 @@ export default async function DashboardPage() {
       {canSales && (
         <section className="grid content-start gap-3">
           <div className="flex items-center justify-between">
-            <h2 className="font-medium">Recorridos más vendidos (últimos 12 meses)</h2>
+            <h2 className="font-medium">
+              Recorridos más vendidos ({period}){clientName && ` · ${clientName}`}
+            </h2>
             <Button variant="ghost" size="sm" asChild>
               <Link href="/ventas">Ver recorridos</Link>
             </Button>
           </div>
           {topRoutes.length === 0 ? (
-            <EmptyState>Sin recorridos en los últimos 12 meses.</EmptyState>
+            <EmptyState>Sin recorridos en el período elegido.</EmptyState>
           ) : (
             <div className="rounded-xl border">
               <Table>

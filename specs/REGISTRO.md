@@ -15,6 +15,15 @@ Una entrada por tarea terminada, **la más nueva arriba**. Formato fijo y breve 
 
 ---
 
+## 2026-09-28 · T-016 · Gráficos e informes de Inicio: gastos correctos + filtros
+- Resultado: en Inicio, Gastos = costos directos de los recorridos (chofer + gasoil + adicionales, igual que /ventas) + gastos generales (gastos sin combustible + cargas extras). Margen = facturado − gastos. Filtros desde/hasta (máx. 36 meses) y cliente para la evolución mensual y los recorridos más vendidos.
+- Archivos: `src/lib/monthly.ts` (+test), `src/lib/reports.ts`, `src/app/(app)/page.tsx`.
+- Datos: — (causa confirmada con consulta de solo lectura: en 2026 no hay filas en `expense` ni en `fuel_load`; en ene 2026 los costos directos son $5.823.881,25 y Inicio mostraba $0).
+- Verificación: npm test 65/65 · tsc · lint · build OK. No se probó en el navegador.
+- Revisión: APROBADO (Sonnet), 2 menores sin corregir: el margen es bruto sin `finanzas` y neto con `finanzas`, y con `?cliente=` de un potencial no se muestra el nombre.
+- Pendiente: —
+- Costo: spec 41k · impl 89k (42 herramientas) · rev 30k tokens · ~7 min
+
 ## 2026-09-28 · T-015 · Tratamiento Clientes Potenciales
 - Resultado: etapas de potenciales con nota automática en cada cambio. Ganado pasa a recurrente o especial y Perdido a inactivo. Cada contacto tiene una pestaña Seguimiento: las notas manuales las borra solo su autor y las automáticas no se borran. En Ventas no se pueden elegir potenciales.
 - Archivos: `src/db/schema.ts`, `src/lib/prospects.ts` (+test), `contactos/**`, `ventas/{actions,trip-form}`, `components/badges.tsx`, `scripts/import-potenciales.ts` (`npm run db:import-potenciales [--aplicar]`).
