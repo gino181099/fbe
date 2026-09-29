@@ -6,7 +6,8 @@ Cómo usar este archivo:
 2. Corré `/tareas` (todas las listas) o `/tareas T-004 T-007` (algunas). Por defecto se frena para que apruebes cada spec antes de implementar; `/tareas auto` no se frena.
 3. Las **recomendaciones** las agrega Claude en su sección (`/recomendar` pide más). Para hacer una, movela a "Pendientes" con estado `Nueva`, o corré `/tareas T-XXX` con su ID. Las recomendaciones **no** se ejecutan solas.
 
-Estados: `Nueva` → `Especificada` (spec escrita, espera aprobación) → `Aprobada` → `En curso` → `Hecha` · también `Bloqueada` (con motivo).
+Estados: `Nueva` → `Especificada` (spec escrita, espera aprobación) → `Aprobada` → `En curso` → (`En revisión`, solo riesgo alto) → `Hecha` · también `Bloqueada` (con motivo).
+Opciones de `/tareas`: `auto` (sin preguntar) · `nocommit` (por defecto hace un commit por tarea) · `revisar` (revisor también en riesgo bajo) · `recomendar`.
 Prioridad: `Alta` · `Media` · `Baja`.
 
 **Próximo ID: T-016**

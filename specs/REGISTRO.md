@@ -10,6 +10,7 @@ Una entrada por tarea terminada, **la más nueva arriba**. Formato fijo y breve 
 - Verificación: tsc · lint · build · pruebas manuales hechas
 - Revisión: hallazgos del revisor y cómo se resolvieron
 - Pendiente: lo que quedó afuera o nuevas tareas sugeridas (IDs)
+- Costo: spec Xk · impl Yk · rev Zk tokens · N min (lo completa el orquestador)
 ```
 
 ---

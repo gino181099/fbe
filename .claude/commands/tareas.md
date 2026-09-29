@@ -1,38 +1,44 @@
 ---
-description: Corre el arnés spec-driven sobre las tareas de specs/TAREAS.md (especificar → aprobar → implementar → revisar → registrar)
-argument-hint: "[T-001 T-002 …] [auto] [commit]"
+description: Corre el arnés spec-driven sobre las tareas de specs/TAREAS.md (especificar → aprobar → implementar → revisar si hay riesgo → registrar)
+argument-hint: "[T-XXX ...] [auto] [nocommit] [revisar] [recomendar]"
 ---
 
 Sos el **orquestador**. Argumentos: `$ARGUMENTS`
 - IDs `T-XXX`: procesar solo esas tareas. Sin IDs: todas las de "📥 Pendientes" con estado `Nueva`, `Especificada` o `Aprobada`, por prioridad (Alta → Baja) y luego por ID.
-- `auto`: no frenar para aprobar specs (se aprueban solas salvo preguntas bloqueantes).
-- `commit`: al terminar cada tarea, hacer un commit con `T-XXX: <título>` (nunca push).
+- `auto`: no preguntar; se aprueban las specs con las opciones por defecto (salvo preguntas bloqueantes).
+- `nocommit`: no hacer commits (por defecto se hace uno por tarea; nunca push).
+- `revisar`: lanzar el revisor en todas las tareas, aunque sean de riesgo bajo.
+- `recomendar`: al final, pedir hasta 2 recomendaciones al especificador.
 
-No hagas el trabajo de los subagentes vos mismo; tu contexto es para coordinar. No releas archivos que un subagente ya resumió.
+No hagas el trabajo de los subagentes; tu contexto es para coordinar. No releas archivos que un subagente ya resumió. Los subagentes escriben el registro: vos solo lo completás.
 
 ## 0. Preparación
-Leé `specs/TAREAS.md` (solo las tareas a procesar) y decí en una línea qué vas a correr. Si no hay tareas, sugerí `/nueva-tarea` o `/recomendar` y terminá. Las tareas `Bloqueada` no se ejecutan. Las `Recomendada` solo si se pidieron explícitamente por ID: en ese caso movelas a "📥 Pendientes" con `Estado: Nueva`.
+- Leé en `specs/TAREAS.md` solo el encabezado y las tareas a procesar. Si hay IDs repetidos, renumerá con el "Próximo ID". Decí en una línea qué vas a correr.
+- Si no hay tareas, sugerí `/nueva-tarea` o `/recomendar` y terminá. Las `Bloqueada` no se ejecutan. Las `Recomendada` solo si se pidieron por ID (movelas a Pendientes con `Estado: Nueva`).
+- Si `git status --short` muestra cambios ajenos y no se pasó `nocommit`, avisá y preguntá si se commitean como base antes de empezar (el revisor necesita un `git diff` limpio).
 
-## 1. Especificar (tareas en estado `Nueva`)
-Lanzá el subagente `especificador` con: "Modo especificar T-XXX". Podés lanzar varios en paralelo si son tareas independientes.
+## 1. Especificar (estado `Nueva`)
+Lanzá un `especificador` por tarea **en paralelo** ("Modo especificar T-XXX"; avisale qué otras se especifican a la vez si comparten archivos o migraciones).
 
-## 2. Aprobar (tareas en estado `Especificada`)
-- Sin `auto`: mostrá por tarea un resumen de 3–5 líneas (objetivo, criterios, cambios en la base, preguntas) y pedí aprobación con AskUserQuestion (Aprobar / Pedir cambios / Saltear). Con "Pedir cambios", pasale el pedido al `especificador` y volvé a preguntar.
-- Con `auto`: aprobá salvo que haya preguntas bloqueantes (esas quedan `Bloqueada`).
-- Al aprobar: `Estado: Aprobada` en la spec y en `TAREAS.md`.
+## 2. Aprobar (estado `Especificada`) — lo menos posible de idas y vueltas
+- Sin `auto`: juntá en **un solo** AskUserQuestion (máx. 4 preguntas; si hay más, en tandas) la aprobación de cada spec (Aprobar / Pedir cambios / Saltear, con resumen de 2–3 líneas: objetivo, riesgo, cambios en la base) y sus "Decisiones propuestas" (opción por defecto primero, "(Recomendado)").
+- Anotá las respuestas **vos mismo** con un Edit en "Decisiones propuestas" de la spec (`✅ Usuario: …`) y poné `Estado: Aprobada` en spec y TAREAS. Retomá al `especificador` (SendMessage) solo si el usuario pidió un cambio de diseño que no se resuelve anotando la respuesta.
+- No esperes a tener todas aprobadas: apenas una queda aprobada, implementala (paso 3) mientras seguís con las demás.
 
-## 3. Implementar (una tarea a la vez, en orden)
-Poné `Estado: En curso` en `TAREAS.md` y lanzá `implementador` con la ruta de la spec.
+## 3. Implementar (de a una, en orden: migraciones y archivos compartidos)
+`Estado: En curso` en TAREAS y lanzá `implementador` con la ruta de la spec (mencioná tareas hechas en esta corrida que no debe romper). Anotá tokens y duración que trae la notificación de cada agente.
 
-## 4. Revisar
-Lanzá `revisor` con la ruta de la spec. Pegá su respuesta en la sección "Revisión" de la spec.
-Si el veredicto es `CAMBIOS REQUERIDOS`: lanzá `implementador` en modo "corregir hallazgos" con la lista y volvé a revisar. Máximo **2 rondas**; si sigue fallando, marcá la tarea `Bloqueada: <motivo>` y seguí con la próxima.
+## 4. Revisar (solo `Riesgo: Alto` o argumento `revisar`)
+- Riesgo Bajo: no hay revisor; el implementador ya hizo su autochequeo y cerró el registro.
+- Riesgo Alto: lanzá `revisor` con la ruta de la spec y "tsc/lint/build OK según el implementador". El revisor escribe su veredicto en la spec.
+- `CAMBIOS REQUERIDOS`: `implementador` en modo "corregir hallazgos" con la lista y volvé a revisar. Máximo **2 rondas**; si sigue fallando, `Bloqueada: <motivo>` y seguí con la próxima.
+- Hallazgos MENORES con APROBADO: no se corrigen en la corrida; quedan en la spec y el REGISTRO los lista como pendientes.
 
 ## 5. Cerrar la tarea
-1. `specs/TAREAS.md`: mover la tarea a "✅ Hechas" con `Estado: Hecha (fecha)`.
-2. `specs/REGISTRO.md`: agregar la entrada arriba de todo con el formato del archivo (≤ 12 líneas).
-3. Si corresponde, `commit` (solo si se pidió): `git add` de los archivos de la tarea (nunca `.env*` ni `frabel-database*`) y commit.
+1. Riesgo Alto aprobada: mové el bloque en TAREAS a "✅ Hechas" (`Estado: Hecha (fecha)`, 1–2 líneas) y completá `Revisión:` en su entrada de REGISTRO.
+2. En la entrada de REGISTRO agregá `- Costo: spec Xk · impl Yk · rev Zk tokens · N min` (de las notificaciones).
+3. Salvo `nocommit`: `git add` de los archivos de la tarea (nunca `.env*` ni `frabel-database*`) y `git commit -m "T-XXX: <título>"`.
 
 ## 6. Cierre de la corrida
-- Lanzá `especificador` en modo "recomendar" (máx. 2 tareas) solo si en la corrida aparecieron pendientes nuevos.
-- Resumen final al usuario (≤ 10 líneas): tareas hechas, bloqueadas (y qué falta para destrabarlas), cómo probar lo nuevo, recomendaciones agregadas.
+- Solo con `recomendar`: `especificador` en modo "recomendar" (máx. 2).
+- Resumen al usuario (≤ 10 líneas): tareas hechas, bloqueadas (y qué falta), cómo probar lo nuevo, costo total aproximado.

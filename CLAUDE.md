@@ -10,8 +10,9 @@ Módulos: Contactos (clientes + tarifarios versionados), Ventas (recorridos), Fi
 - Backlog: `specs/TAREAS.md` · Specs: `specs/T-XXX-*.md` (plantilla `specs/_plantilla.md`)
 - Conocimiento estable (reglas de negocio, decisiones, trampas): `specs/MEMORIA.md` — **leer antes de explorar código**
 - Registro de lo hecho: `specs/REGISTRO.md` (más nuevo arriba)
-- Comandos: `/tareas [IDs|auto|commit]` corre el arnés · `/nueva-tarea <texto>` · `/recomendar`
-- Subagentes: `especificador` (escribe specs y recomendaciones), `implementador` (ejecuta una spec aprobada), `revisor` (revisa el diff contra la spec)
+- Comandos: `/tareas [IDs] [auto] [nocommit] [revisar] [recomendar]` corre el arnés (commit por tarea por defecto, nunca push) · `/nueva-tarea <texto>` · `/recomendar`
+- Subagentes: `especificador` (spec con "Mapa de código", Riesgo y decisiones propuestas), `implementador` (ejecuta la spec, se autochequea y escribe REGISTRO/TAREAS), `revisor` (Sonnet; revisa el `git diff` solo en tareas de `Riesgo: Alto`)
+- Checklist de calidad compartida: `specs/CHECKLIST.md`
 
 ## Stack y comandos
 
