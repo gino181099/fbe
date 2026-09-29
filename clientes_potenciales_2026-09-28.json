@@ -1,0 +1,910 @@
+{
+  "generado": "2026-09-28T19:48:03.455Z",
+  "empresa": "Fra-Bel Viajes S.R.L.",
+  "total": 30,
+  "por_segmento": {
+    "bodegas_turismo": 14,
+    "corporativo": 5,
+    "mineria_industria": 11
+  },
+  "por_prioridad": {
+    "alta": 22,
+    "media": 7,
+    "baja": 1
+  },
+  "con_email": 20,
+  "con_telefono_o_whatsapp": 26,
+  "descartados_por_repetidos": [],
+  "clientes": [
+    {
+      "nombre": "Nites Incoming",
+      "segmento": "bodegas_turismo",
+      "rubro": "agencia receptiva premium / MICE",
+      "sitio_web": "https://nitesincoming.com/",
+      "ubicacion": "Mendoza",
+      "descripcion": "Receptivo líder en enoturismo premium y segmento MICE",
+      "motivo_encaje": "Mueve grupos corporativos e incentivos a bodegas; necesita vans de 13-19 pax con chofer",
+      "angulo_venta": "Landing Bodegas: flota de respaldo para grupos MICE y wine tours",
+      "encaje": 5,
+      "fuente": "https://nitesincoming.com/",
+      "dominio": "nitesincoming.com",
+      "contacto": {
+        "emails": [
+          "reservas@nites.travel",
+          "mcornejo@nites.travel",
+          "grupos@nites.travel",
+          "online@nites.travel"
+        ],
+        "telefonos": [
+          "+5492615605838",
+          "+5492613033646",
+          "+5492617004620",
+          "08109990798",
+          "+56226563112"
+        ],
+        "whatsapp": [
+          "+5492615605838"
+        ],
+        "redes": {
+          "instagram": "https://www.instagram.com/nitesoperadormayorista",
+          "facebook": "https://www.facebook.com/NitesTourOperator/",
+          "linkedin": "https://www.linkedin.com/company/nites"
+        }
+      },
+      "estado_web": "ok",
+      "puntaje": 15,
+      "prioridad": "alta"
+    },
+    {
+      "nombre": "Mendoza Wine Tour",
+      "segmento": "bodegas_turismo",
+      "rubro": "operador de wine tours",
+      "sitio_web": "https://mendozawinetour.com.ar/",
+      "ubicacion": "Mendoza",
+      "descripcion": "Tours guiados a bodegas con degustaciones y almuerzos",
+      "motivo_encaje": "Tours diarios a bodegas que requieren traslados de grupos",
+      "angulo_venta": "Landing Bodegas: tercerizar traslados en temporada alta",
+      "encaje": 5,
+      "fuente": "https://mendozawinetour.com.ar/",
+      "dominio": "mendozawinetour.com.ar",
+      "contacto": {
+        "emails": [
+          "info@mendozawinetour.com.ar"
+        ],
+        "telefonos": [
+          "+5492615085881"
+        ],
+        "whatsapp": [],
+        "redes": {
+          "instagram": "https://www.instagram.com/mendozawinetour",
+          "facebook": "https://www.facebook.com/mendozawinetour"
+        }
+      },
+      "estado_web": "ok",
+      "puntaje": 15,
+      "prioridad": "alta"
+    },
+    {
+      "nombre": "Canteros Eventos",
+      "segmento": "corporativo",
+      "rubro": "organizador de eventos corporativos / MICE",
+      "sitio_web": "https://canteroseventos.com.ar/",
+      "ubicacion": "Mendoza",
+      "descripcion": "Más de una década organizando eventos corporativos de gran escala",
+      "motivo_encaje": "Eventos corporativos con traslado de asistentes",
+      "angulo_venta": "Landing Institucional: proveedor de traslados para eventos",
+      "encaje": 5,
+      "fuente": "https://canteroseventos.com.ar/eventos-corporativos-mendoza/",
+      "dominio": "canteroseventos.com.ar",
+      "contacto": {
+        "emails": [
+          "info@canteroseventos.com.ar"
+        ],
+        "telefonos": [
+          "5491161448362"
+        ],
+        "whatsapp": [
+          "+5491161448362"
+        ],
+        "redes": {
+          "facebook": "https://www.facebook.com/canteroseventos",
+          "linkedin": "https://in.linkedin.com/company/canteroseventos"
+        }
+      },
+      "estado_web": "ok",
+      "puntaje": 15,
+      "prioridad": "alta"
+    },
+    {
+      "nombre": "Kahuak",
+      "segmento": "corporativo",
+      "rubro": "organizador de convenciones y congresos",
+      "sitio_web": "https://kahuak.com.ar/",
+      "ubicacion": "Mendoza",
+      "descripcion": "Convenciones, ferias, congresos y lanzamientos",
+      "motivo_encaje": "Congresos con traslados hotel-sede y excursiones",
+      "angulo_venta": "Landing Institucional / Bodegas (MICE)",
+      "encaje": 5,
+      "fuente": "https://kahuak.com.ar/servicios-corporativos-2/",
+      "dominio": "kahuak.com.ar",
+      "contacto": {
+        "emails": [
+          "info@kahuak.com.ar"
+        ],
+        "telefonos": [
+          "+54 261 4238409",
+          "+54 9261 4191117"
+        ],
+        "whatsapp": [
+          "+5492614191117"
+        ],
+        "redes": {
+          "instagram": "https://www.instagram.com/kahuak.mendoza",
+          "facebook": "https://www.facebook.com/kahuak.mendoza"
+        }
+      },
+      "estado_web": "ok",
+      "puntaje": 15,
+      "prioridad": "alta"
+    },
+    {
+      "nombre": "Ampora Wine Tours",
+      "segmento": "bodegas_turismo",
+      "rubro": "operador de wine tours",
+      "sitio_web": "https://www.mendozawinetours.com/",
+      "ubicacion": "Luján de Cuyo / Valle de Uco",
+      "descripcion": "Wine tours en grupos reducidos por Luján de Cuyo y Valle de Uco",
+      "motivo_encaje": "Grupos pequeños que encajan en combis; salidas frecuentes",
+      "angulo_venta": "Landing Bodegas: traslado ejecutivo por los caminos del vino",
+      "encaje": 4,
+      "fuente": "https://www.mendozawinetours.com/",
+      "dominio": "mendozawinetours.com",
+      "contacto": {
+        "emails": [
+          "info@mendozawinetours.com"
+        ],
+        "telefonos": [
+          "+5492616819171"
+        ],
+        "whatsapp": [
+          "+5492616819171"
+        ],
+        "redes": {
+          "instagram": "https://www.instagram.com/amporawinetours"
+        }
+      },
+      "estado_web": "ok",
+      "puntaje": 13,
+      "prioridad": "alta"
+    },
+    {
+      "nombre": "Trout & Wine",
+      "segmento": "bodegas_turismo",
+      "rubro": "operador de tours premium",
+      "sitio_web": "https://troutandwine.com/",
+      "ubicacion": "Mendoza",
+      "descripcion": "Tours de vino, montaña, pesca con mosca y experiencias privadas",
+      "motivo_encaje": "Experiencias privadas multilingües con traslados a bodegas y montaña",
+      "angulo_venta": "Landing Bodegas: confort y puntualidad para pasajeros premium",
+      "encaje": 4,
+      "fuente": "https://troutandwine.com/en/",
+      "dominio": "troutandwine.com",
+      "contacto": {
+        "emails": [
+          "ask@troutandwine.com"
+        ],
+        "telefonos": [
+          "261 578-1616"
+        ],
+        "whatsapp": [
+          "+5492615781616"
+        ],
+        "redes": {
+          "instagram": "https://www.instagram.com/troutandwinearg",
+          "facebook": "https://www.facebook.com/troutandwine/"
+        }
+      },
+      "estado_web": "ok",
+      "puntaje": 13,
+      "prioridad": "alta"
+    },
+    {
+      "nombre": "Grupo Sur Turismo",
+      "segmento": "bodegas_turismo",
+      "rubro": "agencia receptiva",
+      "sitio_web": "https://www.gruposur.tur.ar/",
+      "ubicacion": "Mendoza",
+      "descripcion": "Excursiones de Alta Montaña y enoturismo",
+      "motivo_encaje": "Opera excursiones grupales regulares",
+      "angulo_venta": "Landing Bodegas: capacidad extra en temporada",
+      "encaje": 4,
+      "fuente": "https://www.gruposur.tur.ar/",
+      "dominio": "gruposur.tur.ar",
+      "contacto": {
+        "emails": [
+          "reservas@gruposur.tur.ar"
+        ],
+        "telefonos": [
+          "+54 9 261 572 3110"
+        ],
+        "whatsapp": [
+          "+5492615723110"
+        ],
+        "redes": {
+          "instagram": "https://www.instagram.com/gruposurturismo",
+          "facebook": "https://www.facebook.com/Gruposurmza"
+        }
+      },
+      "estado_web": "ok",
+      "puntaje": 13,
+      "prioridad": "alta"
+    },
+    {
+      "nombre": "Finca Las Divas (Bodega Riglos)",
+      "segmento": "bodegas_turismo",
+      "rubro": "bodega / venue de eventos",
+      "sitio_web": "https://www.rigloswines.com/fincalasdivas/",
+      "ubicacion": "Gualtallary, Tupungato",
+      "descripcion": "Eventos, bodas, despedidas y eventos corporativos entre viñedos",
+      "motivo_encaje": "Invitados de eventos necesitan traslado ida y vuelta desde Mendoza",
+      "angulo_venta": "Landing Bodegas / Institucional: traslado de invitados",
+      "encaje": 4,
+      "fuente": "https://www.rigloswines.com/fincalasdivas/",
+      "dominio": "rigloswines.com",
+      "contacto": {
+        "emails": [
+          "eventos@wht.com.ar",
+          "pht@wht.com.ar",
+          "mht@wht.com.ar",
+          "turismo@wht.com.ar",
+          "amb@wht.com.ar"
+        ],
+        "telefonos": [
+          "+54 261 4900397",
+          "+54 9 261 6109798"
+        ],
+        "whatsapp": [],
+        "redes": {
+          "instagram": "https://www.instagram.com/huarpe_riglos",
+          "facebook": "https://www.facebook.com/RiglosWines/"
+        }
+      },
+      "estado_web": "ok",
+      "puntaje": 13,
+      "prioridad": "alta"
+    },
+    {
+      "nombre": "PSJ Cobre Mendocino (Minera San Jorge)",
+      "segmento": "mineria_industria",
+      "rubro": "minería de cobre",
+      "sitio_web": "https://psjcobremendocino.com/",
+      "ubicacion": "Uspallata, Las Heras",
+      "descripcion": "Proyecto de cobre aprobado, adherido al RIGI (US$613 M)",
+      "motivo_encaje": "Construcción y operación en Uspallata: traslado diario de personal por turnos",
+      "angulo_venta": "Landing Minería: 10+ años en yacimientos, HSE, LINTI, turnos rotativos",
+      "encaje": 5,
+      "fuente": "https://psjcobremendocino.com/",
+      "dominio": "psjcobremendocino.com",
+      "contacto": {
+        "emails": [],
+        "telefonos": [],
+        "whatsapp": [
+          "+5492615867617"
+        ],
+        "redes": {
+          "instagram": "https://www.instagram.com/psjcobremendocino",
+          "linkedin": "https://www.linkedin.com/company/psjcobremendocino"
+        }
+      },
+      "estado_web": "ok",
+      "puntaje": 13,
+      "prioridad": "alta",
+      "notas": "Sin email público; usar WhatsApp del sitio y LinkedIn (buscar Gerente de Compras/Logística/RRHH)."
+    },
+    {
+      "nombre": "EMESA - Empresa Mendocina de Energía",
+      "segmento": "mineria_industria",
+      "rubro": "energía / oil & gas",
+      "sitio_web": "https://emesa.com.ar/",
+      "ubicacion": "Mendoza",
+      "descripcion": "Empresa provincial de energía con áreas de oil & gas",
+      "motivo_encaje": "Personal y visitas técnicas a áreas petroleras y energéticas",
+      "angulo_venta": "Landing Minería: proveedor con experiencia en yacimientos",
+      "encaje": 4,
+      "fuente": "https://emesa.com.ar/oil-gas/",
+      "dominio": "emesa.com.ar",
+      "contacto": {
+        "emails": [
+          "emesa@emesa.com.ar"
+        ],
+        "telefonos": [
+          "+54 9 261 4201492",
+          "+54 9 261 4340072"
+        ],
+        "whatsapp": [
+          "+5492612053044"
+        ],
+        "redes": {
+          "linkedin": "https://ar.linkedin.com/company/emesa-pura-energia"
+        }
+      },
+      "estado_web": "ok",
+      "puntaje": 13,
+      "prioridad": "alta"
+    },
+    {
+      "nombre": "Cougar Construcciones",
+      "segmento": "mineria_industria",
+      "rubro": "constructora",
+      "sitio_web": "https://www.cougarsa.com.ar/",
+      "ubicacion": "Mendoza",
+      "descripcion": "Empresa constructora mendocina",
+      "motivo_encaje": "Obras con cuadrillas que necesitan traslado a obra",
+      "angulo_venta": "Landing Minería/Industria: traslado de personal de obra",
+      "encaje": 4,
+      "fuente": "https://www.cougarsa.com.ar/",
+      "dominio": "cougarsa.com.ar",
+      "contacto": {
+        "emails": [
+          "info@cougarsa.com.ar"
+        ],
+        "telefonos": [
+          "+54 9 261 3048292"
+        ],
+        "whatsapp": [],
+        "redes": {
+          "instagram": "https://www.instagram.com/cougarconstrucciones",
+          "facebook": "https://www.facebook.com/cougarconstrucciones",
+          "linkedin": "https://www.linkedin.com/company/cougar-s"
+        }
+      },
+      "estado_web": "ok",
+      "puntaje": 13,
+      "prioridad": "alta"
+    },
+    {
+      "nombre": "Grupo Genco",
+      "segmento": "mineria_industria",
+      "rubro": "constructora",
+      "sitio_web": "https://grupogenco.com.ar/",
+      "ubicacion": "Mendoza",
+      "descripcion": "Construcciones comerciales, rutas nacionales y provinciales",
+      "motivo_encaje": "Obras viales con personal rotativo",
+      "angulo_venta": "Landing Minería/Industria",
+      "encaje": 4,
+      "fuente": "https://grupogenco.com.ar/constructora/",
+      "dominio": "grupogenco.com.ar",
+      "contacto": {
+        "emails": [
+          "info@gencosa.com.ar"
+        ],
+        "telefonos": [
+          "0261 4764012",
+          "0261 6114737"
+        ],
+        "whatsapp": [
+          "+5492616114737"
+        ],
+        "redes": {
+          "instagram": "https://www.instagram.com/gencobmw",
+          "facebook": "https://www.facebook.com/BMWGencoMendoza"
+        }
+      },
+      "estado_web": "ok",
+      "puntaje": 13,
+      "prioridad": "alta"
+    },
+    {
+      "nombre": "Planners Eventos y Comunicación",
+      "segmento": "corporativo",
+      "rubro": "organizador de eventos",
+      "sitio_web": "https://www.plannerseventos.com.ar/",
+      "ubicacion": "Mendoza",
+      "descripcion": "Eventos corporativos, bodas de destino y sociales",
+      "motivo_encaje": "Bodas de destino y eventos corporativos con traslado de invitados",
+      "angulo_venta": "Landing Institucional",
+      "encaje": 4,
+      "fuente": "https://www.plannerseventos.com.ar/",
+      "dominio": "plannerseventos.com.ar",
+      "contacto": {
+        "emails": [
+          "info@plannerseventos.com.ar"
+        ],
+        "telefonos": [
+          "+54 9 261 563-0231"
+        ],
+        "whatsapp": [
+          "+5492615630231"
+        ],
+        "redes": {
+          "instagram": "https://www.instagram.com/plannerseventos",
+          "facebook": "https://www.facebook.com/plannerseventos"
+        }
+      },
+      "estado_web": "ok",
+      "puntaje": 13,
+      "prioridad": "alta"
+    },
+    {
+      "nombre": "Visit Valle de Uco",
+      "segmento": "bodegas_turismo",
+      "rubro": "operador turístico / team building",
+      "sitio_web": "https://visitvalledeuco.com/",
+      "ubicacion": "Valle de Uco",
+      "descripcion": "Experiencias turísticas, team building y eventos corporativos en Valle de Uco",
+      "motivo_encaje": "Eventos corporativos en el Valle requieren traslado desde Gran Mendoza (~1h30)",
+      "angulo_venta": "Landing Bodegas: traslados MICE Mendoza-Valle de Uco",
+      "encaje": 5,
+      "fuente": "https://visitvalledeuco.com/",
+      "dominio": "visitvalledeuco.com",
+      "contacto": {
+        "emails": [],
+        "telefonos": [
+          "+5492622678161"
+        ],
+        "whatsapp": [
+          "+5492622678161"
+        ],
+        "redes": {
+          "instagram": "https://www.instagram.com/visitvalledeuco",
+          "facebook": "https://www.facebook.com/visitvalledeuco"
+        }
+      },
+      "estado_web": "ok",
+      "puntaje": 13,
+      "prioridad": "alta",
+      "notas": "Email ofuscado en el sitio; usar formulario en https://visitvalledeuco.com/contacto/"
+    },
+    {
+      "nombre": "Bodegas Salentein",
+      "segmento": "bodegas_turismo",
+      "rubro": "bodega con turismo y eventos",
+      "sitio_web": "https://www.bodegasalentein.com/",
+      "ubicacion": "Tunuyán, Valle de Uco",
+      "descripcion": "Bodega con restaurante, auditorio y sala de eventos corporativos",
+      "motivo_encaje": "Recibe eventos corporativos y grupos que necesitan traslado",
+      "angulo_venta": "Landing Bodegas: partner de traslados para sus eventos",
+      "encaje": 4,
+      "fuente": "https://www.bodegasalentein.com/mediasite",
+      "dominio": "bodegasalentein.com",
+      "contacto": {
+        "emails": [
+          "espaciosalentein@salentein.com",
+          "reservas.killka@salentein.com",
+          "posada@salentein.com"
+        ],
+        "telefonos": [
+          "2622-429500",
+          "+54 9 261 5547902"
+        ],
+        "whatsapp": [
+          "+5492616860153"
+        ],
+        "redes": {
+          "facebook": "https://www.facebook.com/tr"
+        }
+      },
+      "estado_web": "ok",
+      "puntaje": 13,
+      "prioridad": "alta",
+      "notas": "Contacto completado vía WebSearch (página de contacto/turismo). No toman reservas por WhatsApp en Espacio Salentein."
+    },
+    {
+      "nombre": "Ikatu Viajes",
+      "segmento": "bodegas_turismo",
+      "rubro": "agencia de viajes / receptivo",
+      "sitio_web": "https://ikatuviajes.tur.ar/",
+      "ubicacion": "Mendoza",
+      "descripcion": "Excursiones grupales y privadas: Alta Montaña, Termas, Bodegas",
+      "motivo_encaje": "Excursiones grupales que requieren unidades de 13-19 pax",
+      "angulo_venta": "Landing Bodegas: proveedor de transporte para excursiones",
+      "encaje": 4,
+      "fuente": "https://ikatuviajes.tur.ar/",
+      "dominio": "ikatuviajes.tur.ar",
+      "contacto": {
+        "emails": [
+          "info@ikatuviajes.tur.ar",
+          "reclamos@ikatuviajes.tur.ar"
+        ],
+        "telefonos": [
+          "+54 261 608-4556"
+        ],
+        "whatsapp": [
+          "+5492616084556"
+        ],
+        "redes": {}
+      },
+      "estado_web": "ok",
+      "puntaje": 12,
+      "prioridad": "alta"
+    },
+    {
+      "nombre": "SIP SRL - Servicios Industriales y Petroleros",
+      "segmento": "mineria_industria",
+      "rubro": "servicios petroleros e industriales",
+      "sitio_web": "https://www.sip-srl.com/",
+      "ubicacion": "Zona industrial, Mendoza",
+      "descripcion": "Servicios industriales y petroleros con planta de 6.500 m2",
+      "motivo_encaje": "Personal que se traslada a yacimientos y plantas",
+      "angulo_venta": "Landing Minería: traslado de cuadrillas",
+      "encaje": 4,
+      "fuente": "https://www.sip-srl.com/",
+      "dominio": "sip-srl.com",
+      "contacto": {
+        "emails": [
+          "info@sip-srl.com"
+        ],
+        "telefonos": [
+          "+54 (0261) 431-8722"
+        ],
+        "whatsapp": [],
+        "redes": {}
+      },
+      "estado_web": "ok",
+      "puntaje": 12,
+      "prioridad": "alta"
+    },
+    {
+      "nombre": "Aymara Viajes",
+      "segmento": "bodegas_turismo",
+      "rubro": "agencia de viajes",
+      "sitio_web": "https://aymaramendoza.com.ar/",
+      "ubicacion": "Mendoza",
+      "descripcion": "Agencia de viajes y turismo en Mendoza",
+      "motivo_encaje": "Arma excursiones y paquetes con traslados",
+      "angulo_venta": "Landing Bodegas: traslados para sus grupos",
+      "encaje": 3,
+      "fuente": "https://aymaramendoza.com.ar/en/",
+      "dominio": "aymaramendoza.com.ar",
+      "contacto": {
+        "emails": [
+          "aymaramendoza@aymara.com.ar"
+        ],
+        "telefonos": [
+          "+54 261 4202064"
+        ],
+        "whatsapp": [
+          "+5492614708533"
+        ],
+        "redes": {
+          "instagram": "https://www.instagram.com/turismoaymara",
+          "facebook": "https://www.facebook.com/turismo.aymara"
+        }
+      },
+      "estado_web": "ok",
+      "puntaje": 11,
+      "prioridad": "alta"
+    },
+    {
+      "nombre": "Finca Adalgisa",
+      "segmento": "bodegas_turismo",
+      "rubro": "hotel boutique de vino",
+      "sitio_web": "https://www.fincaadalgisa.com/",
+      "ubicacion": "Chacras de Coria, Luján de Cuyo",
+      "descripcion": "Hotel boutique y viñedo familiar",
+      "motivo_encaje": "Huéspedes que hacen tours a bodegas y traslados al aeropuerto",
+      "angulo_venta": "Landing Bodegas: traslados para huéspedes",
+      "encaje": 3,
+      "fuente": "https://www.fincaadalgisa.com/",
+      "dominio": "fincaadalgisa.com",
+      "contacto": {
+        "emails": [
+          "reservas@fincaadalgisa.com"
+        ],
+        "telefonos": [
+          "+54 9 2616 13-1771"
+        ],
+        "whatsapp": [],
+        "redes": {
+          "instagram": "https://instagram.com/fincaadalgisa",
+          "facebook": "https://facebook.com/fincaadalgisa/"
+        }
+      },
+      "estado_web": "ok",
+      "puntaje": 11,
+      "prioridad": "alta"
+    },
+    {
+      "nombre": "Amérian Chacras de Coria",
+      "segmento": "bodegas_turismo",
+      "rubro": "hotel con salones de eventos",
+      "sitio_web": "https://www.amerian.com/en/destinos/amerian-chacras-de-coria/",
+      "ubicacion": "Chacras de Coria, Luján de Cuyo",
+      "descripcion": "Hotel con sala de reuniones y tarifas para grupos",
+      "motivo_encaje": "Grupos y convenciones alojados necesitan traslados",
+      "angulo_venta": "Landing Institucional: traslados de grupos y eventos",
+      "encaje": 3,
+      "fuente": "https://www.amerian.com/en/destinos/amerian-chacras-de-coria/",
+      "dominio": "amerian.com",
+      "contacto": {
+        "emails": [
+          "info@amerian.com"
+        ],
+        "telefonos": [
+          "08108102637",
+          "+54 11 5171 6565",
+          "+54 9 2613890524"
+        ],
+        "whatsapp": [
+          "+5491166006760",
+          "+5492613890524"
+        ],
+        "redes": {
+          "instagram": "https://www.instagram.com/amerianhotelesok",
+          "facebook": "https://www.facebook.com/AmerianHoteles/"
+        }
+      },
+      "estado_web": "ok",
+      "puntaje": 11,
+      "prioridad": "alta"
+    },
+    {
+      "nombre": "Apolo Sur Construcciones",
+      "segmento": "mineria_industria",
+      "rubro": "constructora",
+      "sitio_web": "https://constructoraapolosur.com/",
+      "ubicacion": "Mendoza",
+      "descripcion": "Obras públicas y privadas",
+      "motivo_encaje": "Traslado de personal a obras",
+      "angulo_venta": "Landing Minería/Industria",
+      "encaje": 3,
+      "fuente": "https://constructoraapolosur.com/portfolio-constructora",
+      "dominio": "constructoraapolosur.com",
+      "contacto": {
+        "emails": [
+          "mcavaion@constructoraapolosur.com",
+          "ggatica47@gmail.com"
+        ],
+        "telefonos": [
+          "+5492615749519"
+        ],
+        "whatsapp": [],
+        "redes": {
+          "instagram": "https://www.instagram.com/apolosursa"
+        }
+      },
+      "estado_web": "ok",
+      "puntaje": 11,
+      "prioridad": "alta"
+    },
+    {
+      "nombre": "Mendoza Bureau (Convention & Visitors Bureau)",
+      "segmento": "corporativo",
+      "rubro": "bureau de congresos",
+      "sitio_web": "https://mendozabureau.com/",
+      "ubicacion": "Mendoza",
+      "descripcion": "Captación de congresos y exposiciones; red de proveedores",
+      "motivo_encaje": "Sumarse como proveedor socio da acceso a múltiples congresos",
+      "angulo_venta": "Landing Institucional: postularse como proveedor de transporte",
+      "encaje": 4,
+      "fuente": "https://mendozabureau.com/",
+      "dominio": "mendozabureau.com",
+      "contacto": {
+        "emails": [],
+        "telefonos": [],
+        "whatsapp": [
+          "+5492616564336"
+        ],
+        "redes": {
+          "instagram": "https://instagram.com/mendoza.bureau",
+          "linkedin": "https://www.linkedin.com/company/mendozabureau"
+        }
+      },
+      "estado_web": "ok",
+      "puntaje": 11,
+      "prioridad": "alta"
+    },
+    {
+      "nombre": "Hotel San Francisco Chacras",
+      "segmento": "corporativo",
+      "rubro": "hotel con salones corporativos",
+      "sitio_web": "https://www.hotelsanfranciscochacras.com/",
+      "ubicacion": "Chacras de Coria, Luján de Cuyo",
+      "descripcion": "Salones para eventos, desayunos de trabajo y capacitaciones in-company",
+      "motivo_encaje": "Capacitaciones corporativas con asistentes que necesitan traslado",
+      "angulo_venta": "Landing Institucional",
+      "encaje": 3,
+      "fuente": "https://www.hotelsanfranciscochacras.com/",
+      "dominio": "hotelsanfranciscochacras.com",
+      "contacto": {
+        "emails": [
+          "hotelsanfranciscochacras@gmail.com"
+        ],
+        "telefonos": [
+          "+54 (261) 496-0110",
+          "+54 9 261 5719142"
+        ],
+        "whatsapp": [],
+        "redes": {}
+      },
+      "estado_web": "ok",
+      "puntaje": 10,
+      "prioridad": "media"
+    },
+    {
+      "nombre": "Cepas Turismo",
+      "segmento": "bodegas_turismo",
+      "rubro": "agencia receptiva",
+      "sitio_web": "https://www.cepas.tur.ar/es/index.html",
+      "ubicacion": "Mendoza",
+      "descripcion": "Turismo receptivo en Mendoza",
+      "motivo_encaje": "Receptivo que necesita traslados para visitantes",
+      "angulo_venta": "Landing Bodegas",
+      "encaje": 3,
+      "fuente": "https://www.cepas.tur.ar/es/index.html",
+      "dominio": "cepas.tur.ar",
+      "contacto": {
+        "emails": [],
+        "telefonos": [
+          "+5492613289999",
+          "+5492617186693"
+        ],
+        "whatsapp": [
+          "+5492617186693"
+        ],
+        "redes": {
+          "instagram": "https://www.instagram.com/cepasturismo",
+          "facebook": "https://www.facebook.com/CepasTurismo/"
+        }
+      },
+      "estado_web": "ok",
+      "puntaje": 9,
+      "prioridad": "media"
+    },
+    {
+      "nombre": "Vive el Turismo (Mendoza Tours)",
+      "segmento": "bodegas_turismo",
+      "rubro": "operador de excursiones",
+      "sitio_web": "https://mendozatours.com.ar/",
+      "ubicacion": "Mendoza",
+      "descripcion": "Excursiones y tours en Mendoza",
+      "motivo_encaje": "Excursiones regulares con grupos",
+      "angulo_venta": "Landing Bodegas: flota de respaldo",
+      "encaje": 3,
+      "fuente": "https://mendozatours.com.ar/en/",
+      "dominio": "mendozatours.com.ar",
+      "contacto": {
+        "emails": [],
+        "telefonos": [
+          "+5492615886994"
+        ],
+        "whatsapp": [
+          "+5492615886994"
+        ],
+        "redes": {
+          "instagram": "https://www.instagram.com/lauke.tours",
+          "facebook": "https://www.facebook.com/Lauketours/"
+        }
+      },
+      "estado_web": "ok",
+      "puntaje": 9,
+      "prioridad": "media"
+    },
+    {
+      "nombre": "Impulsa Mendoza",
+      "segmento": "mineria_industria",
+      "rubro": "empresa provincial de minería",
+      "sitio_web": "https://impulsamendoza.com.ar/",
+      "ubicacion": "Mendoza / Malargüe",
+      "descripcion": "Empresa provincial que impulsa el Distrito Minero Malargüe Occidental",
+      "motivo_encaje": "Coordina decenas de proyectos de exploración; puede derivar a contratistas",
+      "angulo_venta": "Landing Minería: proveedor local habilitado",
+      "encaje": 4,
+      "fuente": "https://impulsamendoza.com.ar/en/impulsa-mendoza/",
+      "dominio": "impulsamendoza.com.ar",
+      "contacto": {
+        "emails": [],
+        "telefonos": [],
+        "whatsapp": [],
+        "redes": {
+          "linkedin": "https://www.linkedin.com/company/impulsa-mendoza"
+        }
+      },
+      "estado_web": "ok",
+      "puntaje": 9,
+      "prioridad": "media",
+      "direccion": "25 de Mayo 1078, Ciudad de Mendoza",
+      "notas": "Sin email/teléfono públicos; formulario en https://impulsa-mendoza.odoo.com/contactus o LinkedIn."
+    },
+    {
+      "nombre": "Bravin Hnos",
+      "segmento": "mineria_industria",
+      "rubro": "constructora",
+      "sitio_web": "https://bravin.net/",
+      "ubicacion": "Mendoza",
+      "descripcion": "Constructora desde 1950, obras públicas y privadas",
+      "motivo_encaje": "Traslado de personal a obras",
+      "angulo_venta": "Landing Minería/Industria",
+      "encaje": 3,
+      "fuente": "https://bravin.net/",
+      "dominio": "bravin.net",
+      "contacto": {
+        "emails": [],
+        "telefonos": [
+          "+542614254415",
+          "542614380281"
+        ],
+        "whatsapp": [],
+        "redes": {
+          "instagram": "https://www.instagram.com/bravinhnos",
+          "facebook": "https://www.facebook.com/bravinconstructora/",
+          "linkedin": "https://www.linkedin.com/company/bravin-hnos-empresa-de-construcciones-s-a"
+        }
+      },
+      "estado_web": "ok",
+      "puntaje": 9,
+      "prioridad": "media"
+    },
+    {
+      "nombre": "SUREN Servicios Petroleros",
+      "segmento": "mineria_industria",
+      "rubro": "servicios petroleros (pulling, workover)",
+      "sitio_web": "https://www.suren.net.ar/",
+      "ubicacion": "Mendoza / Neuquén / Río Negro",
+      "descripcion": "Operación, mantenimiento, pulling y workover",
+      "motivo_encaje": "Equipos de campo con turnos en yacimientos de Mendoza",
+      "angulo_venta": "Landing Minería: traslado de personal por turnos",
+      "encaje": 4,
+      "fuente": "https://www.suren.net.ar/",
+      "dominio": "suren.net.ar",
+      "contacto": {
+        "emails": [],
+        "telefonos": [],
+        "whatsapp": [],
+        "redes": {}
+      },
+      "estado_web": "fallo:error",
+      "puntaje": 8,
+      "prioridad": "media",
+      "notas": "El dominio suren.net.ar no resuelve (DNS). Buscar contacto por LinkedIn o verificar si sigue operando en Mendoza."
+    },
+    {
+      "nombre": "Tolcon S.A.",
+      "segmento": "mineria_industria",
+      "rubro": "constructora (obras públicas, viales, hidráulicas)",
+      "sitio_web": "https://tolconsrl.com/",
+      "ubicacion": "Rivadavia, Mendoza",
+      "descripcion": "Obras públicas y privadas, +4.000 viviendas",
+      "motivo_encaje": "Obras viales e hidráulicas alejadas: traslado de operarios",
+      "angulo_venta": "Landing Minería/Industria",
+      "encaje": 4,
+      "fuente": "https://tolconsrl.com/",
+      "dominio": "tolconsrl.com",
+      "contacto": {
+        "emails": [],
+        "telefonos": [],
+        "whatsapp": [],
+        "redes": {}
+      },
+      "estado_web": "fallo:error",
+      "puntaje": 8,
+      "prioridad": "media",
+      "notas": "El sitio tolconsrl.com tiene el certificado SSL vencido; contactar por teléfono/redes tras búsqueda manual."
+    },
+    {
+      "nombre": "EMEPA S.A.",
+      "segmento": "mineria_industria",
+      "rubro": "servicios a la industria petrolera",
+      "sitio_web": null,
+      "ubicacion": "Luján de Cuyo",
+      "descripcion": "Servicios para la industria petrolera",
+      "motivo_encaje": "Personal de campo en Luján de Cuyo / yacimientos",
+      "angulo_venta": "Landing Minería",
+      "encaje": 3,
+      "fuente": "https://www.instagram.com/emepa.sa/",
+      "contacto": {
+        "emails": [],
+        "telefonos": [],
+        "whatsapp": [],
+        "redes": {
+          "instagram": "https://www.instagram.com/emepa.sa/"
+        }
+      },
+      "dominio": null,
+      "estado_web": "sin-sitio",
+      "puntaje": 7,
+      "prioridad": "baja",
+      "notas": "Solo presencia en Instagram; contactar por DM."
+    }
+  ]
+}
