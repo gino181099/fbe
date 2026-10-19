@@ -71,6 +71,13 @@
       "when": 1792425109923,
       "tag": "0009_proveedores",
       "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "7",
+      "when": 1792425847178,
+      "tag": "0010_gastos_nuevos",
+      "breakpoints": true
     }
   ]
 }

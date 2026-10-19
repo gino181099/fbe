@@ -10,11 +10,21 @@ import {
   type supplierPayments,
   type suppliers,
 } from "@/db/schema";
-import { PAYMENT_METHODS, SUPPLIER_CATEGORIES, VEHICLE_EXPENSE_CONCEPTS } from "@/lib/constants";
+import {
+  EXPENSE_CATEGORIES,
+  EXPENSE_CATEGORY_LABELS,
+  EXPENSE_SCOPE_LABELS,
+  EXPENSE_SCOPES,
+  EXPENSE_SUBCATEGORIES,
+  PAYMENT_METHODS,
+  SUPPLIER_CATEGORIES,
+  VOUCHER_TYPE_LABELS,
+  VOUCHER_TYPES,
+} from "@/lib/constants";
 
 export function SupplierField({ defaultValue, className }: { defaultValue?: string | null; className?: string }) {
   return (
-    <Field label="Proveedor / estación" htmlFor="supplier" className={className} hint="Para combustible: la estación de servicio.">
+    <Field label="Estación" htmlFor="supplier" className={className} hint="La estación de servicio de la carga.">
       <Input id="supplier" name="supplier" list="suppliers" defaultValue={defaultValue ?? ""} />
       <datalist id="suppliers">
         {FUEL_SUPPLIERS.map((s) => (
@@ -25,50 +35,45 @@ export function SupplierField({ defaultValue, className }: { defaultValue?: stri
   );
 }
 
-export const EXPENSE_LABELS = { combustible: "Combustible", sueldo: "Sueldos", varios: "Varios" } as const;
-
 export type FleetOptions = {
   drivers: { id: number; name: string; active: boolean }[];
   vehicles: { id: number; plate: string; model: string; active: boolean }[];
 };
 
+export type SupplierOption = { id: number; name: string; active: boolean };
+
 export function ExpenseFields({
   value,
   defaultDate,
   concepts,
+  subcategories,
   fleet,
+  supplierOptions,
 }: {
   value?: typeof expenses.$inferSelect;
   defaultDate: string;
   concepts: string[];
+  subcategories: string[];
   fleet: FleetOptions;
+  supplierOptions: SupplierOption[];
 }) {
-  // Sugerencias: conceptos de vehículo primero, después los ya usados.
-  const conceptOptions = [...new Set([...VEHICLE_EXPENSE_CONCEPTS, ...concepts])];
+  // Sugerencias: subcategorías fijas primero, después las ya usadas.
+  const subcategoryOptions = [...new Set([...Object.values(EXPENSE_SUBCATEGORIES).flat(), ...subcategories])];
   return (
     <div className="grid gap-4 sm:grid-cols-2">
       <Field label="Fecha" htmlFor="date">
         <Input id="date" name="date" type="date" defaultValue={value?.date ?? defaultDate} required />
       </Field>
-      <Field label="Categoría" htmlFor="category">
-        <NativeSelect id="category" name="category" className="w-full" defaultValue={value?.category ?? "varios"}>
-          {Object.entries(EXPENSE_LABELS).map(([k, label]) => (
-            <NativeSelectOption key={k} value={k}>
-              {label}
+      <Field label="Alcance" htmlFor="scope">
+        <NativeSelect id="scope" name="scope" className="w-full" defaultValue={value?.scope ?? "general"}>
+          {EXPENSE_SCOPES.map((s) => (
+            <NativeSelectOption key={s} value={s}>
+              {EXPENSE_SCOPE_LABELS[s]}
             </NativeSelectOption>
           ))}
         </NativeSelect>
       </Field>
-      <Field label="Concepto" htmlFor="concept" hint="Ej.: Seguro, Impuestos, nombre del chofer…">
-        <Input id="concept" name="concept" list="concepts" defaultValue={value?.concept ?? ""} />
-        <datalist id="concepts">
-          {conceptOptions.map((c) => (
-            <option key={c} value={c} />
-          ))}
-        </datalist>
-      </Field>
-      <SupplierField defaultValue={value?.supplier} />
-      <Field label="Vehículo" htmlFor="vehicleId" hint="Opcional: cuota, seguro, service… de una unidad.">
+      <Field label="Vehículo" htmlFor="vehicleId" hint="Solo para alcance Vehículo (en General se ignora).">
         <NativeSelect id="vehicleId" name="vehicleId" className="w-full" defaultValue={value?.vehicleId ?? ""}>
           <NativeSelectOption value="">—</NativeSelectOption>
           {fleet.vehicles
@@ -79,6 +84,72 @@ export function ExpenseFields({
               </NativeSelectOption>
             ))}
         </NativeSelect>
+      </Field>
+      <Field label="Categoría" htmlFor="category">
+        <NativeSelect id="category" name="category" className="w-full" defaultValue={value?.category ?? "generales"}>
+          {EXPENSE_CATEGORIES.map((c) => (
+            <NativeSelectOption key={c} value={c}>
+              {EXPENSE_CATEGORY_LABELS[c]}
+            </NativeSelectOption>
+          ))}
+        </NativeSelect>
+      </Field>
+      <Field label="Subcategoría" htmlFor="subcategory" hint="Ej.: Mantenimiento, Sueldos, Alquiler…">
+        <Input id="subcategory" name="subcategory" list="expense-subcategories" defaultValue={value?.subcategory ?? ""} />
+        <datalist id="expense-subcategories">
+          {subcategoryOptions.map((c) => (
+            <option key={c} value={c} />
+          ))}
+        </datalist>
+      </Field>
+      <Field label="Proveedor" htmlFor="supplierId" hint="¿No está? Crealo en Proveedores.">
+        <NativeSelect id="supplierId" name="supplierId" className="w-full" defaultValue={value?.supplierId ?? ""}>
+          <NativeSelectOption value="">—</NativeSelectOption>
+          {supplierOptions
+            .filter((s) => s.active || s.id === value?.supplierId)
+            .map((s) => (
+              <NativeSelectOption key={s.id} value={s.id}>
+                {s.name}
+              </NativeSelectOption>
+            ))}
+        </NativeSelect>
+      </Field>
+      <Field label="Qué se hizo" htmlFor="concept">
+        <Input id="concept" name="concept" list="concepts" defaultValue={value?.concept ?? ""} />
+        <datalist id="concepts">
+          {concepts.map((c) => (
+            <option key={c} value={c} />
+          ))}
+        </datalist>
+      </Field>
+      <Field label="Para qué" htmlFor="purpose">
+        <Input id="purpose" name="purpose" defaultValue={value?.purpose ?? ""} />
+      </Field>
+      <Field label="Comprobante" htmlFor="voucherType">
+        <NativeSelect
+          id="voucherType"
+          name="voucherType"
+          className="w-full"
+          defaultValue={value?.voucherType ?? "sin_comprobante"}
+        >
+          {VOUCHER_TYPES.map((t) => (
+            <NativeSelectOption key={t} value={t}>
+              {VOUCHER_TYPE_LABELS[t]}
+            </NativeSelectOption>
+          ))}
+        </NativeSelect>
+      </Field>
+      <Field label="N° de comprobante" htmlFor="voucherNumber">
+        <Input id="voucherNumber" name="voucherNumber" defaultValue={value?.voucherNumber ?? ""} />
+      </Field>
+      <Field label="Pago" htmlFor="payment" hint="A pagar: suma a la cuenta del proveedor. Combustible es siempre contado.">
+        <NativeSelect id="payment" name="payment" className="w-full" defaultValue={value?.paid === false ? "a_pagar" : "contado"}>
+          <NativeSelectOption value="contado">Contado</NativeSelectOption>
+          <NativeSelectOption value="a_pagar">A pagar</NativeSelectOption>
+        </NativeSelect>
+      </Field>
+      <Field label="Monto" htmlFor="amount">
+        <Input id="amount" name="amount" inputMode="decimal" defaultValue={value?.amount ?? ""} required />
       </Field>
       <Field label="Chofer" htmlFor="driverId" hint="Opcional.">
         <NativeSelect id="driverId" name="driverId" className="w-full" defaultValue={value?.driverId ?? ""}>
@@ -91,9 +162,6 @@ export function ExpenseFields({
               </NativeSelectOption>
             ))}
         </NativeSelect>
-      </Field>
-      <Field label="Monto" htmlFor="amount">
-        <Input id="amount" name="amount" inputMode="decimal" defaultValue={value?.amount ?? ""} required />
       </Field>
       <Field label="Observaciones" htmlFor="notes" className="sm:col-span-2">
         <Textarea id="notes" name="notes" rows={2} defaultValue={value?.notes ?? ""} />

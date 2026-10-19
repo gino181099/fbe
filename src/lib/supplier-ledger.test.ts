@@ -11,7 +11,7 @@ const empty: SupplierLedgerInput = { expenses: [], payments: [], tripFuel: [], f
 const expense = (e: Partial<SupplierExpense>): SupplierExpense => ({
   id: 1,
   date: "2026-10-20",
-  category: "varios",
+  category: "generales",
   concept: "Service",
   notes: null,
   amount: 1000,

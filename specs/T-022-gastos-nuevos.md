@@ -1,6 +1,6 @@
 # T-022 · Gastos nuevos (general o por vehículo, con comprobante)
 
-- Estado: Aprobada
+- Estado: Implementada
 - Prioridad: Media
 - Riesgo: Alto <!-- cambia un enum con datos de producción + montos en reportes y Flota -->
 - Fecha: 2026-10-19
@@ -13,15 +13,15 @@ Hoy un gasto tiene categoría combustible/sueldo/varios, concepto y proveedor de
 Cargar y filtrar gastos con el modelo nuevo; los gastos "a pagar" suman a la cuenta del proveedor; Flota suma los gastos de cada vehículo en su costo; Inicio no cambia sus números históricos.
 
 ## Criterios de aceptación
-- [ ] CA1 Enum `expense_category` = `vehiculo | personal | generales | combustible`; tras migrar no quedan `sueldo`/`varios`: `sueldo→personal`, `varios` con vehículo→`vehiculo`, `varios` sin vehículo→`generales`. La cantidad y suma de gastos no cambian.
-- [ ] CA2 `expense` tiene `scope` (`general|vehiculo`, default `general`), `subcategory`, `purpose`, `voucher_type` (`factura_a|factura_b|factura_c|recibo|ticket|sin_comprobante`, default `sin_comprobante`), `voucher_number`; backfill `scope='vehiculo'` donde hay `vehicle_id`. Check en la base: `scope='vehiculo'` ⇔ `vehicle_id` no nulo.
-- [ ] CA3 Formulario "Registrar gasto": fecha, alcance (General / Vehículo), vehículo, categoría, subcategoría (sugerencias), proveedor (select de activos + "—"), qué se hizo, para qué, comprobante (tipo + número), contado / a pagar, monto, chofer (opcional), observaciones. Sin adjuntos.
-- [ ] CA4 Validaciones con mensajes en español: alcance Vehículo sin vehículo → "Elegí el vehículo"; alcance General ignora el vehículo; "A pagar" sin proveedor → "Para dejarlo a pagar elegí un proveedor"; categoría Combustible exige proveedor y queda siempre contado (es pago a estación del gasoil ya contado).
-- [ ] CA5 Un gasto "a pagar" aparece como debe en `/finanzas/proveedores/[id]` y sube el saldo; pasado a contado deja de sumar.
-- [ ] CA6 Listado de `/finanzas/gastos`: columnas Fecha · Categoría/subcategoría · Qué / para qué · Proveedor · Comprobante · Vehículo · Estado (Contado / A pagar) · Monto; filtros nuevos por alcance, proveedor y estado, además de los actuales; StatCards Total + 4 categorías + "A pagar".
-- [ ] CA7 Flota: la columna Gastos de cada vehículo suma los gastos con `scope='vehiculo'` de ese vehículo en el período (sin categoría combustible, que ya está en la columna Gasoil) + adicionales de recorridos; el monto enlaza a `/finanzas/gastos?vehiculo=<id>&desde&hasta`.
-- [ ] CA8 Inicio (T-016) muestra los mismos números que antes: gastos generales siguen siendo `expense` sin combustible (contado y a pagar, por fecha del gasto) + `fuel_load`; `supplier_payment` no suma.
-- [ ] CA9 La pestaña Combustible y los gastos con chofer siguen funcionando igual; `scripts/migrate-legacy.ts` compila (usa `generales`).
+- [x] CA1 Enum `expense_category` = `vehiculo | personal | generales | combustible`; tras migrar no quedan `sueldo`/`varios`: `sueldo→personal`, `varios` con vehículo→`vehiculo`, `varios` sin vehículo→`generales`. La cantidad y suma de gastos no cambian.
+- [x] CA2 `expense` tiene `scope` (`general|vehiculo`, default `general`), `subcategory`, `purpose`, `voucher_type` (`factura_a|factura_b|factura_c|recibo|ticket|sin_comprobante`, default `sin_comprobante`), `voucher_number`; backfill `scope='vehiculo'` donde hay `vehicle_id`. Check en la base: `scope='vehiculo'` ⇔ `vehicle_id` no nulo.
+- [x] CA3 Formulario "Registrar gasto": fecha, alcance (General / Vehículo), vehículo, categoría, subcategoría (sugerencias), proveedor (select de activos + "—"), qué se hizo, para qué, comprobante (tipo + número), contado / a pagar, monto, chofer (opcional), observaciones. Sin adjuntos.
+- [x] CA4 Validaciones con mensajes en español: alcance Vehículo sin vehículo → "Elegí el vehículo"; alcance General ignora el vehículo; "A pagar" sin proveedor → "Para dejarlo a pagar elegí un proveedor"; categoría Combustible exige proveedor y queda siempre contado (es pago a estación del gasoil ya contado).
+- [x] CA5 Un gasto "a pagar" aparece como debe en `/finanzas/proveedores/[id]` y sube el saldo; pasado a contado deja de sumar.
+- [x] CA6 Listado de `/finanzas/gastos`: columnas Fecha · Categoría/subcategoría · Qué / para qué · Proveedor · Comprobante · Vehículo · Estado (Contado / A pagar) · Monto; filtros nuevos por alcance, proveedor y estado, además de los actuales; StatCards Total + 4 categorías + "A pagar".
+- [x] CA7 Flota: la columna Gastos de cada vehículo suma los gastos con `scope='vehiculo'` de ese vehículo en el período (sin categoría combustible, que ya está en la columna Gasoil) + adicionales de recorridos; el monto enlaza a `/finanzas/gastos?vehiculo=<id>&desde&hasta`.
+- [x] CA8 Inicio (T-016) muestra los mismos números que antes: gastos generales siguen siendo `expense` sin combustible (contado y a pagar, por fecha del gasto) + `fuel_load`; `supplier_payment` no suma.
+- [x] CA9 La pestaña Combustible y los gastos con chofer siguen funcionando igual; `scripts/migrate-legacy.ts` compila (usa `generales`).
 
 ## Diseño
 ### Datos
@@ -45,10 +45,10 @@ Textos: "Alcance" (General / Vehículo), "Qué se hizo", "Para qué", "Comproban
 - Patrón de enum en constants + re-export: `COLLECTION_KINDS` (`constants.ts` l.8, `schema.ts` l.250–252).
 
 ## Plan
-- [ ] 1. Antes de migrar, anotar: conteo y suma de `expense` por categoría, gastos con vehículo, y totales de Inicio/Flota de un período con datos (2025).
-- [ ] 2. Constants + schema; `db:generate -- --name gastos_nuevos`; ajustar SQL (mapeo + backfill + check); `db:migrate`; comparar conteos/sumas.
-- [ ] 3. Acción y formulario; `migrate-legacy.ts`.
-- [ ] 4. Listado/filtros de Gastos; Flota.
+- [x] 1. Antes de migrar, anotar: conteo y suma de `expense` por categoría, gastos con vehículo, y totales de Inicio/Flota de un período con datos (2025).
+- [x] 2. Constants + schema; `db:generate -- --name gastos_nuevos`; ajustar SQL (mapeo + backfill + check); `db:migrate`; comparar conteos/sumas.
+- [x] 3. Acción y formulario; `migrate-legacy.ts`.
+- [x] 4. Listado/filtros de Gastos; Flota.
 
 ## Verificación
 - `npx tsc --noEmit` · `npm run lint` · `npm test` · `npm run build`
@@ -73,7 +73,21 @@ Textos: "Alcance" (General / Vehículo), "Qué se hizo", "Para qué", "Comproban
 ---
 
 ## Notas de implementación
-_(completa el implementador: desvíos del plan, decisiones, archivos tocados)_
+- Antes/después de `0010_gastos_nuevos` (Neon): 90 gastos / $72.387.945,38 → iguales. combustible 19 / $24.763.131,37 (sin cambio); varios 71 / $47.624.814,01 → generales 71 / mismo monto (no había `sueldo` ni gastos con vehículo, así que `vehiculo` y backfill de `scope` quedaron en 0 filas). Serie mensual de Inicio (expense sin combustible, 2025-01…2025-11) idéntica; pagos de combustible por proveedor iguales.
+- Migración: drizzle generó `SET DATA TYPE text → DROP TYPE → CREATE TYPE → USING`; se insertó el `UPDATE` de mapeo entre medio y el backfill de `scope` antes del `CHECK expense_scope_vehicle_check` ((scope='vehiculo') = (vehicle_id is not null)). Una sola migración.
+- Reglas CA4 extraídas a `src/lib/expense-rules.ts` (`resolveExpense`, pura) con test (`expense-rules.test.ts`); `saveExpense` solo parsea con zod y la usa. Mensajes exactos (sin el prefijo de `firstError`). Combustible sin proveedor: "Para combustible elegí la estación (proveedor)". Con "Sin comprobante" se descarta el número.
+- Se quitó el puente de T-021 (`supplierIdByName`); `expense.supplier` (texto) ya no se escribe ni se pisa al editar; en el listado se muestra solo si no hay `supplier_id`. Proveedor enlaza a `/finanzas/proveedores/[id]`.
+- StatCards (Total, 4 categorías, A pagar) usan solo el período, como antes; los filtros nuevos (alcance, proveedor, estado) aplican a la tabla. Observaciones pasan debajo de "Qué / para qué" (la columna no está en la lista de CA6).
+- Hallazgo menor T-021 resuelto: la pestaña Combustible agrupa estaciones por `lower(trim(nombre))` (mismo criterio que la cuenta del proveedor), mostrando el primer nombre visto.
+- Flota: `scope='vehiculo'` y sin combustible (antes sumaba cualquier gasto con vehículo; no había filas, sin cambio de números); monto con `Link` a Gastos con período. Nota del margen actualizada.
+- `SupplierField` queda solo para cargas de combustible (label "Estación"). `VEHICLE_EXPENSE_CONCEPTS` eliminado (reemplazado por `EXPENSE_SUBCATEGORIES`); `EXPENSE_LABELS` reemplazado por `EXPENSE_CATEGORY_LABELS`.
+- Prueba contra la base (script temporal, datos "PRUEBA ZZ T-022" borrados, 0 restos): general contado ignora vehículo; vehículo sin vehículo → error; vehículo con vehículo suma en query de Flota; a pagar sin proveedor → error; a pagar con proveedor → saldo 7000 y línea `gasto` en estado de cuenta; pasado a contado → saldo 0; `CHECK` rechaza scope vehiculo sin vehículo (23514). Sin clics en navegador.
+- Archivos: `src/lib/constants.ts`, `src/lib/expense-rules(.test).ts`, `src/lib/supplier-ledger.test.ts` (categoría `generales`), `src/db/schema.ts`, `drizzle/0010_gastos_nuevos.sql` (+ meta), `src/app/(app)/finanzas/{actions.ts,fields.tsx,gastos/page.tsx}`, `src/app/(app)/flota/page.tsx`, `scripts/migrate-legacy.ts`.
 
 ## Revisión
-_(completa el revisor solo si Riesgo: Alto; si no, "No aplica (riesgo bajo, autochequeo del implementador)")_
+Veredicto: APROBADO
+Criterios: CA1 ✅ · CA2 ✅ · CA3 ✅ · CA4 ✅ · CA5 ✅ · CA6 ✅ · CA7 ✅ · CA8 ✅ · CA9 ✅ (revisado por código/SQL; sin prueba en navegador)
+Hallazgos:
+1. [MENOR] src/app/(app)/flota/page.tsx:~183 — el enlace a `/finanzas/gastos?vehiculo=<id>` lista también gastos de combustible con ese vehículo, que la columna Gastos excluye → el total de la lista puede no coincidir con el monto → (hoy 0 filas) agregar `categoria` o aclarar si aparece el caso.
+2. [MENOR] migración 0010 — `UPDATE` y `DROP TYPE` dependen de que no haya otras columnas/usos del enum `expense_category`; ya aplicada y verificada (90 gastos, misma suma), sin acción.
+Verificado: no quedan usos de `VEHICLE_EXPENSE_CONCEPTS`, `EXPENSE_LABELS` ni `supplierIdByName`; migrate-legacy usa `generales`; SQL mapea sueldo/varios correctamente y el CHECK va después del backfill; reglas CA4 en `expense-rules.ts` correctas; Combustible agrupa por lower(trim).

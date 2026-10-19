@@ -68,9 +68,6 @@ export const RECEIPT_POS = 1;
 /** Medios de pago sugeridos (se puede escribir otro). */
 export const PAYMENT_METHODS = ["Transferencia", "Efectivo", "Cheque", "Mercado Pago", "Otro"];
 
-/** Conceptos sugeridos para gastos de un vehículo (se puede escribir otro). */
-export const VEHICLE_EXPENSE_CONCEPTS = ["Cuota", "Seguro", "Service", "Patente", "VTV", "Neumáticos", "Reparación"];
-
 /** Patente normalizada: mayúsculas, sin espacios ni guiones ("ah 115-dl" → "AH115DL"). */
 export function normalizePlate(s: string) {
   return s.toUpperCase().replace(/[\s-]+/g, "");
@@ -112,3 +109,40 @@ export const SUPPLIER_CATEGORIES = [
   "Otros",
 ];
 export const FUEL_SUPPLIER_CATEGORY = "Combustible";
+
+/**
+ * Categorías de gasto (T-022). "combustible" = pago a estación del gasoil ya contado en recorridos/cargas
+ * (no es gasto en reportes ni en Flota).
+ */
+export const EXPENSE_CATEGORIES = ["vehiculo", "personal", "generales", "combustible"] as const;
+export type ExpenseCategory = (typeof EXPENSE_CATEGORIES)[number];
+export const EXPENSE_CATEGORY_LABELS: Record<ExpenseCategory, string> = {
+  vehiculo: "Vehículo",
+  personal: "Personal",
+  generales: "Generales",
+  combustible: "Combustible",
+};
+/** Subcategorías sugeridas por categoría (texto libre: se puede escribir otra). */
+export const EXPENSE_SUBCATEGORIES: Record<ExpenseCategory, string[]> = {
+  vehiculo: ["Mantenimiento", "Repuestos", "Cubiertas", "Seguro", "Patente", "VTV", "Lavado", "Peajes", "Cuota"],
+  personal: ["Sueldos", "Viáticos", "Cargas sociales"],
+  generales: ["Alquiler", "Servicios", "Teléfono", "Contador", "Impuestos", "Bancarios", "Publicidad"],
+  combustible: ["Pago a estación"],
+};
+
+/** Alcance de un gasto: general de la empresa o de un vehículo (⇔ tiene vehículo). */
+export const EXPENSE_SCOPES = ["general", "vehiculo"] as const;
+export type ExpenseScope = (typeof EXPENSE_SCOPES)[number];
+export const EXPENSE_SCOPE_LABELS: Record<ExpenseScope, string> = { general: "General", vehiculo: "Vehículo" };
+
+/** Tipo de comprobante de un gasto. */
+export const VOUCHER_TYPES = ["factura_a", "factura_b", "factura_c", "recibo", "ticket", "sin_comprobante"] as const;
+export type VoucherType = (typeof VOUCHER_TYPES)[number];
+export const VOUCHER_TYPE_LABELS: Record<VoucherType, string> = {
+  factura_a: "Factura A",
+  factura_b: "Factura B",
+  factura_c: "Factura C",
+  recibo: "Recibo",
+  ticket: "Ticket",
+  sin_comprobante: "Sin comprobante",
+};

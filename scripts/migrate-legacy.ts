@@ -205,7 +205,7 @@ async function main() {
       const shell = clean(r.Observaciones) === "Shell";
       return {
         date: day(r.Fecha),
-        category: shell ? ("combustible" as const) : ("varios" as const),
+        category: shell ? ("combustible" as const) : ("generales" as const),
         concept: shell ? "Carga de combustible" : clean(r.Observaciones),
         supplier: shell ? "Shell Maza" : null,
         amount: num(r.Monto_Abonado) ?? 0,

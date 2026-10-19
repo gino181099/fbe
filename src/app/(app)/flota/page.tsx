@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
-import { and, asc, count, gte, isNotNull, lte } from "drizzle-orm";
+import Link from "next/link";
+import { and, asc, count, eq, gte, isNotNull, lte, ne } from "drizzle-orm";
 import { Pencil, Plus, Power } from "lucide-react";
 import { ConfirmButton } from "@/components/confirm-button";
 import { FormDialog } from "@/components/form-dialog";
@@ -55,7 +56,15 @@ export default async function FleetPage({ searchParams }: PageProps<"/flota">) {
     db
       .select({ id: expenses.vehicleId, total: sumOf(expenses.amount) })
       .from(expenses)
-      .where(and(gte(expenses.date, desde), lte(expenses.date, hasta), isNotNull(expenses.vehicleId)))
+      // Gastos del vehículo sin combustible (el pago a estación ya está en la columna Gasoil).
+      .where(
+        and(
+          gte(expenses.date, desde),
+          lte(expenses.date, hasta),
+          eq(expenses.scope, "vehiculo"),
+          ne(expenses.category, "combustible"),
+        ),
+      )
       .groupBy(expenses.vehicleId),
     db
       .select({ id: trips.driverId, n: count(), driverPay: sumOf(trips.driverPay) })
@@ -170,7 +179,15 @@ export default async function FleetPage({ searchParams }: PageProps<"/flota">) {
                         <TableCell className="text-right tabular-nums">{formatMoney(billed)}</TableCell>
                         <TableCell className="text-right tabular-nums">{formatMoney(fuel)}</TableCell>
                         <TableCell className="text-right tabular-nums">{formatMoney(pay)}</TableCell>
-                        <TableCell className="text-right tabular-nums">{formatMoney(exp)}</TableCell>
+                        <TableCell className="text-right tabular-nums">
+                          <Link
+                            href={`/finanzas/gastos?vehiculo=${v.id}&desde=${desde}&hasta=${hasta}`}
+                            className="hover:underline"
+                            title="Ver los gastos del vehículo"
+                          >
+                            {formatMoney(exp)}
+                          </Link>
+                        </TableCell>
                         <TableCell className="text-right font-medium tabular-nums">
                           {formatMoney(billed - fuel - pay - exp)}
                         </TableCell>
@@ -208,7 +225,7 @@ export default async function FleetPage({ searchParams }: PageProps<"/flota">) {
       )}
       {showMoney && (
         <p className="text-xs text-muted-foreground">
-          Margen = facturado − gasoil de recorridos − pago a choferes − gastos asociados a la unidad (en el período).
+          Margen = facturado − gasoil de recorridos − pago a choferes − gastos de la unidad sin combustible (en el período; el monto enlaza a Gastos).
         </p>
       )}
 

@@ -15,6 +15,15 @@ Una entrada por tarea terminada, **la más nueva arriba**. Formato fijo y breve 
 
 ---
 
+## 2026-10-19 · T-022 · Gastos nuevos (general o por vehículo, con comprobante)
+- Resultado: gasto con alcance General/Vehículo, categorías vehiculo/personal/generales/combustible + subcategoría, qué/para qué, comprobante (tipo + N°), proveedor (select) y Contado/A pagar; listado con filtros alcance/proveedor/estado y StatCards + "A pagar"; Flota suma gastos de vehículo sin combustible con link a Gastos.
+- Archivos: `src/lib/{constants,expense-rules(+test)}.ts`, `schema.ts`, `finanzas/{actions.ts,fields.tsx,gastos/page.tsx}`, `flota/page.tsx`, `scripts/migrate-legacy.ts`.
+- Datos: `0010_gastos_nuevos` (enum recreado vía text + mapeo, `expense_scope`/`expense_voucher_type`, 5 columnas, backfill scope, CHECK). 90 gastos / $72.387.945,38 iguales; varios 71 → generales; serie de Inicio idéntica. PRUEBA creados y borrados.
+- Verificación: tsc · lint · npm test 140/140 · build OK · script contra la base (validaciones, saldo proveedor a pagar/contado, CHECK 23514, query Flota). Sin clics en navegador.
+- Revisión: APROBADO (0 bloqueantes, 0 importantes). Menores pendientes: el enlace de Flota a Gastos por vehículo también lista combustible (la columna lo excluye); el DROP TYPE de 0010 dependía de que nadie más usara el enum (ya aplicada, totales iguales).
+- Pendiente: —
+- Costo: spec ~39k (tanda T-021..T-022 78k) · impl 144k · rev 29k tokens · 11 min
+
 ## 2026-10-19 · T-021 · Proveedores y cuenta corriente con proveedores
 - Resultado: `/finanzas/proveedores` (ABM, filtros texto/rubro/estado, saldo, total a pagar) y `/[id]` (movimientos con saldo corrido, desde/hasta con saldo anterior, registrar/editar/borrar pagos); estaciones suman gasoil por día + cargas extras; pestaña Combustible suma `supplier_payment`. Sidebar "Proveedores".
 - Archivos: `src/lib/{supplier-ledger(+test),suppliers,db-errors,constants}.ts`, `schema.ts`, `finanzas/{actions,fields}.tsx?`, `finanzas/gastos/page.tsx`, `finanzas/proveedores/**`, `app-sidebar.tsx`.

@@ -1,6 +1,7 @@
 import {
   type AnyPgColumn,
   boolean,
+  check,
   date,
   index,
   integer,
@@ -14,7 +15,15 @@ import {
 } from "drizzle-orm/pg-core";
 import { sql } from "drizzle-orm";
 import type { AdapterAccountType } from "next-auth/adapters";
-import { CLIENT_TYPES, COLLECTION_KINDS, DOCUMENT_TYPES, LEAD_STAGES } from "@/lib/constants";
+import {
+  CLIENT_TYPES,
+  COLLECTION_KINDS,
+  DOCUMENT_TYPES,
+  EXPENSE_CATEGORIES,
+  EXPENSE_SCOPES,
+  LEAD_STAGES,
+  VOUCHER_TYPES,
+} from "@/lib/constants";
 
 // Montos en pesos: numeric(14,2) leído como number en JS.
 const money = (name: string) => numeric(name, { precision: 14, scale: 2, mode: "number" });
@@ -402,18 +411,28 @@ export const supplierPayments = pgTable(
   (t) => [index("supplier_payment_supplier_date_idx").on(t.supplierId, t.date)],
 );
 
-export const EXPENSE_CATEGORIES =["combustible", "sueldo", "varios"] as const;
+export { EXPENSE_CATEGORIES, EXPENSE_SCOPES, VOUCHER_TYPES } from "@/lib/constants";
 export const expenseCategory = pgEnum("expense_category", EXPENSE_CATEGORIES);
+export const expenseScope = pgEnum("expense_scope", EXPENSE_SCOPES);
+export const expenseVoucherType = pgEnum("expense_voucher_type", VOUCHER_TYPES);
 
 export const expenses = pgTable(
   "expense",
   {
     id: integer("id").primaryKey().generatedAlwaysAsIdentity(),
     date: date("date", { mode: "string" }).notNull(),
+    // T-022: general de la empresa o de un vehículo (check: vehiculo ⇔ vehicle_id no nulo).
+    scope: expenseScope("scope").notNull().default("general"),
     category: expenseCategory("category").notNull(),
-    // Detalle libre: "Seguro", "Impuestos", nombre del chofer, etc.
+    // Texto libre con sugerencias EXPENSE_SUBCATEGORIES.
+    subcategory: text("subcategory"),
+    // "Qué se hizo".
     concept: text("concept"),
-    // Proveedor: para combustible, la estación de servicio.
+    // "Para qué".
+    purpose: text("purpose"),
+    voucherType: expenseVoucherType("voucher_type").notNull().default("sin_comprobante"),
+    voucherNumber: text("voucher_number"),
+    // Histórico (texto libre): ya no se escribe; se muestra solo si no hay supplier_id.
     supplier: text("supplier"),
     // T-021: proveedor vinculado (el texto `supplier` queda como histórico) y si se pagó en el momento.
     supplierId: integer("supplier_id").references(() => suppliers.id, { onDelete: "restrict" }),
@@ -432,6 +451,7 @@ export const expenses = pgTable(
     index("expense_vehicle_idx").on(t.vehicleId),
     index("expense_supplier_idx").on(t.supplierId),
     uniqueIndex("expense_legacy_idx").on(t.legacySource, t.legacyId),
+    check("expense_scope_vehicle_check", sql`(${t.scope} = 'vehiculo') = (${t.vehicleId} is not null)`),
   ],
 );
 

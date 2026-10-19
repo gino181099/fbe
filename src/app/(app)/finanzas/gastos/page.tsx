@@ -12,18 +12,25 @@ import { NativeSelect, NativeSelectOption } from "@/components/ui/native-select"
 import { Table, TableBody, TableCell, TableFooter, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { db } from "@/db";
-import { drivers, EXPENSE_CATEGORIES, expenses, fuelLoads, supplierPayments, suppliers, trips, vehicles } from "@/db/schema";
+import { drivers, EXPENSE_CATEGORIES, EXPENSE_SCOPES, expenses, fuelLoads, supplierPayments, suppliers, trips, vehicles } from "@/db/schema";
 import { sumOf } from "@/lib/balances";
-import { FUEL_SUPPLIER_CATEGORY } from "@/lib/constants";
+import {
+  EXPENSE_CATEGORY_LABELS,
+  EXPENSE_SCOPE_LABELS,
+  type ExpenseCategory,
+  FUEL_SUPPLIER_CATEGORY,
+  VOUCHER_TYPE_LABELS,
+} from "@/lib/constants";
 import { formatDate, formatMoney, formatNumber, today } from "@/lib/format";
 import { can, requirePermission } from "@/lib/permissions";
 import { deleteExpense, deleteFuelLoad, saveExpense, saveFuelLoad } from "../actions";
-import { EXPENSE_LABELS, ExpenseFields, FuelLoadFields } from "../fields";
+import { ExpenseFields, FuelLoadFields } from "../fields";
 
 export const metadata: Metadata = { title: "Gastos" };
 
 const str = (v: string | string[] | undefined) => (typeof v === "string" && v.trim() ? v.trim() : undefined);
 const isDate = (v?: string) => (v && /^\d{4}-\d{2}-\d{2}$/.test(v) ? v : undefined);
+const sumBy = (rows: { total: number }[]) => rows.reduce((s, r) => s + r.total, 0);
 
 export default async function ExpensesPage({ searchParams }: PageProps<"/finanzas/gastos">) {
   const user = await requirePermission("finanzas");
@@ -31,7 +38,10 @@ export default async function ExpensesPage({ searchParams }: PageProps<"/finanza
   const desde = isDate(str(sp.desde));
   const hasta = isDate(str(sp.hasta));
   const categoria = EXPENSE_CATEGORIES.find((c) => c === sp.categoria);
+  const alcance = EXPENSE_SCOPES.find((s) => s === sp.alcance);
+  const estado = (["contado", "a_pagar"] as const).find((s) => s === sp.estado);
   const vehiculo = Number(str(sp.vehiculo)) || undefined;
+  const proveedor = Number(str(sp.proveedor)) || undefined;
 
   const expFilters: SQL[] = [];
   const fuelFilters: SQL[] = [];
@@ -46,27 +56,45 @@ export default async function ExpensesPage({ searchParams }: PageProps<"/finanza
     fuelFilters.push(lte(fuelLoads.date, hasta));
     tripFilters.push(lte(trips.date, hasta));
   }
-  const categoryFilters = categoria ? [...expFilters, eq(expenses.category, categoria)] : [...expFilters];
-  if (vehiculo) categoryFilters.push(eq(expenses.vehicleId, vehiculo));
+  // Filtros de la tabla (los totales por categoría solo usan el período).
+  const rowFilters = [...expFilters];
+  if (categoria) rowFilters.push(eq(expenses.category, categoria));
+  if (alcance) rowFilters.push(eq(expenses.scope, alcance));
+  if (vehiculo) rowFilters.push(eq(expenses.vehicleId, vehiculo));
+  if (proveedor) rowFilters.push(eq(expenses.supplierId, proveedor));
+  if (estado) rowFilters.push(eq(expenses.paid, estado === "contado"));
 
   const payFilters: SQL[] = [];
   if (desde) payFilters.push(gte(supplierPayments.date, desde));
   if (hasta) payFilters.push(lte(supplierPayments.date, hasta));
   const stationName = sql<string | null>`coalesce(${suppliers.name}, ${expenses.supplier})`;
 
-  const [expenseRows, byCategory, loads, tripFuel, fuelPayments, supplierPaid, conceptRows, driverList, vehicleList] = await Promise.all([
+  const [
+    expenseRows,
+    byCategory,
+    loads,
+    tripFuel,
+    fuelPayments,
+    supplierPaid,
+    conceptRows,
+    subcategoryRows,
+    driverList,
+    vehicleList,
+    supplierList,
+  ] = await Promise.all([
     db
-      .select({ expense: expenses, vehiclePlate: vehicles.plate })
+      .select({ expense: expenses, vehiclePlate: vehicles.plate, supplierName: suppliers.name })
       .from(expenses)
       .leftJoin(vehicles, eq(vehicles.id, expenses.vehicleId))
-      .where(and(...categoryFilters))
+      .leftJoin(suppliers, eq(suppliers.id, expenses.supplierId))
+      .where(and(...rowFilters))
       .orderBy(desc(expenses.date), desc(expenses.id))
       .limit(500),
     db
-      .select({ category: expenses.category, total: sumOf(expenses.amount) })
+      .select({ category: expenses.category, paid: expenses.paid, total: sumOf(expenses.amount) })
       .from(expenses)
       .where(and(...expFilters))
-      .groupBy(expenses.category),
+      .groupBy(expenses.category, expenses.paid),
     db
       .select()
       .from(fuelLoads)
@@ -92,25 +120,36 @@ export default async function ExpensesPage({ searchParams }: PageProps<"/finanza
       .where(and(...payFilters))
       .groupBy(suppliers.name, suppliers.category),
     db.selectDistinct({ concept: expenses.concept }).from(expenses).where(isNotNull(expenses.concept)).orderBy(asc(expenses.concept)),
+    db
+      .selectDistinct({ subcategory: expenses.subcategory })
+      .from(expenses)
+      .where(isNotNull(expenses.subcategory))
+      .orderBy(asc(expenses.subcategory)),
     db.select({ id: drivers.id, name: drivers.name, active: drivers.active }).from(drivers).orderBy(asc(drivers.name)),
     db
       .select({ id: vehicles.id, plate: vehicles.plate, model: vehicles.model, active: vehicles.active })
       .from(vehicles)
       .orderBy(asc(vehicles.plate)),
+    db.select({ id: suppliers.id, name: suppliers.name, active: suppliers.active }).from(suppliers).orderBy(asc(suppliers.name)),
   ]);
   const fleet = { drivers: driverList, vehicles: vehicleList };
 
   const canEdit = can(user, "finanzas", "edit");
   const date = today();
   const concepts = conceptRows.map((c) => c.concept!);
-  const catTotal = (c: (typeof EXPENSE_CATEGORIES)[number]) => byCategory.find((b) => b.category === c)?.total ?? 0;
-  const totalExpenses = byCategory.reduce((s, b) => s + b.total, 0);
+  const subcategories = subcategoryRows.map((c) => c.subcategory!);
+  const catTotal = (c: ExpenseCategory) => sumBy(byCategory.filter((b) => b.category === c));
+  const totalExpenses = sumBy(byCategory);
+  const toPay = sumBy(byCategory.filter((b) => !b.paid));
+  const formProps = { defaultDate: date, concepts, subcategories, fleet, supplierOptions: supplierList };
 
-  // Combustible por estación: consumo (gasoil de recorridos + cargas extras) contra pagos.
-  const stations = new Map<string, { trips: number; liters: number; loads: number; paid: number }>();
+  // Combustible por estación: consumo (gasoil de recorridos + cargas extras) contra pagos. Se agrupa por
+  // nombre sin mayúsculas ni espacios extremos (mismo criterio que la cuenta del proveedor).
+  const stations = new Map<string, { name: string; trips: number; liters: number; loads: number; paid: number }>();
+  const stationKey = (name: string | null) => name?.trim().toLowerCase() || "";
   const station = (name: string | null) => {
-    const key = name ?? "Sin especificar";
-    if (!stations.has(key)) stations.set(key, { trips: 0, liters: 0, loads: 0, paid: 0 });
+    const key = stationKey(name);
+    if (!stations.has(key)) stations.set(key, { name: name?.trim() || "Sin especificar", trips: 0, liters: 0, loads: 0, paid: 0 });
     return stations.get(key)!;
   };
   for (const t of tripFuel) {
@@ -125,10 +164,10 @@ export default async function ExpensesPage({ searchParams }: PageProps<"/finanza
   for (const p of fuelPayments) station(p.supplier).paid += p.total;
   // Pagos a proveedor: solo de estaciones (rubro Combustible o con consumo/pagos en la tabla).
   for (const p of supplierPaid)
-    if (stations.has(p.supplier) || p.category === FUEL_SUPPLIER_CATEGORY) station(p.supplier).paid += p.total;
-  const stationRows = [...stations.entries()].sort((a, b) => a[0].localeCompare(b[0]));
+    if (stations.has(stationKey(p.supplier)) || p.category === FUEL_SUPPLIER_CATEGORY) station(p.supplier).paid += p.total;
+  const stationRows = [...stations.values()].sort((a, b) => a.name.localeCompare(b.name));
   const fuelTotals = stationRows.reduce(
-    (acc, [, s]) => ({ consumption: acc.consumption + s.trips + s.loads, paid: acc.paid + s.paid }),
+    (acc, s) => ({ consumption: acc.consumption + s.trips + s.loads, paid: acc.paid + s.paid }),
     { consumption: 0, paid: 0 },
   );
 
@@ -157,7 +196,7 @@ export default async function ExpensesPage({ searchParams }: PageProps<"/finanza
                   </Button>
                 }
               >
-                <ExpenseFields defaultDate={date} concepts={concepts} fleet={fleet} />
+                <ExpenseFields {...formProps} />
               </FormDialog>
             </>
           )
@@ -173,11 +212,19 @@ export default async function ExpensesPage({ searchParams }: PageProps<"/finanza
           Hasta
           <Input type="date" name="hasta" defaultValue={hasta} className="w-40" />
         </label>
+        <NativeSelect name="alcance" defaultValue={alcance ?? ""}>
+          <NativeSelectOption value="">Todo alcance</NativeSelectOption>
+          {EXPENSE_SCOPES.map((s) => (
+            <NativeSelectOption key={s} value={s}>
+              {EXPENSE_SCOPE_LABELS[s]}
+            </NativeSelectOption>
+          ))}
+        </NativeSelect>
         <NativeSelect name="categoria" defaultValue={categoria ?? ""}>
           <NativeSelectOption value="">Todas las categorías</NativeSelectOption>
           {EXPENSE_CATEGORIES.map((c) => (
             <NativeSelectOption key={c} value={c}>
-              {EXPENSE_LABELS[c]}
+              {EXPENSE_CATEGORY_LABELS[c]}
             </NativeSelectOption>
           ))}
         </NativeSelect>
@@ -189,10 +236,23 @@ export default async function ExpensesPage({ searchParams }: PageProps<"/finanza
             </NativeSelectOption>
           ))}
         </NativeSelect>
+        <NativeSelect name="proveedor" defaultValue={proveedor ?? ""}>
+          <NativeSelectOption value="">Todos los proveedores</NativeSelectOption>
+          {supplierList.map((s) => (
+            <NativeSelectOption key={s.id} value={s.id}>
+              {s.name}
+            </NativeSelectOption>
+          ))}
+        </NativeSelect>
+        <NativeSelect name="estado" defaultValue={estado ?? ""}>
+          <NativeSelectOption value="">Contado y a pagar</NativeSelectOption>
+          <NativeSelectOption value="contado">Contado</NativeSelectOption>
+          <NativeSelectOption value="a_pagar">A pagar</NativeSelectOption>
+        </NativeSelect>
         <Button type="submit" variant="secondary">
           Filtrar
         </Button>
-        {(desde || hasta || categoria || vehiculo) && (
+        {(desde || hasta || categoria || alcance || vehiculo || proveedor || estado) && (
           <Button variant="ghost" asChild>
             <Link href="/finanzas/gastos">Limpiar</Link>
           </Button>
@@ -206,11 +266,12 @@ export default async function ExpensesPage({ searchParams }: PageProps<"/finanza
         </TabsList>
 
         <TabsContent value="gastos" className="grid gap-4 pt-2">
-          <div className="grid gap-4 sm:grid-cols-4">
+          <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-6">
             <StatCard label="Total" value={formatMoney(totalExpenses)} />
             {EXPENSE_CATEGORIES.map((c) => (
-              <StatCard key={c} label={EXPENSE_LABELS[c]} value={formatMoney(catTotal(c))} />
+              <StatCard key={c} label={EXPENSE_CATEGORY_LABELS[c]} value={formatMoney(catTotal(c))} />
             ))}
+            <StatCard label="A pagar" value={formatMoney(toPay)} />
           </div>
           {expenseRows.length === 0 ? (
             <EmptyState>No hay gastos con esos filtros.</EmptyState>
@@ -221,26 +282,51 @@ export default async function ExpensesPage({ searchParams }: PageProps<"/finanza
                   <TableRow>
                     <TableHead>Fecha</TableHead>
                     <TableHead>Categoría</TableHead>
-                    <TableHead>Concepto</TableHead>
+                    <TableHead>Qué / para qué</TableHead>
+                    <TableHead>Proveedor</TableHead>
+                    <TableHead>Comprobante</TableHead>
                     <TableHead>Vehículo</TableHead>
-                    <TableHead>Observaciones</TableHead>
+                    <TableHead>Estado</TableHead>
                     <TableHead className="text-right">Monto</TableHead>
                     {canEdit && <TableHead className="w-20" />}
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {expenseRows.map(({ expense: e, vehiclePlate }) => (
+                  {expenseRows.map(({ expense: e, vehiclePlate, supplierName }) => (
                     <TableRow key={e.id}>
-                      <TableCell>{formatDate(e.date)}</TableCell>
+                      <TableCell className="whitespace-nowrap">{formatDate(e.date)}</TableCell>
                       <TableCell>
-                        <Badge variant="outline">{EXPENSE_LABELS[e.category]}</Badge>
+                        <Badge variant="outline">{EXPENSE_CATEGORY_LABELS[e.category]}</Badge>
+                        {e.subcategory && <span className="block text-xs text-muted-foreground">{e.subcategory}</span>}
                       </TableCell>
                       <TableCell>
                         {e.concept ?? "—"}
-                        {e.supplier && <span className="block text-xs text-muted-foreground">{e.supplier}</span>}
+                        {e.purpose && <span className="block text-xs text-muted-foreground">Para: {e.purpose}</span>}
+                        {e.notes && <span className="block text-xs text-muted-foreground">{e.notes}</span>}
+                      </TableCell>
+                      <TableCell>
+                        {supplierName && e.supplierId ? (
+                          <Link href={`/finanzas/proveedores/${e.supplierId}`} className="hover:underline">
+                            {supplierName}
+                          </Link>
+                        ) : (
+                          (e.supplier ?? "—")
+                        )}
+                      </TableCell>
+                      <TableCell className="whitespace-nowrap">
+                        {e.voucherType === "sin_comprobante" ? (
+                          <span className="text-muted-foreground">—</span>
+                        ) : (
+                          <>
+                            {VOUCHER_TYPE_LABELS[e.voucherType]}
+                            {e.voucherNumber && <span className="block text-xs text-muted-foreground">{e.voucherNumber}</span>}
+                          </>
+                        )}
                       </TableCell>
                       <TableCell className="whitespace-nowrap">{vehiclePlate ?? "—"}</TableCell>
-                      <TableCell className="text-muted-foreground">{e.notes ?? "—"}</TableCell>
+                      <TableCell>
+                        <Badge variant={e.paid ? "secondary" : "destructive"}>{e.paid ? "Contado" : "A pagar"}</Badge>
+                      </TableCell>
                       <TableCell className="text-right tabular-nums">{formatMoney(e.amount)}</TableCell>
                       {canEdit && (
                         <TableCell>
@@ -254,7 +340,7 @@ export default async function ExpensesPage({ searchParams }: PageProps<"/finanza
                                 </Button>
                               }
                             >
-                              <ExpenseFields value={e} defaultDate={date} concepts={concepts} fleet={fleet} />
+                              <ExpenseFields value={e} {...formProps} />
                             </FormDialog>
                             <ConfirmButton action={deleteExpense.bind(null, e.id)} title="¿Eliminar gasto?" />
                           </div>
@@ -265,7 +351,7 @@ export default async function ExpensesPage({ searchParams }: PageProps<"/finanza
                 </TableBody>
                 <TableFooter>
                   <TableRow>
-                    <TableCell colSpan={5}>Total</TableCell>
+                    <TableCell colSpan={7}>Total</TableCell>
                     <TableCell className="text-right tabular-nums">
                       {formatMoney(expenseRows.reduce((s, r) => s + r.expense.amount, 0))}
                     </TableCell>
@@ -291,11 +377,11 @@ export default async function ExpensesPage({ searchParams }: PageProps<"/finanza
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {stationRows.map(([name, s]) => {
+                {stationRows.map((s) => {
                   const balance = s.trips + s.loads - s.paid;
                   return (
-                    <TableRow key={name}>
-                      <TableCell className="font-medium">{name}</TableCell>
+                    <TableRow key={s.name}>
+                      <TableCell className="font-medium">{s.name}</TableCell>
                       <TableCell className="text-right tabular-nums">{formatNumber(s.liters)}</TableCell>
                       <TableCell className="text-right tabular-nums">{formatMoney(s.trips)}</TableCell>
                       <TableCell className="text-right tabular-nums">{formatMoney(s.loads)}</TableCell>

@@ -23,12 +23,6 @@ Prioridad: `Alta` · `Media` · `Baja`.
 - Prioridad: Media
 - Spec: specs/T-020-vencimientos-semaforo.md
 - Descripción: El vencimiento es el del comprobante que incluye al débito o, si no tiene, la fecha + `payment_days` del cliente. Semáforo: al día / verde ≤30 días de atraso / amarillo ≤60 / rojo >60. Se muestra en el listado de cuentas corrientes (saldo, vencido, filtro por mora), en el estado de cuenta y en su PDF.
-
-### T-022 · Gastos nuevos (general o por vehículo, con comprobante)
-- Estado: Aprobada
-- Prioridad: Media
-- Spec: specs/T-022-gastos-nuevos.md
-- Descripción: Gasto con proveedor (`supplier_id`) y alcance general o vehículo (vehículo obligatorio si es de vehículo). Categorías vehiculo/personal/generales/combustible + subcategoría con sugerencias: mantenimiento, repuestos, cubiertas, seguro, patente, VTV, lavado, peajes; sueldos, viáticos, cargas sociales; alquiler, servicios, teléfono, contador, impuestos, bancarios, publicidad. Se carga "qué se hizo" y "para qué". Tipo de comprobante: factura A/B/C, recibo, ticket o sin comprobante (no todos los proveedores facturan), con número. Contado o a pagar. **Sin adjuntos.** Migración: sueldo→personal, varios→generales. Flota suma los gastos de cada vehículo en su costo.
 ---
 
 ## 💡 Recomendadas por Claude (No implementar)
@@ -82,6 +76,11 @@ Prioridad: `Alta` · `Media` · `Baja`.
 ---
 
 ## ✅ Hechas
+
+### T-022 · Gastos nuevos (general o por vehículo, con comprobante)
+- Estado: Hecha (2026-10-19)
+- Spec: specs/T-022-gastos-nuevos.md
+- Descripción: Gasto con proveedor de la lista, alcance general/vehículo, categorías vehiculo/personal/generales/combustible + subcategoría, qué/para qué, comprobante y contado/a pagar. "Varios" pasó a "Generales" sin cambiar montos; Flota suma gastos por vehículo.
 
 ### T-021 · Proveedores y cuenta corriente con proveedores
 - Estado: Hecha (2026-10-19)

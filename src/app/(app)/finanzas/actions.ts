@@ -1,11 +1,12 @@
 "use server";
 
-import { and, eq, sql } from "drizzle-orm";
+import { and, eq } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { db } from "@/db";
-import { EXPENSE_CATEGORIES, expenses, fuelLoads, supplierPayments, suppliers } from "@/db/schema";
+import { EXPENSE_CATEGORIES, EXPENSE_SCOPES, expenses, fuelLoads, supplierPayments, suppliers, VOUCHER_TYPES } from "@/db/schema";
 import { isInUse, isUniqueViolation } from "@/lib/db-errors";
+import { resolveExpense } from "@/lib/expense-rules";
 import { firstError, formToObject, zDate, zIntOpt, zMoney, zMoneyOpt, zText } from "@/lib/forms";
 import { type ActionResult, checkPermission } from "@/lib/permissions";
 
@@ -22,39 +23,29 @@ function revalidate() {
 
 const expenseSchema = z.object({
   date: zDate,
-  category: z.enum(EXPENSE_CATEGORIES),
+  scope: z.enum(EXPENSE_SCOPES, { error: "Elegí el alcance" }).default("general"),
+  category: z.enum(EXPENSE_CATEGORIES, { error: "Elegí la categoría" }),
+  subcategory: z.string().max(100, "La subcategoría es demasiado larga").optional(),
   concept: zText,
-  supplier: zText,
+  purpose: zText,
+  supplierId: zIntOpt,
+  voucherType: z.enum(VOUCHER_TYPES, { error: "Tipo de comprobante inválido" }).default("sin_comprobante"),
+  voucherNumber: z.string().max(50, "El número de comprobante es demasiado largo").optional(),
+  payment: z.enum(["contado", "a_pagar"], { error: "Indicá si es contado o a pagar" }).default("contado"),
   amount: zMoney,
   notes: zText,
   vehicleId: zIntOpt,
   driverId: zIntOpt,
 });
 
-async function supplierIdByName(name: string | undefined) {
-  if (!name) return null;
-  const [s] = await db
-    .select({ id: suppliers.id })
-    .from(suppliers)
-    .where(sql`lower(${suppliers.name}) = lower(${name.trim()})`);
-  return s?.id ?? null;
-}
-
 export async function saveExpense(id: number | null, formData: FormData): Promise<ActionResult> {
   const { error } = await checkPermission("finanzas");
   if (error) return error;
   const parsed = expenseSchema.safeParse(formToObject(formData));
   if (!parsed.success) return { ok: false, error: firstError(parsed.error) };
-  const values = {
-    ...parsed.data,
-    concept: parsed.data.concept ?? null,
-    supplier: parsed.data.supplier ?? null,
-    // T-021: hasta que el formulario elija proveedor (T-022), se vincula por nombre.
-    supplierId: await supplierIdByName(parsed.data.supplier),
-    notes: parsed.data.notes ?? null,
-    vehicleId: parsed.data.vehicleId ?? null,
-    driverId: parsed.data.driverId ?? null,
-  };
+  const r = resolveExpense(parsed.data);
+  if (!r.ok) return r;
+  const { values } = r;
   if (id) await db.update(expenses).set(values).where(eq(expenses.id, id));
   else await db.insert(expenses).values(values);
   revalidate();
