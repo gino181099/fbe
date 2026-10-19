@@ -9,6 +9,52 @@ export const COLLECTION_KINDS = ["cobro", "ajuste"] as const;
 export type CollectionKind = (typeof COLLECTION_KINDS)[number];
 export const COLLECTION_KIND_LABELS: Record<CollectionKind, string> = { cobro: "Cobro", ajuste: "Ajuste" };
 
+/** Inicio de la cuenta corriente con comprobantes: antes de esta fecha nada suma al saldo (salvo el saldo inicial). */
+export const CC_START = "2026-10-19";
+
+/**
+ * Tipos de comprobante. Factura/interno solo agrupan recorridos (no mueven saldo); ND y saldo inicial
+ * son débitos; NC y bonificación, créditos.
+ */
+export const DOCUMENT_TYPES = [
+  "factura",
+  "interno",
+  "nota_debito",
+  "nota_credito",
+  "bonificacion",
+  "saldo_inicial",
+] as const;
+export type DocumentType = (typeof DOCUMENT_TYPES)[number];
+export const DOCUMENT_TYPE_LABELS: Record<DocumentType, string> = {
+  factura: "Factura",
+  interno: "Comprobante interno",
+  nota_debito: "Nota de débito",
+  nota_credito: "Nota de crédito",
+  bonificacion: "Bonificación",
+  saldo_inicial: "Saldo inicial",
+};
+
+/** Tipos de línea del estado de cuenta. */
+export const MOVEMENT_KINDS = [
+  "recorrido",
+  "saldo_inicial",
+  "nota_debito",
+  "nota_credito",
+  "bonificacion",
+  "cobro",
+  "ajuste",
+] as const;
+export type MovementKind = (typeof MOVEMENT_KINDS)[number];
+export const MOVEMENT_KIND_LABELS: Record<MovementKind, string> = {
+  recorrido: "Recorrido",
+  saldo_inicial: "Saldo inicial",
+  nota_debito: "Nota de débito",
+  nota_credito: "Nota de crédito",
+  bonificacion: "Bonificación",
+  cobro: "Cobro",
+  ajuste: "Ajuste",
+};
+
 /** Conceptos sugeridos para gastos de un vehículo (se puede escribir otro). */
 export const VEHICLE_EXPENSE_CONCEPTS = ["Cuota", "Seguro", "Service", "Patente", "VTV", "Neumáticos", "Reparación"];
 

@@ -15,6 +15,15 @@ Una entrada por tarea terminada, **la más nueva arriba**. Formato fijo y breve 
 
 ---
 
+## 2026-10-19 · T-017 · Cuenta corriente con comprobantes: modelo, corte y saldo inicial
+- Resultado: tablas `document`/`document_item` (anular = `voided_at`, D4 alternativa) y `client.payment_days`; ledger puro con corte 19/10/2026, FIFO y vencimientos; saldos, estado de cuenta y PDF calculados desde el corte. Borrar recorrido en comprobante / cliente con comprobantes da error legible.
+- Archivos: `src/lib/ledger.ts` (+test), `src/lib/balances.ts`, `src/lib/constants.ts`, `src/db/schema.ts`, `src/lib/statement.ts`, `finanzas/cuentas/[id]/page.tsx`, `statement-pdf.tsx`, acciones de ventas y contactos.
+- Datos: `0007_cuenta_corriente` aplicada (solo CREATE + ADD COLUMN default 30). Serie mensual de Inicio idéntica antes/después. Datos PRUEBA creados y borrados.
+- Verificación: tsc · lint · npm test 83/83 · build OK · prueba por script contra la base (saldo 2300 esperado, 23001 al borrar). No se probó en el navegador.
+- Revisión: APROBADO (0 bloqueantes, 0 importantes). Menores pendientes: espacio en `EXPENSE_CATEGORIES =[`; `ledger.ts:357` ignora sin aviso asignación explícita a recorrido pre-corte (documentar en T-019); regla de corte duplicada en SQL (`balances.ts`) y JS (`ledger.ts`).
+- Pendiente: pantallas y acciones de comprobantes (T-018), recibos (T-019), mora (T-020).
+- Costo: spec 55k · impl 116k · rev 35k tokens · 13 min
+
 ## 2026-09-28 · T-016 · Gráficos e informes de Inicio: gastos correctos + filtros
 - Resultado: en Inicio, Gastos = costos directos de los recorridos (chofer + gasoil + adicionales, igual que /ventas) + gastos generales (gastos sin combustible + cargas extras). Margen = facturado − gastos. Filtros desde/hasta (máx. 36 meses) y cliente para la evolución mensual y los recorridos más vendidos.
 - Archivos: `src/lib/monthly.ts` (+test), `src/lib/reports.ts`, `src/app/(app)/page.tsx`.

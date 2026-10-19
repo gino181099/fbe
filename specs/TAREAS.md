@@ -10,11 +10,43 @@ Estados: `Nueva` → `Especificada` (spec escrita, espera aprobación) → `Apro
 Opciones de `/tareas`: `auto` (sin preguntar) · `nocommit` (por defecto hace un commit por tarea) · `revisar` (revisor también en riesgo bajo) · `recomendar`.
 Prioridad: `Alta` · `Media` · `Baja`.
 
-**Próximo ID: T-017**
+**Próximo ID: T-023**
 
 ---
 
 ## 📥 Pendientes
+
+> Rediseño de Finanzas (T-017…T-022), acordado el 2026-10-19. Plan completo: `C:\Users\ginof\.claude\plans\vamos-a-hacer-algunos-buzzing-diffie.md`. Hacerlas en orden.
+
+### T-018 · Pantallas de cuenta corriente y comprobantes + PDF de comprobante interno
+- Estado: Aprobada
+- Prioridad: Alta
+- Spec: specs/T-018-cc-pantallas-comprobantes.md
+- Descripción: `/finanzas/cuentas/[id]` con movimientos tipificados y saldo corrido, y listas de recorridos "sin comprobante" y "sin cancelar". Acciones: registrar factura, emitir comprobante interno, ND/NC/bonificación y saldo inicial con ítems. `/finanzas/comprobantes`: listado con filtros. El alta se hace con cliente + período → tildar recorridos sin comprobante (+ ítems libres). PDF del comprobante interno (X 0001-00000001, numeración automática desde 1).
+
+### T-019 · Recibos numerados con PDF
+- Estado: Aprobada
+- Prioridad: Alta
+- Spec: specs/T-019-recibos-numerados.md
+- Descripción: Tablas `receipt` y `receipt_trip`. Un recibo baja el saldo general, aplicado FIFO a lo más viejo. Opcionalmente se tildan viajes: el monto se calcula solo y esos viajes quedan cancelados explícitamente. PDF numerado (X 0001-00000001, correlativo desde 1, independiente del comprobante interno) con datos del cliente y monto en números y letras (`src/lib/amount-words.ts` con tests). `/finanzas/recibos` reemplaza a Cobros, que queda como historial de solo lectura. "Cobrado" en Inicio/reportes = recibos + `collection` histórica.
+
+### T-020 · Vencimientos y semáforo de mora
+- Estado: Especificada
+- Prioridad: Media
+- Spec: specs/T-020-vencimientos-semaforo.md
+- Descripción: El vencimiento es el del comprobante que incluye al débito o, si no tiene, la fecha + `payment_days` del cliente. Semáforo: al día / verde ≤30 días de atraso / amarillo ≤60 / rojo >60. Se muestra en el listado de cuentas corrientes (saldo, vencido, filtro por mora), en el estado de cuenta y en su PDF.
+
+### T-021 · Proveedores y cuenta corriente con proveedores
+- Estado: Aprobada
+- Prioridad: Media
+- Spec: specs/T-021-proveedores-cc.md
+- Descripción: Tabla `supplier` (nombre único, CUIT, factura sí/no, rubro, activo, notas), con ABM en `/finanzas/proveedores`. Backfill de Axion Sarmiento y Shell Maza. `supplier_payment` para los pagos. Saldo del proveedor = gastos "a pagar" − pagos; las estaciones suman además el gasoil de recorridos y `fuel_load`, como hoy. Detalle `/finanzas/proveedores/[id]` con movimientos.
+
+### T-022 · Gastos nuevos (general o por vehículo, con comprobante)
+- Estado: Aprobada
+- Prioridad: Media
+- Spec: specs/T-022-gastos-nuevos.md
+- Descripción: Gasto con proveedor (`supplier_id`) y alcance general o vehículo (vehículo obligatorio si es de vehículo). Categorías vehiculo/personal/generales/combustible + subcategoría con sugerencias: mantenimiento, repuestos, cubiertas, seguro, patente, VTV, lavado, peajes; sueldos, viáticos, cargas sociales; alquiler, servicios, teléfono, contador, impuestos, bancarios, publicidad. Se carga "qué se hizo" y "para qué". Tipo de comprobante: factura A/B/C, recibo, ticket o sin comprobante (no todos los proveedores facturan), con número. Contado o a pagar. **Sin adjuntos.** Migración: sueldo→personal, varios→generales. Flota suma los gastos de cada vehículo en su costo.
 ---
 
 ## 💡 Recomendadas por Claude (No implementar)
@@ -68,6 +100,11 @@ Prioridad: `Alta` · `Media` · `Baja`.
 ---
 
 ## ✅ Hechas
+
+### T-017 · Cuenta corriente con comprobantes: modelo, corte y saldo inicial
+- Estado: Hecha (2026-10-19)
+- Spec: specs/T-017-cc-comprobantes-modelo.md
+- Descripción: Tablas `document`/`document_item` (anular = `voided_at`) y `client.payment_days`; ledger puro con corte 19/10/2026 y FIFO; saldos, estado de cuenta y PDF calculados desde el corte.
 
 ### T-016 · Gráficos e informes de Inicio
 - Estado: Hecha (2026-09-28)

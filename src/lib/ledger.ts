@@ -1,0 +1,445 @@
+// Cuenta corriente (lógica pura, sin base): movimientos con saldo corrido, aplicación FIFO de créditos
+// y estado de cuenta por período. Ver reglas en specs/MEMORIA.md.
+import {
+  CC_START,
+  type CollectionKind,
+  type DocumentType,
+  type MovementKind,
+} from "./constants";
+
+export type LedgerTrip = {
+  id: number;
+  date: string;
+  route: string | null;
+  routeText: string | null;
+  passengers: number | null;
+  capacity: number | null;
+  price: number;
+};
+
+export type LedgerDocumentItem = {
+  tripId: number | null;
+  date: string;
+  description: string;
+  amount: number;
+};
+
+export type LedgerDocument = {
+  id: number;
+  type: DocumentType;
+  letter: string | null;
+  pos: number | null;
+  number: number | null;
+  date: string;
+  dueDate: string | null;
+  amount: number;
+  notes: string | null;
+  voidedAt: Date | string | null;
+  items: LedgerDocumentItem[];
+};
+
+export type LedgerCollection = {
+  id: number;
+  date: string;
+  kind: CollectionKind;
+  method: string | null;
+  notes: string | null;
+  amount: number;
+};
+
+/** Origen de un crédito: un cobro/ajuste (`collection`) o un comprobante NC/bonificación (`document`). */
+export type CreditRef = { source: "collection" | "document"; id: number };
+
+/** Asignación explícita de un crédito a un recorrido (se aplica antes del FIFO; hook de recibos T-019). */
+export type Allocation = { credit: CreditRef; tripId: number; amount: number };
+
+export type LedgerInput = {
+  trips: LedgerTrip[];
+  documents: LedgerDocument[];
+  collections: LedgerCollection[];
+  allocations?: Allocation[];
+  paymentDays: number;
+  cutoff?: string;
+};
+
+export type LedgerLine = {
+  date: string;
+  kind: MovementKind;
+  description: string;
+  debit: number;
+  credit: number;
+  balance: number;
+};
+
+export type DebitStatus = "pendiente" | "parcial" | "cancelado";
+
+export type LedgerDebit = {
+  key: string;
+  kind: "recorrido" | "nota_debito" | "saldo_inicial";
+  tripId: number | null;
+  documentId: number | null;
+  date: string;
+  description: string;
+  amount: number;
+  paid: number;
+  remaining: number;
+  status: DebitStatus;
+  dueDate: string;
+};
+
+const round2 = (n: number) => Math.round(n * 100) / 100;
+const EPS = 0.005;
+
+/** Comprobante vigente (no anulado). */
+export const isActiveDocument = (d: { voidedAt: Date | string | null }) =>
+  d.voidedAt == null;
+
+/** Solo comprobantes vigentes. */
+export const activeDocuments = <T extends { voidedAt: Date | string | null }>(
+  docs: T[],
+) => docs.filter(isActiveDocument);
+
+const GROUPING_TYPES: DocumentType[] = ["factura", "interno"];
+
+/**
+ * Recorridos ya incluidos en un comprobante factura|interno vigente: tripId → id del comprobante.
+ * Sirve para validar que un recorrido esté en un solo comprobante (excluyendo el que se edita).
+ */
+export function tripsInActiveDocuments(
+  docs: {
+    id: number;
+    type: DocumentType;
+    voidedAt: Date | string | null;
+    items: { tripId: number | null }[];
+  }[],
+  excludeDocumentId?: number,
+) {
+  const map = new Map<number, number>();
+  for (const d of activeDocuments(docs)) {
+    if (!GROUPING_TYPES.includes(d.type) || d.id === excludeDocumentId)
+      continue;
+    for (const it of d.items) if (it.tripId != null) map.set(it.tripId, d.id);
+  }
+  return map;
+}
+
+/** Suma `days` días a una fecha "YYYY-MM-DD" (sin zonas horarias). */
+export function addDays(date: string, days: number) {
+  const [y, m, d] = date.split("-").map(Number);
+  return new Date(Date.UTC(y, m - 1, d + days)).toISOString().slice(0, 10);
+}
+
+/** "A 0001-00000012" (lo que haya de letra, punto de venta y número). */
+export function documentNumber(
+  d: Pick<LedgerDocument, "letter" | "pos" | "number">,
+) {
+  const num =
+    d.number == null
+      ? null
+      : d.pos == null
+        ? String(d.number).padStart(8, "0")
+        : `${String(d.pos).padStart(4, "0")}-${String(d.number).padStart(8, "0")}`;
+  return [d.letter, num].filter(Boolean).join(" ");
+}
+
+export function tripDescription(
+  t: Pick<LedgerTrip, "route" | "routeText" | "capacity" | "passengers">,
+) {
+  return [
+    t.route ?? t.routeText ?? "Recorrido",
+    t.capacity ? `(${t.capacity} plazas)` : null,
+    t.passengers ? `· ${t.passengers} pax` : null,
+  ]
+    .filter(Boolean)
+    .join(" ");
+}
+
+function documentDescription(d: LedgerDocument, label: string) {
+  return [label, documentNumber(d) || null, d.notes ? `– ${d.notes}` : null]
+    .filter(Boolean)
+    .join(" ");
+}
+
+function collectionDescription(c: LedgerCollection) {
+  return (
+    c.kind === "ajuste"
+      ? ["Ajuste", c.notes ? `– ${c.notes}` : null]
+      : [
+          "Cobro",
+          c.method ? `(${c.method})` : null,
+          c.notes ? `– ${c.notes}` : null,
+        ]
+  )
+    .filter(Boolean)
+    .join(" ");
+}
+
+// Orden en el mismo día: saldo inicial → débitos → créditos.
+const rank = (kind: MovementKind) =>
+  kind === "saldo_inicial"
+    ? 0
+    : kind === "recorrido" || kind === "nota_debito"
+      ? 1
+      : 2;
+
+const DOC_LABELS: Partial<Record<DocumentType, string>> = {
+  nota_debito: "Nota de débito",
+  nota_credito: "Nota de crédito",
+  bonificacion: "Bonificación",
+};
+
+/**
+ * Arma la cuenta corriente desde el corte: líneas ordenadas con saldo corrido (desde 0), débitos con
+ * lo aplicado (asignaciones explícitas y luego FIFO a lo más viejo) y el sobrante de créditos (saldo a favor).
+ * Factura/interno no mueven saldo (solo dan vencimiento a sus recorridos); los anulados no cuentan.
+ */
+export function buildLedger(input: LedgerInput) {
+  const cutoff = input.cutoff ?? CC_START;
+  const docs = activeDocuments(input.documents);
+  const trips = input.trips.filter((t) => t.date >= cutoff);
+  const collections = input.collections.filter((c) => c.date >= cutoff);
+
+  // Vencimiento por recorrido según el comprobante factura/interno vigente que lo incluye.
+  const tripDue = new Map<number, string>();
+  for (const d of docs) {
+    if (!GROUPING_TYPES.includes(d.type)) continue;
+    const due = d.dueDate ?? addDays(d.date, input.paymentDays);
+    for (const it of d.items)
+      if (it.tripId != null) tripDue.set(it.tripId, due);
+  }
+
+  type Move = Omit<LedgerLine, "balance"> & { order: number };
+  const moves: Move[] = [];
+  const debits: Omit<LedgerDebit, "paid" | "remaining" | "status">[] = [];
+  const credits: { ref: CreditRef; date: string; amount: number }[] = [];
+  let order = 0;
+
+  for (const d of docs.filter((d) => d.type === "saldo_inicial")) {
+    const label = ["Saldo inicial", d.notes ? `– ${d.notes}` : null]
+      .filter(Boolean)
+      .join(" ");
+    moves.push({
+      date: d.date < cutoff ? cutoff : d.date,
+      kind: "saldo_inicial",
+      description: label,
+      debit: d.amount,
+      credit: 0,
+      order: order++,
+    });
+    // Para FIFO/vencimiento cuenta cada ítem con su fecha (sin ítems: el total en la fecha del documento).
+    const items = d.items.length
+      ? d.items
+      : [{ tripId: null, date: d.date, description: label, amount: d.amount }];
+    items.forEach((it, i) =>
+      debits.push({
+        key: `saldo_inicial:${d.id}:${i}`,
+        kind: "saldo_inicial",
+        tripId: null,
+        documentId: d.id,
+        date: it.date,
+        description: it.description,
+        amount: it.amount,
+        dueDate: d.dueDate ?? addDays(it.date, input.paymentDays),
+      }),
+    );
+  }
+  for (const t of trips) {
+    const description = tripDescription(t);
+    moves.push({
+      date: t.date,
+      kind: "recorrido",
+      description,
+      debit: t.price,
+      credit: 0,
+      order: order++,
+    });
+    debits.push({
+      key: `trip:${t.id}`,
+      kind: "recorrido",
+      tripId: t.id,
+      documentId: null,
+      date: t.date,
+      description,
+      amount: t.price,
+      dueDate: tripDue.get(t.id) ?? addDays(t.date, input.paymentDays),
+    });
+  }
+  for (const d of docs) {
+    // Solo el saldo inicial cuenta aunque sea anterior al corte.
+    if (d.date < cutoff) continue;
+    if (d.type === "nota_debito") {
+      const description = documentDescription(d, DOC_LABELS.nota_debito!);
+      moves.push({
+        date: d.date,
+        kind: "nota_debito",
+        description,
+        debit: d.amount,
+        credit: 0,
+        order: order++,
+      });
+      debits.push({
+        key: `document:${d.id}`,
+        kind: "nota_debito",
+        tripId: null,
+        documentId: d.id,
+        date: d.date,
+        description,
+        amount: d.amount,
+        dueDate: d.dueDate ?? addDays(d.date, input.paymentDays),
+      });
+    } else if (d.type === "nota_credito" || d.type === "bonificacion") {
+      moves.push({
+        date: d.date,
+        kind: d.type,
+        description: documentDescription(d, DOC_LABELS[d.type]!),
+        debit: 0,
+        credit: d.amount,
+        order: order++,
+      });
+      credits.push({
+        ref: { source: "document", id: d.id },
+        date: d.date,
+        amount: d.amount,
+      });
+    }
+  }
+  for (const c of collections) {
+    moves.push({
+      date: c.date,
+      kind: c.kind,
+      description: collectionDescription(c),
+      debit: 0,
+      credit: c.amount,
+      order: order++,
+    });
+    credits.push({
+      ref: { source: "collection", id: c.id },
+      date: c.date,
+      amount: c.amount,
+    });
+  }
+
+  moves.sort(
+    (a, b) =>
+      a.date.localeCompare(b.date) ||
+      rank(a.kind) - rank(b.kind) ||
+      a.order - b.order,
+  );
+  let running = 0;
+  const lines: LedgerLine[] = moves.map((m) => {
+    running = round2(running + m.debit - m.credit);
+    return {
+      date: m.date,
+      kind: m.kind,
+      description: m.description,
+      debit: m.debit,
+      credit: m.credit,
+      balance: running,
+    };
+  });
+
+  // Aplicación de créditos: primero asignaciones explícitas, después el resto a lo más viejo.
+  const sortedDebits = debits
+    .map((d, i) => ({ ...d, i, paid: 0 }))
+    .sort(
+      (a, b) =>
+        a.date.localeCompare(b.date) ||
+        (a.kind === "saldo_inicial" ? 0 : 1) -
+          (b.kind === "saldo_inicial" ? 0 : 1) ||
+        a.i - b.i,
+    );
+  const creditLeft = new Map(
+    credits.map((c) => [`${c.ref.source}:${c.ref.id}`, c.amount]),
+  );
+  for (const a of input.allocations ?? []) {
+    const key = `${a.credit.source}:${a.credit.id}`;
+    const left = creditLeft.get(key) ?? 0;
+    const debit = sortedDebits.find((d) => d.tripId === a.tripId);
+    if (!debit || left <= EPS) continue;
+    const applied = round2(Math.min(a.amount, left, debit.amount - debit.paid));
+    if (applied <= EPS) continue;
+    debit.paid = round2(debit.paid + applied);
+    creditLeft.set(key, round2(left - applied));
+  }
+  // El FIFO a lo más viejo no depende del orden de los créditos: se aplica el total disponible.
+  let pool = round2([...creditLeft.values()].reduce((s, v) => s + v, 0));
+  for (const d of sortedDebits) {
+    if (pool <= EPS) break;
+    const applied = round2(Math.min(pool, d.amount - d.paid));
+    if (applied <= EPS) continue;
+    d.paid = round2(d.paid + applied);
+    pool = round2(pool - applied);
+  }
+
+  const ledgerDebits: LedgerDebit[] = sortedDebits.map((d) => {
+    const remaining = round2(d.amount - d.paid);
+    const status: DebitStatus =
+      remaining <= EPS ? "cancelado" : d.paid > EPS ? "parcial" : "pendiente";
+    const {
+      key,
+      kind,
+      tripId,
+      documentId,
+      date,
+      description,
+      amount,
+      paid,
+      dueDate,
+    } = d;
+    return {
+      key,
+      kind,
+      tripId,
+      documentId,
+      date,
+      description,
+      amount,
+      paid,
+      remaining,
+      status,
+      dueDate,
+    };
+  });
+
+  const totalDebit = round2(lines.reduce((s, l) => s + l.debit, 0));
+  const totalCredit = round2(lines.reduce((s, l) => s + l.credit, 0));
+  return {
+    cutoff,
+    lines,
+    debits: ledgerDebits,
+    // Créditos sin aplicar (saldo a favor del cliente).
+    unappliedCredit: pool,
+    totalDebit,
+    totalCredit,
+    balance: running,
+  };
+}
+
+export type Ledger = ReturnType<typeof buildLedger>;
+
+/**
+ * Estado de cuenta entre `from` y `to` (inclusive) a partir del ledger. Si `from` es anterior al corte se
+ * toma el corte (saldo anterior 0). Devuelve el `from` efectivo.
+ */
+export function statementFromLedger(ledger: Ledger, from: string, to: string) {
+  const effectiveFrom = from < ledger.cutoff ? ledger.cutoff : from;
+  const before = ledger.lines.filter((l) => l.date < effectiveFrom);
+  const opening = before.length ? before[before.length - 1].balance : 0;
+  const lines = ledger.lines.filter(
+    (l) => l.date >= effectiveFrom && l.date <= to,
+  );
+  const totalDebit = round2(lines.reduce((s, l) => s + l.debit, 0));
+  const totalCredit = round2(lines.reduce((s, l) => s + l.credit, 0));
+  return {
+    from: effectiveFrom,
+    opening,
+    lines,
+    totalDebit,
+    totalCredit,
+    // Solo plata recibida (sin ajustes ni notas de crédito): "Cobrado en el período".
+    totalCollected: round2(
+      lines.reduce((s, l) => s + (l.kind === "cobro" ? l.credit : 0), 0),
+    ),
+    closing: round2(opening + totalDebit - totalCredit),
+  };
+}

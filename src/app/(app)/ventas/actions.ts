@@ -9,6 +9,14 @@ import { firstError, formToObject, zDate, zIntOpt, zMoneyOpt, zText } from "@/li
 import { type ActionResult, checkPermission } from "@/lib/permissions";
 import { findRate, ratesInForce } from "@/lib/rates";
 
+function pgCode(e: unknown) {
+  const err = e as { code?: string; cause?: { code?: string } };
+  return err?.code ?? err?.cause?.code;
+}
+
+// ON DELETE RESTRICT dispara 23001 (restrict_violation); NO ACTION, 23503 (foreign_key_violation).
+const isInUse = (e: unknown) => ["23001", "23503"].includes(pgCode(e) ?? "");
+
 /** Tarifas vigentes de un cliente en una fecha (para armar el formulario). */
 export async function getClientRates(clientId: number, date: string) {
   const { error } = await checkPermission("ventas", "view");
@@ -115,7 +123,12 @@ export async function updateTrip(id: number, formData: FormData): Promise<Action
 export async function deleteTrip(id: number): Promise<ActionResult> {
   const { error } = await checkPermission("ventas");
   if (error) return error;
-  await db.delete(trips).where(eq(trips.id, id));
+  try {
+    await db.delete(trips).where(eq(trips.id, id));
+  } catch (e) {
+    if (isInUse(e)) return { ok: false, error: "No se puede eliminar: el recorrido está en un comprobante" };
+    throw e;
+  }
   revalidate();
   return { ok: true, message: "Recorrido eliminado" };
 }

@@ -50,6 +50,13 @@
       "when": 1790647051422,
       "tag": "0006_chofer_domingo",
       "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1792422294682,
+      "tag": "0007_cuenta_corriente",
+      "breakpoints": true
     }
   ]
 }

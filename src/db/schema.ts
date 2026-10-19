@@ -1,4 +1,5 @@
 import {
+  type AnyPgColumn,
   boolean,
   date,
   index,
@@ -12,7 +13,7 @@ import {
   uniqueIndex,
 } from "drizzle-orm/pg-core";
 import type { AdapterAccountType } from "next-auth/adapters";
-import { CLIENT_TYPES, COLLECTION_KINDS, LEAD_STAGES } from "@/lib/constants";
+import { CLIENT_TYPES, COLLECTION_KINDS, DOCUMENT_TYPES, LEAD_STAGES } from "@/lib/constants";
 
 // Montos en pesos: numeric(14,2) leído como number en JS.
 const money = (name: string) => numeric(name, { precision: 14, scale: 2, mode: "number" });
@@ -123,6 +124,8 @@ export const clients = pgTable("client", {
   segment: text("segment"),
   // alta | media | baja (LEAD_PRIORITIES).
   leadPriority: text("lead_priority"),
+  // Días de plazo para pagar (vencimiento de recorridos sin comprobante).
+  paymentDays: integer("payment_days").notNull().default(30),
   createdAt: timestamp("created_at", { mode: "date" }).notNull().defaultNow(),
   updatedAt: timestamp("updated_at", { mode: "date" })
     .notNull()
@@ -271,7 +274,60 @@ export const collections = pgTable(
   ],
 );
 
-export const EXPENSE_CATEGORIES = ["combustible", "sueldo", "varios"] as const;
+export { DOCUMENT_TYPES } from "@/lib/constants";
+export const documentType = pgEnum("document_type", DOCUMENT_TYPES);
+
+// Comprobante de cuenta corriente. Factura/interno agrupan recorridos (no mueven saldo).
+// Anular = voided_at (no se borra ni se reutiliza el número); un anulado no cuenta y libera sus recorridos.
+export const documents = pgTable(
+  "document",
+  {
+    id: integer("id").primaryKey().generatedAlwaysAsIdentity(),
+    type: documentType("type").notNull(),
+    // A / B / C / X (validado en las acciones).
+    letter: text("letter"),
+    pos: integer("pos"),
+    number: integer("number"),
+    date: date("date", { mode: "string" }).notNull(),
+    dueDate: date("due_date", { mode: "string" }),
+    clientId: integer("client_id")
+      .notNull()
+      .references(() => clients.id, { onDelete: "restrict" }),
+    // Σ ítems (lo garantizan las acciones).
+    amount: money("amount").notNull(),
+    relatedDocumentId: integer("related_document_id").references((): AnyPgColumn => documents.id, {
+      onDelete: "set null",
+    }),
+    notes: text("notes"),
+    voidedAt: timestamp("voided_at", { mode: "date" }),
+    voidedReason: text("voided_reason"),
+    createdAt: timestamp("created_at", { mode: "date" }).notNull().defaultNow(),
+  },
+  (t) => [
+    // Nulos distintos: saldo inicial / bonificación sin número no chocan.
+    uniqueIndex("document_number_idx").on(t.type, t.letter, t.pos, t.number),
+    index("document_client_date_idx").on(t.clientId, t.date),
+  ],
+);
+
+// Ítems de un comprobante. Solo factura/interno llevan trip_id; la unicidad "un recorrido en un solo
+// comprobante vigente" se valida en las acciones (un índice no puede ver voided_at del padre).
+export const documentItems = pgTable(
+  "document_item",
+  {
+    id: integer("id").primaryKey().generatedAlwaysAsIdentity(),
+    documentId: integer("document_id")
+      .notNull()
+      .references(() => documents.id, { onDelete: "cascade" }),
+    tripId: integer("trip_id").references(() => trips.id, { onDelete: "restrict" }),
+    date: date("date", { mode: "string" }).notNull(),
+    description: text("description").notNull(),
+    amount: money("amount").notNull(),
+  },
+  (t) => [index("document_item_document_idx").on(t.documentId), index("document_item_trip_idx").on(t.tripId)],
+);
+
+export const EXPENSE_CATEGORIES =["combustible", "sueldo", "varios"] as const;
 export const expenseCategory = pgEnum("expense_category", EXPENSE_CATEGORIES);
 
 export const expenses = pgTable(

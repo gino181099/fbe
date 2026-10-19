@@ -12,7 +12,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { db } from "@/db";
 import { clients } from "@/db/schema";
 import { getStatement } from "@/lib/balances";
-import { COLLECTION_KIND_LABELS } from "@/lib/constants";
+import { CC_START, MOVEMENT_KIND_LABELS } from "@/lib/constants";
 import { formatDate, formatMoney, today } from "@/lib/format";
 import { can, requirePermission } from "@/lib/permissions";
 import { saveCollection } from "../../actions";
@@ -28,14 +28,16 @@ export default async function StatementPage({ params, searchParams }: PageProps<
   if (!Number.isInteger(id)) notFound();
   const sp = await searchParams;
   const hasta = isDate(sp.hasta) ?? today();
-  const desde = isDate(sp.desde) ?? `${hasta.slice(0, 4)}-01-01`;
+  // Por defecto: desde el 1/1 del año, pero nunca antes del inicio de la cuenta corriente.
+  const yearStart = `${hasta.slice(0, 4)}-01-01`;
+  const desde = isDate(sp.desde) ?? (yearStart < CC_START ? CC_START : yearStart);
 
   const [data, clientList] = await Promise.all([
     getStatement(id, desde, hasta),
     db.select({ id: clients.id, name: clients.name }).from(clients).orderBy(asc(clients.name)),
   ]);
   if (!data) notFound();
-  const query = new URLSearchParams({ desde, hasta });
+  const query = new URLSearchParams({ desde: data.from, hasta });
   const tripsCount = data.lines.filter((l) => l.kind === "recorrido").length;
   const adjusted = data.totalCredit - data.totalCollected;
 
@@ -48,7 +50,7 @@ export default async function StatementPage({ params, searchParams }: PageProps<
       </Button>
       <PageHeader
         title={`Estado de cuenta · ${data.client.name}`}
-        description={`Del ${formatDate(desde)} al ${formatDate(hasta)}`}
+        description={`Del ${formatDate(data.from)} al ${formatDate(hasta)} · cuenta corriente desde el ${formatDate(CC_START)}`}
         actions={
           <>
             {can(user, "finanzas", "edit") && (
@@ -76,7 +78,7 @@ export default async function StatementPage({ params, searchParams }: PageProps<
       <form className="flex flex-wrap items-end gap-2">
         <label className="grid gap-1 text-xs text-muted-foreground">
           Desde
-          <Input type="date" name="desde" defaultValue={desde} className="w-40" />
+          <Input type="date" name="desde" defaultValue={data.from} min={CC_START} className="w-40" />
         </label>
         <label className="grid gap-1 text-xs text-muted-foreground">
           Hasta
@@ -88,12 +90,12 @@ export default async function StatementPage({ params, searchParams }: PageProps<
       </form>
 
       <div className="grid gap-4 sm:grid-cols-4">
-        <StatCard label="Saldo anterior" value={formatMoney(data.opening)} hint={`Al ${formatDate(desde)}`} />
-        <StatCard label="Recorridos del período" value={formatMoney(data.totalDebit)} hint={`${tripsCount} recorridos`} />
+        <StatCard label="Saldo anterior" value={formatMoney(data.opening)} hint={`Al ${formatDate(data.from)}`} />
+        <StatCard label="Cargos del período" value={formatMoney(data.totalDebit)} hint={`${tripsCount} recorridos`} />
         <StatCard
           label="Cobrado en el período"
           value={formatMoney(data.totalCollected)}
-          hint={Math.abs(adjusted) >= 0.01 ? `Ajustes: ${formatMoney(adjusted)}` : undefined}
+          hint={Math.abs(adjusted) >= 0.01 ? `Ajustes y notas de crédito: ${formatMoney(adjusted)}` : undefined}
         />
         <StatCard
           label={data.closing >= 0 ? "Saldo a cobrar" : "Saldo a favor del cliente"}
@@ -114,7 +116,7 @@ export default async function StatementPage({ params, searchParams }: PageProps<
           </TableHeader>
           <TableBody>
             <TableRow className="text-muted-foreground">
-              <TableCell>{formatDate(desde)}</TableCell>
+              <TableCell>{formatDate(data.from)}</TableCell>
               <TableCell className="italic">Saldo anterior</TableCell>
               <TableCell />
               <TableCell />
@@ -126,7 +128,7 @@ export default async function StatementPage({ params, searchParams }: PageProps<
                 <TableCell>
                   {l.kind !== "recorrido" && (
                     <Badge variant="secondary" className="mr-2">
-                      {COLLECTION_KIND_LABELS[l.kind]}
+                      {MOVEMENT_KIND_LABELS[l.kind]}
                     </Badge>
                   )}
                   {l.description}

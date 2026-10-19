@@ -86,7 +86,7 @@ export function StatementPdf({ data, issuedAt }: { data: Statement; issuedAt: st
             <Text>{formatMoney(data.opening)}</Text>
           </View>
           <View style={s.sumRow}>
-            <Text>Recorridos del período ({data.lines.filter((l) => l.kind === "recorrido").length})</Text>
+            <Text>Cargos del período ({data.lines.filter((l) => l.kind === "recorrido").length} recorridos)</Text>
             <Text>{formatMoney(data.totalDebit)}</Text>
           </View>
           <View style={s.sumRow}>
@@ -95,7 +95,7 @@ export function StatementPdf({ data, issuedAt }: { data: Statement; issuedAt: st
           </View>
           {Math.abs(data.totalCredit - data.totalCollected) >= 0.01 && (
             <View style={s.sumRow}>
-              <Text>Ajustes</Text>
+              <Text>Ajustes y notas de crédito</Text>
               <Text>- {formatMoney(data.totalCredit - data.totalCollected)}</Text>
             </View>
           )}

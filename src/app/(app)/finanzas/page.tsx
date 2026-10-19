@@ -40,7 +40,7 @@ export default async function AccountsPage({ searchParams }: PageProps<"/finanza
     <>
       <PageHeader
         title="Cuentas corrientes"
-        description="Lo facturado por recorridos menos lo cobrado y los ajustes, por cliente."
+        description="Cuenta corriente desde el 19/10/2026: recorridos, notas de débito y saldo inicial, menos cobros, ajustes, notas de crédito y bonificaciones."
         actions={
           <Button variant="outline" asChild>
             <Link href={showAll ? "/finanzas" : "/finanzas?todos=1"}>
