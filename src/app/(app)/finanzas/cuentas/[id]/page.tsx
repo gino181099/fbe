@@ -1,9 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { asc } from "drizzle-orm";
 import { ArrowLeft, ChevronDown, Download, FileText, Plus } from "lucide-react";
-import { FormDialog } from "@/components/form-dialog";
 import { EmptyState, PageHeader, StatCard } from "@/components/page-header";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -15,16 +13,12 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Input } from "@/components/ui/input";
 import { Table, TableBody, TableCell, TableFooter, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { db } from "@/db";
-import { clients } from "@/db/schema";
 import { getStatement } from "@/lib/balances";
 import { CC_START, DOCUMENT_TYPE_LABELS, DOCUMENT_TYPES, MOVEMENT_KIND_LABELS } from "@/lib/constants";
 import { getUninvoicedTrips } from "@/lib/documents";
 import { formatDate, formatMoney, today } from "@/lib/format";
 import { tripDescription } from "@/lib/ledger";
 import { can, requirePermission } from "@/lib/permissions";
-import { saveCollection } from "../../actions";
-import { CollectionFields } from "../../fields";
 
 export const metadata: Metadata = { title: "Estado de cuenta" };
 
@@ -40,11 +34,7 @@ export default async function StatementPage({ params, searchParams }: PageProps<
   const yearStart = `${hasta.slice(0, 4)}-01-01`;
   const desde = isDate(sp.desde) ?? (yearStart < CC_START ? CC_START : yearStart);
 
-  const [data, clientList, uninvoiced] = await Promise.all([
-    getStatement(id, desde, hasta),
-    db.select({ id: clients.id, name: clients.name }).from(clients).orderBy(asc(clients.name)),
-    getUninvoicedTrips(id),
-  ]);
+  const [data, uninvoiced] = await Promise.all([getStatement(id, desde, hasta), getUninvoicedTrips(id)]);
   if (!data) notFound();
   const query = new URLSearchParams({ desde: data.from, hasta });
   const tripsCount = data.lines.filter((l) => l.kind === "recorrido").length;
@@ -89,17 +79,11 @@ export default async function StatementPage({ params, searchParams }: PageProps<
               </Link>
             </Button>
             {canEdit && (
-              <FormDialog
-                title="Registrar cobro"
-                action={saveCollection.bind(null, null)}
-                trigger={
-                  <Button variant="outline">
-                    <Plus /> Registrar cobro
-                  </Button>
-                }
-              >
-                <CollectionFields clients={clientList} defaultDate={today()} defaultClientId={id} />
-              </FormDialog>
+              <Button variant="outline" asChild>
+                <Link href={`/finanzas/recibos/nuevo?cliente=${id}`}>
+                  <Plus /> Registrar recibo
+                </Link>
+              </Button>
             )}
             <Button asChild>
               <a href={`/api/estado-cuenta/${id}?${query}`}>

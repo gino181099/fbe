@@ -57,6 +57,13 @@
       "when": 1792422294682,
       "tag": "0007_cuenta_corriente",
       "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1792424284158,
+      "tag": "0008_recibos",
+      "breakpoints": true
     }
   ]
 }

@@ -17,6 +17,8 @@ import {
   collections,
   documentItems,
   documents,
+  receiptTrips,
+  receipts,
   routes,
   trips,
 } from "@/db/schema";
@@ -24,6 +26,7 @@ import { CC_START, type DocumentType } from "./constants";
 import {
   type LedgerDocument,
   type LedgerLine,
+  type LedgerReceipt,
   buildLedger,
   statementFromLedger,
 } from "./ledger";
@@ -51,11 +54,11 @@ type Balance = {
 
 /**
  * Cuenta corriente por cliente desde el corte (CC_START): billed = recorridos + ND + saldo inicial;
- * collected = cobros; adjusted = ajustes + NC + bonificación. `trips` = conteo histórico total.
- * Factura/interno no suman; los comprobantes anulados no cuentan.
+ * collected = cobros + recibos vigentes; adjusted = ajustes + NC + bonificación. `trips` = conteo histórico total.
+ * Factura/interno no suman; los comprobantes y recibos anulados no cuentan.
  */
 export async function getBalances() {
-  const [tripRows, docRows, collectionRows] = await Promise.all([
+  const [tripRows, docRows, collectionRows, receiptRows] = await Promise.all([
     db
       .select({
         clientId: trips.clientId,
@@ -91,6 +94,11 @@ export async function getBalances() {
       .from(collections)
       .where(gte(collections.date, CC_START))
       .groupBy(collections.clientId),
+    db
+      .select({ clientId: receipts.clientId, total: sumOf(receipts.amount) })
+      .from(receipts)
+      .where(and(isNull(receipts.voidedAt), gte(receipts.date, CC_START)))
+      .groupBy(receipts.clientId),
   ]);
   const map = new Map<number, Balance>();
   const entry = (clientId: number) => {
@@ -117,6 +125,7 @@ export async function getBalances() {
     e.collected += c.cobros;
     e.adjusted += c.ajustes;
   }
+  for (const r of receiptRows) entry(r.clientId).collected += r.total;
   for (const e of map.values())
     e.balance = Math.round((e.billed - e.collected - e.adjusted) * 100) / 100;
   return map;
@@ -155,20 +164,44 @@ async function getLedgerDocuments(clientId: number): Promise<LedgerDocument[]> {
   }));
 }
 
+/** Recibos vigentes del cliente desde el corte, con sus recorridos tildados. */
+async function getLedgerReceipts(clientId: number): Promise<LedgerReceipt[]> {
+  const where = and(
+    eq(receipts.clientId, clientId),
+    isNull(receipts.voidedAt),
+    gte(receipts.date, CC_START),
+  );
+  const [rows, tripRows] = await Promise.all([
+    db.select().from(receipts).where(where).orderBy(receipts.date, receipts.id),
+    db
+      .select({
+        receiptId: receiptTrips.receiptId,
+        tripId: receiptTrips.tripId,
+        amount: receiptTrips.amount,
+      })
+      .from(receiptTrips)
+      .innerJoin(receipts, eq(receipts.id, receiptTrips.receiptId))
+      .where(where)
+      .orderBy(receiptTrips.id),
+  ]);
+  return rows.map((r) => ({
+    ...r,
+    trips: tripRows.filter((t) => t.receiptId === r.id),
+  }));
+}
+
 /**
- * Estado de cuenta de un cliente entre dos fechas (inclusive) con el modelo de cuenta corriente.
- * Si `from` es anterior al corte se toma el corte (saldo anterior 0); `from` devuelto es el efectivo.
- * El ledger se arma con todo (las líneas se filtran por período); `debits` y `balance` son a la fecha
- * de hoy con todo lo cargado (pendientes de cobro). Factura/interno van como líneas informativas.
+ * Cuenta corriente completa de un cliente (todo lo cargado desde el corte): líneas, débitos con lo
+ * aplicado y saldo. null si el cliente no existe.
  */
-export async function getStatement(clientId: number, from: string, to: string) {
+export async function getClientLedger(clientId: number) {
   const [client] = await db
     .select()
     .from(clients)
     .where(eq(clients.id, clientId));
   if (!client) return null;
 
-  const [tripRows, documentRows, collectionRows] = await Promise.all([
+  const [tripRows, documentRows, collectionRows, receiptRows] = await Promise.all([
     db
       .select({
         id: trips.id,
@@ -193,14 +226,29 @@ export async function getStatement(clientId: number, from: string, to: string) {
         and(eq(collections.clientId, clientId), gte(collections.date, CC_START)),
       )
       .orderBy(collections.date, collections.id),
+    getLedgerReceipts(clientId),
   ]);
 
   const ledger = buildLedger({
     trips: tripRows,
     documents: documentRows,
     collections: collectionRows,
+    receipts: receiptRows,
     paymentDays: client.paymentDays,
   });
+  return { client, ledger };
+}
+
+/**
+ * Estado de cuenta de un cliente entre dos fechas (inclusive) con el modelo de cuenta corriente.
+ * Si `from` es anterior al corte se toma el corte (saldo anterior 0); `from` devuelto es el efectivo.
+ * El ledger se arma con todo (las líneas se filtran por período); `debits` y `balance` son a la fecha
+ * de hoy con todo lo cargado (pendientes de cobro). Factura/interno van como líneas informativas.
+ */
+export async function getStatement(clientId: number, from: string, to: string) {
+  const data = await getClientLedger(clientId);
+  if (!data) return null;
+  const { client, ledger } = data;
   return {
     client,
     to,

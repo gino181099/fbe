@@ -43,7 +43,8 @@ const NAV: NavItem[] = [
     children: [
       { title: "Cuentas corrientes", href: "/finanzas" },
       { title: "Comprobantes", href: "/finanzas/comprobantes" },
-      { title: "Cobros", href: "/finanzas/cobros" },
+      { title: "Recibos", href: "/finanzas/recibos" },
+      { title: "Cobros (historial)", href: "/finanzas/cobros" },
       { title: "Gastos", href: "/finanzas/gastos" },
     ],
   },

@@ -44,6 +44,7 @@ export const MOVEMENT_KINDS = [
   "nota_credito",
   "bonificacion",
   "cobro",
+  "recibo",
   "ajuste",
 ] as const;
 export type MovementKind = (typeof MOVEMENT_KINDS)[number];
@@ -56,8 +57,16 @@ export const MOVEMENT_KIND_LABELS: Record<MovementKind, string> = {
   nota_credito: "Nota de crédito",
   bonificacion: "Bonificación",
   cobro: "Cobro",
+  recibo: "Recibo",
   ajuste: "Ajuste",
 };
+
+/** Recibos (T-019): letra y punto de venta fijos; el número es correlativo y nunca se reutiliza. */
+export const RECEIPT_LETTER = "X";
+export const RECEIPT_POS = 1;
+
+/** Medios de pago sugeridos (se puede escribir otro). */
+export const PAYMENT_METHODS = ["Transferencia", "Efectivo", "Cheque", "Mercado Pago", "Otro"];
 
 /** Conceptos sugeridos para gastos de un vehículo (se puede escribir otro). */
 export const VEHICLE_EXPENSE_CONCEPTS = ["Cuota", "Seguro", "Service", "Patente", "VTV", "Neumáticos", "Reparación"];

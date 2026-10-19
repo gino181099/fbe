@@ -18,12 +18,6 @@ Prioridad: `Alta` · `Media` · `Baja`.
 
 > Rediseño de Finanzas (T-017…T-022), acordado el 2026-10-19. Plan completo: `C:\Users\ginof\.claude\plans\vamos-a-hacer-algunos-buzzing-diffie.md`. Hacerlas en orden.
 
-### T-019 · Recibos numerados con PDF
-- Estado: Aprobada
-- Prioridad: Alta
-- Spec: specs/T-019-recibos-numerados.md
-- Descripción: Tablas `receipt` y `receipt_trip`. Un recibo baja el saldo general, aplicado FIFO a lo más viejo. Opcionalmente se tildan viajes: el monto se calcula solo y esos viajes quedan cancelados explícitamente. PDF numerado (X 0001-00000001, correlativo desde 1, independiente del comprobante interno) con datos del cliente y monto en números y letras (`src/lib/amount-words.ts` con tests). `/finanzas/recibos` reemplaza a Cobros, que queda como historial de solo lectura. "Cobrado" en Inicio/reportes = recibos + `collection` histórica.
-
 ### T-020 · Vencimientos y semáforo de mora
 - Estado: Especificada
 - Prioridad: Media
@@ -94,6 +88,11 @@ Prioridad: `Alta` · `Media` · `Baja`.
 ---
 
 ## ✅ Hechas
+
+### T-019 · Recibos numerados con PDF
+- Estado: Hecha (2026-10-19)
+- Spec: specs/T-019-recibos-numerados.md
+- Descripción: `/finanzas/recibos` con numeración X 0001-…, viajes tildados o monto libre (FIFO), anulación y PDF con monto en letras. Cobros queda como historial de solo lectura.
 
 ### T-018 · Pantallas de cuenta corriente y comprobantes + PDF de comprobante interno
 - Estado: Hecha (2026-10-19)

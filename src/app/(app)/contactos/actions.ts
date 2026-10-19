@@ -5,7 +5,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { z } from "zod";
 import { db } from "@/db";
-import { CLIENT_STATUSES, CLIENT_TYPES, clientNotes, clients, collections, documents, rates, routes, trips } from "@/db/schema";
+import { CLIENT_STATUSES, CLIENT_TYPES, clientNotes, clients, collections, documents, rates, receipts, routes, trips } from "@/db/schema";
 import { LEAD_PRIORITIES, LEAD_STAGE_LABELS, LEAD_STAGES } from "@/lib/constants";
 import { isUniqueViolation } from "@/lib/db-errors";
 import { today } from "@/lib/format";
@@ -103,15 +103,16 @@ export async function updateClient(id: number, formData: FormData): Promise<Acti
 export async function deleteClient(id: number): Promise<ActionResult> {
   const { error } = await checkPermission("contactos");
   if (error) return error;
-  const [[t], [c], [d]] = await Promise.all([
+  const [[t], [c], [d], [r]] = await Promise.all([
     db.select({ n: count() }).from(trips).where(eq(trips.clientId, id)),
     db.select({ n: count() }).from(collections).where(eq(collections.clientId, id)),
     db.select({ n: count() }).from(documents).where(eq(documents.clientId, id)),
+    db.select({ n: count() }).from(receipts).where(eq(receipts.clientId, id)),
   ]);
-  if (t.n > 0 || c.n > 0 || d.n > 0) {
+  if (t.n > 0 || c.n > 0 || d.n > 0 || r.n > 0) {
     return {
       ok: false,
-      error: `No se puede eliminar: tiene ${t.n} recorridos, ${c.n} cobros y ${d.n} comprobantes. Podés marcarlo como inactivo.`,
+      error: `No se puede eliminar: tiene ${t.n} recorridos, ${c.n} cobros, ${r.n} recibos y ${d.n} comprobantes. Podés marcarlo como inactivo.`,
     };
   }
   await db.delete(clients).where(eq(clients.id, id));

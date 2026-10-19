@@ -327,6 +327,44 @@ export const documentItems = pgTable(
   (t) => [index("document_item_document_idx").on(t.documentId), index("document_item_trip_idx").on(t.tripId)],
 );
 
+// Recibo numerado (X 0001-NNNNNNNN): pago de un cliente desde el corte. Anular = voided_at (el número no
+// se reutiliza); un anulado no cuenta y libera sus recorridos.
+export const receipts = pgTable(
+  "receipt",
+  {
+    id: integer("id").primaryKey().generatedAlwaysAsIdentity(),
+    number: integer("number").notNull(),
+    date: date("date", { mode: "string" }).notNull(),
+    clientId: integer("client_id")
+      .notNull()
+      .references(() => clients.id, { onDelete: "restrict" }),
+    amount: money("amount").notNull(),
+    method: text("method"),
+    notes: text("notes"),
+    voidedAt: timestamp("voided_at", { mode: "date" }),
+    voidedReason: text("voided_reason"),
+    createdAt: timestamp("created_at", { mode: "date" }).notNull().defaultNow(),
+  },
+  (t) => [uniqueIndex("receipt_number_idx").on(t.number), index("receipt_client_date_idx").on(t.clientId, t.date)],
+);
+
+// Recorridos tildados en un recibo (asignación explícita antes del FIFO). Un recorrido puede tener
+// asignaciones parciales de varios recibos: el tope lo da su pendiente (se valida en la acción).
+export const receiptTrips = pgTable(
+  "receipt_trip",
+  {
+    id: integer("id").primaryKey().generatedAlwaysAsIdentity(),
+    receiptId: integer("receipt_id")
+      .notNull()
+      .references(() => receipts.id, { onDelete: "cascade" }),
+    tripId: integer("trip_id")
+      .notNull()
+      .references(() => trips.id, { onDelete: "restrict" }),
+    amount: money("amount").notNull(),
+  },
+  (t) => [index("receipt_trip_receipt_idx").on(t.receiptId), index("receipt_trip_trip_idx").on(t.tripId)],
+);
+
 export const EXPENSE_CATEGORIES =["combustible", "sueldo", "varios"] as const;
 export const expenseCategory = pgEnum("expense_category", EXPENSE_CATEGORIES);
 

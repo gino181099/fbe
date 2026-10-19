@@ -10,6 +10,7 @@ import { tripsInActiveDocument } from "@/lib/documents";
 import { firstError, formToObject, zDate, zIntOpt, zMoneyOpt, zText } from "@/lib/forms";
 import { type ActionResult, checkPermission } from "@/lib/permissions";
 import { findRate, ratesInForce } from "@/lib/rates";
+import { tripsInActiveReceipt } from "@/lib/receipts";
 
 // ON DELETE RESTRICT dispara 23001 (restrict_violation); NO ACTION, 23503 (foreign_key_violation).
 const isInUse = (e: unknown) => ["23001", "23503"].includes(pgCode(e) ?? "");
@@ -112,20 +113,21 @@ export async function updateTrip(id: number, formData: FormData): Promise<Action
   if (error) return error;
   const built = await buildTrip(formData);
   if ("error" in built) return { ok: false, error: built.error! };
-  // Un recorrido en factura/interno vigente no cambia precio, cliente ni fecha (se anula el comprobante primero).
-  const [[current], inDocument] = await Promise.all([
+  // Un recorrido en factura/interno o recibo vigente no cambia precio, cliente ni fecha (se anula primero).
+  const [[current], inDocument, inReceipt] = await Promise.all([
     db.select({ price: trips.price, clientId: trips.clientId, date: trips.date }).from(trips).where(eq(trips.id, id)),
     tripsInActiveDocument([id]),
+    tripsInActiveReceipt([id]),
   ]);
   if (!current) return { ok: false, error: "El recorrido no existe." };
-  const doc = inDocument.get(id);
+  const lockedBy = inDocument.get(id)?.label ?? inReceipt.get(id);
   if (
-    doc &&
+    lockedBy &&
     (current.price !== built.values.price ||
       current.clientId !== built.values.clientId ||
       current.date !== built.values.date)
   ) {
-    return { ok: false, error: `Está en ${doc.label}.` };
+    return { ok: false, error: `Está en ${lockedBy}.` };
   }
   await db.update(trips).set(built.values).where(eq(trips.id, id));
   revalidate();
@@ -138,7 +140,7 @@ export async function deleteTrip(id: number): Promise<ActionResult> {
   try {
     await db.delete(trips).where(eq(trips.id, id));
   } catch (e) {
-    if (isInUse(e)) return { ok: false, error: "No se puede eliminar: el recorrido está en un comprobante" };
+    if (isInUse(e)) return { ok: false, error: "No se puede eliminar: el recorrido está en un comprobante o recibo" };
     throw e;
   }
   revalidate();

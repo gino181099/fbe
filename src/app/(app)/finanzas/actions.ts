@@ -4,7 +4,7 @@ import { eq } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { db } from "@/db";
-import { COLLECTION_KINDS, collections, EXPENSE_CATEGORIES, expenses, fuelLoads } from "@/db/schema";
+import { EXPENSE_CATEGORIES, expenses, fuelLoads } from "@/db/schema";
 import { firstError, formToObject, zDate, zIntOpt, zMoney, zMoneyOpt, zText } from "@/lib/forms";
 import { type ActionResult, checkPermission } from "@/lib/permissions";
 
@@ -15,37 +15,7 @@ function revalidate() {
   revalidatePath("/");
 }
 
-/* ───────────────────────────────── Cobros ──────────────────────────────── */
-
-const collectionSchema = z.object({
-  date: zDate,
-  clientId: z.coerce.number({ error: "Elegí un cliente" }).int().positive({ error: "Elegí un cliente" }),
-  amount: zMoney.refine((n) => n !== 0, "El monto no puede ser 0"),
-  kind: z.enum(COLLECTION_KINDS, { error: "Tipo inválido" }).default("cobro"),
-  method: zText,
-  notes: zText,
-});
-
-export async function saveCollection(id: number | null, formData: FormData): Promise<ActionResult> {
-  const { error } = await checkPermission("finanzas");
-  if (error) return error;
-  const parsed = collectionSchema.safeParse(formToObject(formData));
-  if (!parsed.success) return { ok: false, error: firstError(parsed.error) };
-  const values = { ...parsed.data, method: parsed.data.method ?? null, notes: parsed.data.notes ?? null };
-  if (id) await db.update(collections).set(values).where(eq(collections.id, id));
-  else await db.insert(collections).values(values);
-  revalidate();
-  const label = parsed.data.kind === "ajuste" ? "Ajuste" : "Cobro";
-  return { ok: true, message: `${label} ${id ? "actualizado" : "registrado"}` };
-}
-
-export async function deleteCollection(id: number): Promise<ActionResult> {
-  const { error } = await checkPermission("finanzas");
-  if (error) return error;
-  await db.delete(collections).where(eq(collections.id, id));
-  revalidate();
-  return { ok: true, message: "Movimiento eliminado" };
-}
+// Cobros: solo historial desde T-019 (los pagos nuevos son recibos, `recibos/actions.ts`).
 
 /* ───────────────────────────────── Gastos ──────────────────────────────── */
 

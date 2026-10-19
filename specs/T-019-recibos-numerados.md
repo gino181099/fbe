@@ -1,6 +1,6 @@
 # T-019 · Recibos numerados con PDF
 
-- Estado: Aprobada
+- Estado: Implementada
 - Prioridad: Alta
 - Riesgo: Alto (esquema + migración, saldos y "Cobrado" de Inicio/reportes)
 - Fecha: 2026-10-19
@@ -55,12 +55,12 @@ Tras guardar: toast "Recibo X 0001-00000001 registrado" y redirección a `/finan
 - `specs/MEMORIA.md`: regla "collection post-corte cuenta hasta T-019" → recibos; "Cobrado" = recibos + collection histórica.
 
 ## Plan
-- [ ] 1. Constantes + esquema; `db:generate -- --name recibos`; revisar SQL; `db:migrate`.
-- [ ] 2. `amount-words.ts` + tests; ledger con recibos + tests.
-- [ ] 3. `receipts.ts`, acciones, páginas, sidebar.
-- [ ] 4. PDF del recibo.
-- [ ] 5. Cobros a solo lectura; botón en cuenta corriente.
-- [ ] 6. `balances.ts`, `reports.ts`, Inicio; borrados/edición de recorridos; MEMORIA.
+- [x] 1. Constantes + esquema; `db:generate -- --name recibos`; revisar SQL; `db:migrate`.
+- [x] 2. `amount-words.ts` + tests; ledger con recibos + tests.
+- [x] 3. `receipts.ts`, acciones, páginas, sidebar.
+- [x] 4. PDF del recibo.
+- [x] 5. Cobros a solo lectura; botón en cuenta corriente.
+- [x] 6. `balances.ts`, `reports.ts`, Inicio; borrados/edición de recorridos; MEMORIA.
 
 ## Verificación
 - `npx tsc --noEmit` · `npm run lint` · `npm test` · `npm run build` (una vez, al final)
@@ -89,7 +89,23 @@ Tras guardar: toast "Recibo X 0001-00000001 registrado" y redirección a `/finan
 ---
 
 ## Notas de implementación
-_(completa el implementador: desvíos del plan, decisiones, archivos tocados)_
+- Datos: `0008_recibos` (solo CREATE TABLE/INDEX/FK, sin backfill) aplicada. Foto antes/después de `collection` por mes/tipo: idéntica (hoy no hay `collection` kind cobro: todo es ajuste, así que "Cobrado" histórico es 0 y sigue en 0).
+- Ledger: `LedgerReceipt` + `receipts` en `LedgerInput`; recibos vigentes ≥ corte = crédito `kind: "recibo"`; sus `receipt_trip` se convierten en `allocations` (antes del FIFO). `totalCollected` = cobro + recibo. Nuevos puros `pendingTripAmounts` y `receiptAllocationError` (tests).
+- Hallazgo T-017 (asignación a recorrido previo al corte ignorada en silencio): resuelto en la acción: `createReceipt` valida contra `pendingTripAmounts` del ledger recalculado en el servidor, que solo contiene recorridos del cliente ≥ `CC_START` con pendiente > 0 (error legible si no). El ledger sigue ignorando asignaciones inválidas como defensa.
+- `balances.ts`: se extrajo `getClientLedger(clientId)` (usado por `getStatement` y por `getPendingTrips`); `getBalances().collected` suma recibos vigentes ≥ corte.
+- Acción: `createReceipt(input)` objeto tipado; el cliente manda cada viaje con su pendiente (D2) y el servidor valida ≤ pendiente actual; número = max+1 con 1 reintento ante 23505; si falla `receipt_trip` se borra el recibo. Sin transacción (neon-http): dos recibos simultáneos sobre el mismo viaje no rompen el saldo (el ledger topea la asignación al pendiente) — riesgo aceptado.
+- Formulario: el monto sigue a Σ tildados salvo que se haya escrito uno mayor a mano; aviso del excedente "a cuenta del saldo".
+- Extra fuera del mapa (consistencia CA12): `recalculateTripPrices` (`rates.ts`) tampoco toca recorridos en un recibo vigente.
+- `deleteTrip`: la FK `receipt_trip.trip_id` es RESTRICT (23001) también para recibos anulados; mensaje "está en un comprobante o recibo".
+- PDF: título en dos líneas ("Recibo X" / "N° 0001-00000001"); texto "la suma de pesos … con NN/100 ($ N)".
+- Prueba con datos "PRUEBA T-019" (cliente 80, 4 recorridos, 2 recibos; borrados): tildar el 3.º lo cancela con los más viejos pendientes; libre 1200 → FIFO (1.º cancelado, 2.º parcial 300); viaje previo al corte rechazado; exceso sobre pendiente rechazado; getBalances/estado de cuenta/serie mensual cuentan 1500; anular recibo 1 → libera viaje, saldo 600, próximo número 3; borrar recorrido con recibo → 23001. PDF `/api/recibo/1` (anulado) revisado renderizado; 404 inexistente; páginas `/finanzas/recibos`, `?nuevo=`, `/nuevo?cliente=`, cobros, cuenta corriente → 200. No se probó el alta desde el navegador (clic en "Guardar recibo"): la lógica se probó por script.
+- Archivos: `src/db/schema.ts`, `drizzle/0008_recibos.sql`, `src/lib/{constants,doc-number,amount-words(+test),ledger(+test),balances,receipts,receipt-pdf,reports,rates}.ts(x)`, `src/app/(app)/finanzas/recibos/{actions.ts,page.tsx,void-dialog.tsx,nuevo/page.tsx,nuevo/receipt-form.tsx}`, `src/app/api/recibo/[id]/route.tsx`, `finanzas/{actions.ts,fields.tsx,cobros/page.tsx,cuentas/[id]/page.tsx}`, `src/app/(app)/page.tsx`, `contactos/actions.ts`, `ventas/actions.ts`, `app-sidebar.tsx`.
 
 ## Revisión
-_(completa el revisor)_
+Veredicto: APROBADO
+Criterios: CA1 ✅ · CA2 ✅ · CA3 ✅ (no probado clic a clic) · CA4 ✅ · CA5 ✅ · CA6 ✅ · CA7 ✅ · CA8 ✅ · CA9 ✅ · CA10 ✅ · CA11 ✅ (reports/Inicio/getBalances suman recibos; serie previa sin cambios; buildMonthlySeries suma meses duplicados) · CA12 ✅
+Desvíos evaluados: recalculateTripPrices con recibo vigente (coherente con CA12, aceptable); sin transacción en createReceipt (aceptable: ledger topea asignación al pendiente, rollback manual del recibo); getClientLedger extraído (refactor limpio).
+Hallazgos:
+1. [MENOR] recibos/actions.ts:~75 — si falla el insert de receipt_trip y también falla el delete de compensación, queda un recibo sin viajes (cuenta como crédito FIFO, saldo coherente) → bajo riesgo, sin acción.
+2. [MENOR] createReceipt: dos altas simultáneas pueden tildar el mismo viaje; el ledger topea y el sobrante pasa a FIFO, sin romper saldos (riesgo ya declarado).
+3. [MENOR] Alta desde navegador no probada (solo script): probar un clic real en "Guardar recibo" antes de usar en producción.

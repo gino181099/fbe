@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { and, asc, count, desc, eq, gte, lte, ne } from "drizzle-orm";
+import { and, asc, count, desc, eq, gte, isNull, lte, ne } from "drizzle-orm";
 import { MonthlyChart } from "@/components/monthly-chart";
 import { EmptyState, PageHeader, StatCard } from "@/components/page-header";
 import { Button } from "@/components/ui/button";
@@ -7,7 +7,7 @@ import { Input } from "@/components/ui/input";
 import { NativeSelect, NativeSelectOption } from "@/components/ui/native-select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { db } from "@/db";
-import { clients, collections, routes, trips, users } from "@/db/schema";
+import { clients, collections, receipts, routes, trips, users } from "@/db/schema";
 import { getBalances, sumOf } from "@/lib/balances";
 import { firstDayOfMonth, formatDate, formatMoney, today } from "@/lib/format";
 import { buildMonthlySeries, formatMonth, resolveRange, totalsOf } from "@/lib/monthly";
@@ -43,11 +43,18 @@ export default async function DashboardPage({ searchParams }: PageProps<"/">) {
           .from(trips)
           .where(and(gte(trips.date, start), lte(trips.date, end)))
       : [{ n: 0, total: 0 }],
+    // Cobrado del mes = cobros históricos + recibos vigentes.
     canFinance
-      ? db
-          .select({ total: sumOf(collections.amount) })
-          .from(collections)
-          .where(and(eq(collections.kind, "cobro"), gte(collections.date, start), lte(collections.date, end)))
+      ? Promise.all([
+          db
+            .select({ total: sumOf(collections.amount) })
+            .from(collections)
+            .where(and(eq(collections.kind, "cobro"), gte(collections.date, start), lte(collections.date, end))),
+          db
+            .select({ total: sumOf(receipts.amount) })
+            .from(receipts)
+            .where(and(isNull(receipts.voidedAt), gte(receipts.date, start), lte(receipts.date, end))),
+        ]).then(([[c], [r]]) => [{ total: c.total + r.total }])
       : [{ total: 0 }],
     canSales
       ? db

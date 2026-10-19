@@ -3,11 +3,14 @@ import {
   type LedgerCollection,
   type LedgerDocument,
   type LedgerInput,
+  type LedgerReceipt,
   type LedgerTrip,
   activeDocuments,
   addDays,
   buildLedger,
   documentNumber,
+  pendingTripAmounts,
+  receiptAllocationError,
   statementFromLedger,
   tripsInActiveDocuments,
 } from "./ledger";
@@ -402,6 +405,122 @@ describe("buildLedger · aplicación de créditos", () => {
     });
     expect(l.debits.map((d) => d.status)).toEqual(["cancelado", "cancelado"]);
     expect(l.balance).toBe(0);
+  });
+});
+
+const recibo = (r: Partial<LedgerReceipt>): LedgerReceipt => ({
+  id: 1,
+  number: 1,
+  date: "2026-10-25",
+  method: null,
+  notes: null,
+  amount: 0,
+  voidedAt: null,
+  trips: [],
+  ...r,
+});
+
+describe("buildLedger · recibos", () => {
+  const trips = [
+    trip({ id: 1, date: "2026-10-20", price: 1000 }),
+    trip({ id: 2, date: "2026-10-21", price: 500 }),
+    trip({ id: 3, date: "2026-10-22", price: 300 }),
+  ];
+
+  it("recibo con recorrido tildado lo cancela aunque haya débitos más viejos", () => {
+    const l = ledger({
+      trips,
+      receipts: [recibo({ amount: 300, trips: [{ tripId: 3, amount: 300 }] })],
+    });
+    expect(l.debits.map((d) => [d.tripId, d.paid, d.status])).toEqual([
+      [1, 0, "pendiente"],
+      [2, 0, "pendiente"],
+      [3, 300, "cancelado"],
+    ]);
+    expect(l.balance).toBe(1500);
+  });
+
+  it("el excedente sobre lo tildado va FIFO", () => {
+    const l = ledger({
+      trips,
+      receipts: [recibo({ amount: 1500, trips: [{ tripId: 3, amount: 300 }] })],
+    });
+    expect(l.debits.map((d) => [d.tripId, d.paid, d.status])).toEqual([
+      [1, 1000, "cancelado"],
+      [2, 200, "parcial"],
+      [3, 300, "cancelado"],
+    ]);
+  });
+
+  it("recibo por monto libre: FIFO y parcial", () => {
+    const l = ledger({ trips, receipts: [recibo({ amount: 1200 })] });
+    expect(l.debits.map((d) => [d.tripId, d.remaining])).toEqual([
+      [1, 0],
+      [2, 300],
+      [3, 300],
+    ]);
+  });
+
+  it("recibo anulado no cuenta ni asigna", () => {
+    const l = ledger({
+      trips,
+      receipts: [
+        recibo({ amount: 300, voidedAt: new Date(), trips: [{ tripId: 3, amount: 300 }] }),
+      ],
+    });
+    expect(l.balance).toBe(1800);
+    expect(l.lines.some((x) => x.kind === "recibo")).toBe(false);
+    expect(l.debits.every((d) => d.paid === 0)).toBe(true);
+  });
+
+  it("línea de recibo y cobrado del período", () => {
+    const l = ledger({
+      trips,
+      collections: [cobro({ id: 9, date: "2026-10-24", amount: 100 })],
+      receipts: [recibo({ number: 12, amount: 200, method: "Transferencia" })],
+    });
+    const line = l.lines.find((x) => x.kind === "recibo");
+    expect(line?.description).toBe("Recibo X 0001-00000012 (Transferencia)");
+    expect(line?.credit).toBe(200);
+    expect(statementFromLedger(l, CUT, "2026-12-31").totalCollected).toBe(300);
+  });
+});
+
+describe("receiptAllocationError", () => {
+  const pending = new Map([
+    [1, 1000],
+    [3, 300],
+  ]);
+  it("acepta asignaciones dentro del pendiente y monto ≥ Σ", () => {
+    expect(receiptAllocationError(1500, [{ tripId: 3, amount: 300 }], pending)).toBeNull();
+    expect(receiptAllocationError(200, [], pending)).toBeNull();
+  });
+  it("rechaza monto ≤ 0, recorrido no pendiente o anterior al corte, exceso y Σ > monto", () => {
+    expect(receiptAllocationError(0, [], pending)).toMatch(/mayor a 0/);
+    expect(receiptAllocationError(500, [{ tripId: 2, amount: 100 }], pending)).toMatch(/no están pendientes/);
+    expect(receiptAllocationError(500, [{ tripId: 3, amount: 301 }], pending)).toMatch(/supera su pendiente/);
+    expect(receiptAllocationError(200, [{ tripId: 3, amount: 300 }], pending)).toMatch(/menor que la suma/);
+    expect(
+      receiptAllocationError(
+        900,
+        [
+          { tripId: 3, amount: 100 },
+          { tripId: 3, amount: 100 },
+        ],
+        pending,
+      ),
+    ).toMatch(/repetidos/);
+  });
+  it("pendingTripAmounts: solo recorridos desde el corte con pendiente", () => {
+    const l = ledger({
+      trips: [
+        trip({ id: 1, date: "2026-10-18", price: 999 }),
+        trip({ id: 2, date: "2026-10-20", price: 500 }),
+        trip({ id: 3, date: "2026-10-21", price: 300 }),
+      ],
+      receipts: [recibo({ amount: 500 })],
+    });
+    expect([...pendingTripAmounts(l)]).toEqual([[3, 300]]);
   });
 });
 

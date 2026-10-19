@@ -1,7 +1,7 @@
 import "server-only";
 import { and, eq, gte, isNull, lte, or, sql } from "drizzle-orm";
 import { db } from "@/db";
-import { documentItems, documents, rates, routes, trips } from "@/db/schema";
+import { documentItems, documents, rates, receiptTrips, receipts, routes, trips } from "@/db/schema";
 import { type NewRate, planRateChanges } from "./rates-plan";
 
 /** Tarifa vigente de un cliente para un recorrido + categoría en una fecha. */
@@ -67,7 +67,7 @@ export async function applyNewRates(clientId: number, validFrom: string, items: 
 
 /**
  * Reasigna tarifa y precio a los recorridos del cliente desde una fecha. No toca los que están en un
- * comprobante factura/interno vigente (su precio quedó documentado).
+ * comprobante factura/interno o recibo vigente (su precio quedó documentado).
  */
 export function recalculateTripPrices(clientId: number, from: string) {
   return db.execute(sql`
@@ -79,6 +79,10 @@ export function recalculateTripPrices(clientId: number, from: string) {
       AND NOT EXISTS (
         SELECT 1 FROM ${documentItems} di JOIN ${documents} d ON d.id = di.document_id
         WHERE di.trip_id = t.id AND d.voided_at IS NULL AND d.type IN ('factura', 'interno')
+      )
+      AND NOT EXISTS (
+        SELECT 1 FROM ${receiptTrips} rt JOIN ${receipts} rc ON rc.id = rt.receipt_id
+        WHERE rt.trip_id = t.id AND rc.voided_at IS NULL
       )
   `);
 }

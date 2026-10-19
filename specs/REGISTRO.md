@@ -15,6 +15,15 @@ Una entrada por tarea terminada, **la más nueva arriba**. Formato fijo y breve 
 
 ---
 
+## 2026-10-19 · T-019 · Recibos numerados con PDF
+- Resultado: `/finanzas/recibos` (listado, filtros, total, PDF, anular) y `/nuevo` (saldo, recorridos pendientes tildables, monto ≥ Σ tildados, excedente FIFO); recibo X 0001-NNNNNNNN correlativo; PDF con monto en letras; ledger/saldos/Inicio/reportes cuentan recibos vigentes; Cobros queda como historial de solo lectura; "Registrar recibo" en la cuenta corriente.
+- Archivos: `src/lib/{amount-words,receipts,receipt-pdf}.ts(x)`, `ledger.ts` (+tests), `balances.ts`, `reports.ts`, `rates.ts`, `finanzas/recibos/**`, `api/recibo/[id]`, `finanzas/{cobros,cuentas/[id]}`, `(app)/page.tsx`, acciones de ventas/contactos, sidebar.
+- Datos: `0008_recibos` (solo CREATE). "Cobrado" histórico por mes idéntico antes/después. Datos "PRUEBA T-019" creados por script y borrados.
+- Verificación: tsc · lint · npm test 129/129 · build OK · script contra la base (tildado, FIFO, anulación, validaciones, 23001) · PDF anulado visto renderizado · páginas 200. Alta desde el navegador no clickeada.
+- Revisión: APROBADO (0 bloqueantes, 0 importantes). Menores pendientes: si falla la compensación tras error en `receipt_trip` queda un recibo sin viajes (saldo coherente); altas simultáneas sobre el mismo viaje se resuelven por el tope del ledger; probar una vez el alta con clic real en producción.
+- Pendiente: hallazgo T-017 resuelto en la acción (solo recorridos ≥ corte con pendiente); recibos simultáneos sin transacción (riesgo aceptado).
+- Costo: spec ~35k (tanda T-018..T-020 105k) · impl 206k · rev 36k tokens · 16 min
+
 ## 2026-10-19 · T-018 · Pantallas de cuenta corriente y comprobantes + PDF de comprobante interno
 - Resultado: `/finanzas/comprobantes` (filtros, totales, anular con motivo) y `/nuevo` (factura A/B/C, interno X numerado automático, ND/saldo inicial con ítems, NC/bonificación); cuenta del cliente con "Nuevo comprobante", factura/interno como líneas informativas, "Recorridos sin comprobante" y "Pendientes de cobro"; PDF `/api/comprobante/[id]` con logo y datos de la empresa; `updateTrip`/recálculo de tarifas respetan recorridos en comprobante vigente.
 - Archivos: `src/lib/{doc-number,document-rules,documents,db-errors,company,pdf-brand,document-pdf}.ts(x)` (+tests), `finanzas/comprobantes/**`, `finanzas/cuentas/[id]/page.tsx`, `ledger.ts`, `balances.ts`, `constants.ts`, `ventas/actions.ts`, `rates.ts`, `app-sidebar.tsx`, `next.config.ts`.

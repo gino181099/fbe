@@ -1,7 +1,7 @@
 import "server-only";
-import { and, count, desc, eq, gte, lte, ne, sql, type SQL } from "drizzle-orm";
+import { and, count, desc, eq, gte, isNull, lte, ne, sql, type SQL } from "drizzle-orm";
 import { db } from "@/db";
-import { collections, expenses, fuelLoads, routes, trips } from "@/db/schema";
+import { collections, expenses, fuelLoads, receipts, routes, trips } from "@/db/schema";
 import { sumOf } from "./balances";
 import type { MonthTotal } from "./monthly";
 
@@ -19,6 +19,7 @@ export async function getMonthlyTotals(
 ) {
   const tripMonth = sql<string>`to_char(${trips.date}, 'YYYY-MM')`;
   const collectionMonth = sql<string>`to_char(${collections.date}, 'YYYY-MM')`;
+  const receiptMonth = sql<string>`to_char(${receipts.date}, 'YYYY-MM')`;
   const expenseMonth = sql<string>`to_char(${expenses.date}, 'YYYY-MM')`;
   const loadMonth = sql<string>`to_char(${fuelLoads.date}, 'YYYY-MM')`;
   const directCost = sql<number>`coalesce(sum(coalesce(${trips.driverPay}, 0) + coalesce(${trips.fuelPesos}, 0) + coalesce(${trips.extraPayments}, 0)), 0)`.mapWith(
@@ -31,7 +32,10 @@ export async function getMonthlyTotals(
   if (clientId) collectionWhere.push(eq(collections.clientId, clientId));
   const general = finance && !clientId;
 
-  const [tripRows, collected, spent, loads] = await Promise.all([
+  const receiptWhere: SQL[] = [isNull(receipts.voidedAt), gte(receipts.date, from), lte(receipts.date, to)];
+  if (clientId) receiptWhere.push(eq(receipts.clientId, clientId));
+
+  const [tripRows, collected, receiptRows, spent, loads] = await Promise.all([
     sales
       ? db
           .select({ month: tripMonth, billed: sumOf(trips.price), direct: directCost })
@@ -45,6 +49,13 @@ export async function getMonthlyTotals(
           .from(collections)
           .where(and(...collectionWhere))
           .groupBy(collectionMonth)
+      : null,
+    finance
+      ? db
+          .select({ month: receiptMonth, total: sumOf(receipts.amount) })
+          .from(receipts)
+          .where(and(...receiptWhere))
+          .groupBy(receiptMonth)
       : null,
     general
       ? db
@@ -63,7 +74,8 @@ export async function getMonthlyTotals(
   ]);
   return {
     billed: tripRows?.map((r) => ({ month: r.month, total: r.billed })) ?? null,
-    collected,
+    // Cobrado = cobros históricos (`collection` kind cobro) + recibos vigentes, por fecha.
+    collected: collected && receiptRows ? [...collected, ...receiptRows] : null,
     directCosts: tripRows?.map((r) => ({ month: r.month, total: r.direct })) ?? null,
     generalExpenses: spent && loads ? [...spent, ...loads] : null,
   } satisfies Record<string, MonthTotal[] | null>;

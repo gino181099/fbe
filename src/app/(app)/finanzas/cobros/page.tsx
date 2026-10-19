@@ -1,9 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { and, asc, desc, eq, gte, lte, type SQL } from "drizzle-orm";
-import { Pencil, Plus } from "lucide-react";
-import { ConfirmButton } from "@/components/confirm-button";
-import { FormDialog } from "@/components/form-dialog";
 import { EmptyState, PageHeader } from "@/components/page-header";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -13,18 +10,16 @@ import { Table, TableBody, TableCell, TableFooter, TableHead, TableHeader, Table
 import { db } from "@/db";
 import { clients, collections } from "@/db/schema";
 import { COLLECTION_KIND_LABELS, COLLECTION_KINDS } from "@/lib/constants";
-import { formatDate, formatMoney, today } from "@/lib/format";
-import { can, requirePermission } from "@/lib/permissions";
-import { deleteCollection, saveCollection } from "../actions";
-import { CollectionFields } from "../fields";
+import { formatDate, formatMoney } from "@/lib/format";
+import { requirePermission } from "@/lib/permissions";
 
-export const metadata: Metadata = { title: "Cobros" };
+export const metadata: Metadata = { title: "Cobros (historial)" };
 
 const str = (v: string | string[] | undefined) => (typeof v === "string" && v.trim() ? v.trim() : undefined);
 const isDate = (v?: string) => (v && /^\d{4}-\d{2}-\d{2}$/.test(v) ? v : undefined);
 
 export default async function CollectionsPage({ searchParams }: PageProps<"/finanzas/cobros">) {
-  const user = await requirePermission("finanzas");
+  await requirePermission("finanzas");
   const sp = await searchParams;
   const desde = isDate(str(sp.desde));
   const hasta = isDate(str(sp.hasta));
@@ -47,34 +42,22 @@ export default async function CollectionsPage({ searchParams }: PageProps<"/fina
       .limit(500),
     db.select({ id: clients.id, name: clients.name }).from(clients).orderBy(asc(clients.name)),
   ]);
-  const canEdit = can(user, "finanzas", "edit");
   const totalCobros = rows.reduce((s, r) => s + (r.c.kind === "cobro" ? r.c.amount : 0), 0);
   const totalAjustes = rows.reduce((s, r) => s + (r.c.kind === "ajuste" ? r.c.amount : 0), 0);
   const footer = [
     ...(tipo !== "ajuste" ? [{ label: "Total cobrado", value: totalCobros }] : []),
     ...(tipo !== "cobro" ? [{ label: "Total ajustes", value: totalAjustes }] : []),
   ];
-  const date = today();
 
   return (
     <>
       <PageHeader
-        title="Cobros"
-        description="Pagos recibidos de clientes y ajustes de saldo. Ambos se descuentan de su cuenta corriente."
+        title="Cobros (historial)"
+        description="Historial de cobros anterior a la cuenta corriente. Solo lectura: los pagos nuevos se registran como recibos."
         actions={
-          canEdit && (
-            <FormDialog
-              title="Registrar cobro"
-              action={saveCollection.bind(null, null)}
-              trigger={
-                <Button>
-                  <Plus /> Registrar cobro
-                </Button>
-              }
-            >
-              <CollectionFields clients={clientList} defaultDate={date} defaultClientId={clienteId} />
-            </FormDialog>
-          )
+          <Button variant="outline" asChild>
+            <Link href="/finanzas/recibos">Ir a Recibos</Link>
+          </Button>
         }
       />
 
@@ -123,7 +106,6 @@ export default async function CollectionsPage({ searchParams }: PageProps<"/fina
                 <TableHead>Medio</TableHead>
                 <TableHead>Observaciones</TableHead>
                 <TableHead className="text-right">Monto</TableHead>
-                {canEdit && <TableHead className="w-20" />}
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -141,24 +123,6 @@ export default async function CollectionsPage({ searchParams }: PageProps<"/fina
                   <TableCell>{c.method ?? "—"}</TableCell>
                   <TableCell className="text-muted-foreground">{c.notes ?? "—"}</TableCell>
                   <TableCell className="text-right tabular-nums">{formatMoney(c.amount)}</TableCell>
-                  {canEdit && (
-                    <TableCell>
-                      <div className="flex justify-end">
-                        <FormDialog
-                          title="Editar cobro"
-                          action={saveCollection.bind(null, c.id)}
-                          trigger={
-                            <Button variant="ghost" size="icon-sm" aria-label="Editar">
-                              <Pencil className="text-muted-foreground" />
-                            </Button>
-                          }
-                        >
-                          <CollectionFields clients={clientList} value={c} defaultDate={date} />
-                        </FormDialog>
-                        <ConfirmButton action={deleteCollection.bind(null, c.id)} title="¿Eliminar cobro?" />
-                      </div>
-                    </TableCell>
-                  )}
                 </TableRow>
               ))}
             </TableBody>
@@ -167,7 +131,6 @@ export default async function CollectionsPage({ searchParams }: PageProps<"/fina
                 <TableRow key={f.label}>
                   <TableCell colSpan={5}>{f.label}</TableCell>
                   <TableCell className="text-right tabular-nums">{formatMoney(f.value)}</TableCell>
-                  {canEdit && <TableCell />}
                 </TableRow>
               ))}
             </TableFooter>

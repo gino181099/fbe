@@ -6,7 +6,7 @@ import {
   type DocumentType,
   type MovementKind,
 } from "./constants";
-import { formatDocNumber } from "./doc-number";
+import { formatDocNumber, formatReceiptNumber } from "./doc-number";
 
 export type LedgerTrip = {
   id: number;
@@ -48,16 +48,30 @@ export type LedgerCollection = {
   amount: number;
 };
 
-/** Origen de un crédito: un cobro/ajuste (`collection`) o un comprobante NC/bonificación (`document`). */
-export type CreditRef = { source: "collection" | "document"; id: number };
+/** Recibo numerado (T-019) con sus recorridos tildados (asignaciones explícitas). */
+export type LedgerReceipt = {
+  id: number;
+  number: number;
+  date: string;
+  method: string | null;
+  notes: string | null;
+  amount: number;
+  voidedAt: Date | string | null;
+  trips: { tripId: number; amount: number }[];
+};
 
-/** Asignación explícita de un crédito a un recorrido (se aplica antes del FIFO; hook de recibos T-019). */
+/** Origen de un crédito: cobro/ajuste (`collection`), comprobante NC/bonificación (`document`) o recibo. */
+export type CreditRef = { source: "collection" | "document" | "receipt"; id: number };
+
+/** Asignación explícita de un crédito a un recorrido (se aplica antes del FIFO). */
 export type Allocation = { credit: CreditRef; tripId: number; amount: number };
 
 export type LedgerInput = {
   trips: LedgerTrip[];
   documents: LedgerDocument[];
   collections: LedgerCollection[];
+  /** Recibos vigentes; sus `trips` se aplican como asignaciones explícitas. Los anulados no cuentan. */
+  receipts?: LedgerReceipt[];
   allocations?: Allocation[];
   paymentDays: number;
   cutoff?: string;
@@ -169,6 +183,17 @@ function collectionDescription(c: LedgerCollection) {
     .join(" ");
 }
 
+function receiptDescription(r: LedgerReceipt) {
+  return [
+    "Recibo",
+    formatReceiptNumber(r.number),
+    r.method ? `(${r.method})` : null,
+    r.notes ? `– ${r.notes}` : null,
+  ]
+    .filter(Boolean)
+    .join(" ");
+}
+
 // Orden en el mismo día: saldo inicial → débitos (y factura/interno informativos) → créditos.
 const rank = (kind: MovementKind) =>
   kind === "saldo_inicial"
@@ -199,6 +224,9 @@ export function buildLedger(input: LedgerInput) {
   const docs = activeDocuments(input.documents);
   const trips = input.trips.filter((t) => t.date >= cutoff);
   const collections = input.collections.filter((c) => c.date >= cutoff);
+  const receipts = (input.receipts ?? []).filter(
+    (r) => r.voidedAt == null && r.date >= cutoff,
+  );
 
   // Vencimiento por recorrido según el comprobante factura/interno vigente que lo incluye.
   const tripDue = new Map<number, string>();
@@ -337,6 +365,32 @@ export function buildLedger(input: LedgerInput) {
       amount: c.amount,
     });
   }
+  for (const r of receipts) {
+    moves.push({
+      date: r.date,
+      kind: "recibo",
+      description: receiptDescription(r),
+      debit: 0,
+      credit: r.amount,
+      order: order++,
+    });
+    credits.push({
+      ref: { source: "receipt", id: r.id },
+      date: r.date,
+      amount: r.amount,
+    });
+  }
+  // Recorridos tildados en recibos vigentes: asignaciones explícitas (antes del FIFO).
+  const allocations: Allocation[] = [
+    ...receipts.flatMap((r) =>
+      r.trips.map((t) => ({
+        credit: { source: "receipt" as const, id: r.id },
+        tripId: t.tripId,
+        amount: t.amount,
+      })),
+    ),
+    ...(input.allocations ?? []),
+  ];
 
   moves.sort(
     (a, b) =>
@@ -370,7 +424,7 @@ export function buildLedger(input: LedgerInput) {
   const creditLeft = new Map(
     credits.map((c) => [`${c.ref.source}:${c.ref.id}`, c.amount]),
   );
-  for (const a of input.allocations ?? []) {
+  for (const a of allocations) {
     const key = `${a.credit.source}:${a.credit.id}`;
     const left = creditLeft.get(key) ?? 0;
     const debit = sortedDebits.find((d) => d.tripId === a.tripId);
@@ -455,10 +509,50 @@ export function statementFromLedger(ledger: Ledger, from: string, to: string) {
     lines,
     totalDebit,
     totalCredit,
-    // Solo plata recibida (sin ajustes ni notas de crédito): "Cobrado en el período".
+    // Solo plata recibida (cobros y recibos; sin ajustes ni notas de crédito): "Cobrado en el período".
     totalCollected: round2(
-      lines.reduce((s, l) => s + (l.kind === "cobro" ? l.credit : 0), 0),
+      lines.reduce(
+        (s, l) =>
+          s + (l.kind === "cobro" || l.kind === "recibo" ? l.credit : 0),
+        0,
+      ),
     ),
     closing: round2(opening + totalDebit - totalCredit),
   };
+}
+
+/** Recorridos con saldo pendiente en el ledger: tripId → pendiente (solo recorridos desde el corte). */
+export function pendingTripAmounts(ledger: Pick<Ledger, "debits">) {
+  const map = new Map<number, number>();
+  for (const d of ledger.debits)
+    if (d.kind === "recorrido" && d.tripId != null && d.remaining > EPS)
+      map.set(d.tripId, d.remaining);
+  return map;
+}
+
+/**
+ * Valida las asignaciones de un recibo nuevo contra los pendientes actuales: monto > 0, recorridos
+ * pendientes del cliente (≥ corte), cada asignación entre 0 y su pendiente, sin repetir, y Σ ≤ monto.
+ */
+export function receiptAllocationError(
+  amount: number,
+  allocations: { tripId: number; amount: number }[],
+  pending: Map<number, number>,
+): string | null {
+  if (!(amount > EPS)) return "El monto debe ser mayor a 0.";
+  const seen = new Set<number>();
+  for (const a of allocations) {
+    if (seen.has(a.tripId)) return "Hay recorridos repetidos.";
+    seen.add(a.tripId);
+    const left = pending.get(a.tripId);
+    if (left == null)
+      return "Hay recorridos que no están pendientes de cobro, no son del cliente o son anteriores al inicio de la cuenta corriente.";
+    if (!(a.amount > EPS)) return "El importe de cada recorrido debe ser mayor a 0.";
+    if (a.amount > left + EPS)
+      return "El importe de un recorrido supera su pendiente (puede haber cambiado: recargá la página).";
+  }
+  const total = round2(allocations.reduce((s, a) => s + a.amount, 0));
+  if (total > amount + EPS)
+    return "El monto del recibo no puede ser menor que la suma de los recorridos tildados.";
+  return null;
 }
