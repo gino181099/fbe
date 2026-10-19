@@ -42,6 +42,7 @@ const NAV: NavItem[] = [
     module: "finanzas",
     children: [
       { title: "Cuentas corrientes", href: "/finanzas" },
+      { title: "Comprobantes", href: "/finanzas/comprobantes" },
       { title: "Cobros", href: "/finanzas/cobros" },
       { title: "Gastos", href: "/finanzas/gastos" },
     ],

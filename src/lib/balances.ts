@@ -8,7 +8,6 @@ import {
   gte,
   inArray,
   isNull,
-  lte,
   or,
   sql,
 } from "drizzle-orm";
@@ -125,14 +124,10 @@ export async function getBalances() {
 
 export type StatementLine = LedgerLine;
 
-/** Comprobantes del cliente (con ítems) hasta `to`, en la forma que usa el ledger. */
-async function getLedgerDocuments(
-  clientId: number,
-  to: string,
-): Promise<LedgerDocument[]> {
+/** Comprobantes vigentes del cliente (con ítems), en la forma que usa el ledger. */
+async function getLedgerDocuments(clientId: number): Promise<LedgerDocument[]> {
   const where = and(
     eq(documents.clientId, clientId),
-    lte(documents.date, to),
     isNull(documents.voidedAt),
   );
   const [docRows, itemRows] = await Promise.all([
@@ -163,6 +158,8 @@ async function getLedgerDocuments(
 /**
  * Estado de cuenta de un cliente entre dos fechas (inclusive) con el modelo de cuenta corriente.
  * Si `from` es anterior al corte se toma el corte (saldo anterior 0); `from` devuelto es el efectivo.
+ * El ledger se arma con todo (las líneas se filtran por período); `debits` y `balance` son a la fecha
+ * de hoy con todo lo cargado (pendientes de cobro). Factura/interno van como líneas informativas.
  */
 export async function getStatement(clientId: number, from: string, to: string) {
   const [client] = await db
@@ -185,23 +182,15 @@ export async function getStatement(clientId: number, from: string, to: string) {
       .from(trips)
       .leftJoin(routes, eq(routes.id, trips.routeId))
       .where(
-        and(
-          eq(trips.clientId, clientId),
-          gte(trips.date, CC_START),
-          lte(trips.date, to),
-        ),
+        and(eq(trips.clientId, clientId), gte(trips.date, CC_START)),
       )
       .orderBy(trips.date, trips.id),
-    getLedgerDocuments(clientId, to),
+    getLedgerDocuments(clientId),
     db
       .select()
       .from(collections)
       .where(
-        and(
-          eq(collections.clientId, clientId),
-          gte(collections.date, CC_START),
-          lte(collections.date, to),
-        ),
+        and(eq(collections.clientId, clientId), gte(collections.date, CC_START)),
       )
       .orderBy(collections.date, collections.id),
   ]);
@@ -212,5 +201,12 @@ export async function getStatement(clientId: number, from: string, to: string) {
     collections: collectionRows,
     paymentDays: client.paymentDays,
   });
-  return { client, to, ...statementFromLedger(ledger, from, to) };
+  return {
+    client,
+    to,
+    ...statementFromLedger(ledger, from, to),
+    debits: ledger.debits,
+    unappliedCredit: ledger.unappliedCredit,
+    currentBalance: ledger.balance,
+  };
 }

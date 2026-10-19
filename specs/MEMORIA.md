@@ -42,6 +42,7 @@ Conocimiento estable que no se deduce fácil del código. Leer antes de explorar
 - Flota: `trip.driver` (texto) queda como histórico; mostrar `driver.name ?? trip.driver`. Textos compuestos ("Walter y Omar", "Sergio y Jose") quedan sin chofer.
 - Mingo = Domingo Sículo (dueño); chofer propio desde `0006_chofer_domingo`.
 - El registry de shadcn generó `import { cn } from "cn"`: al agregar componentes nuevos, corregir a `@/lib/utils`.
+- PDFs nuevos: usar `PdfBrandHeader` (`src/lib/pdf-brand.tsx`, logo leído con `fs` + `outputFileTracingIncludes` en `next.config.ts`) y `formatDocNumber` (`src/lib/doc-number.ts`). Un `page.tsx` solo exporta default/metadata: componentes auxiliares van en archivo aparte.
 - `/login` estática en build: si cambian las variables de Google hay que redeployar.
 - Los clics de prueba en el navegador pueden fallar antes de la hidratación en dev: esperar y reintentar.
 - "Jest worker encountered 2 child process exceptions" en dev = murió el worker de static paths (todas las rutas `[id]`); pasó con un `npm run dev` lanzado desde una terminal ya cerrada (EPIPE en `.next/dev/logs/next-development.log`). Fix: matar el server, borrar `.next/` y relanzar desde una terminal viva.

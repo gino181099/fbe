@@ -1,6 +1,6 @@
 # T-018 · Pantallas de cuenta corriente y comprobantes + PDF de comprobante interno
 
-- Estado: Aprobada
+- Estado: Implementada
 - Prioridad: Alta
 - Riesgo: Alto (crea movimientos que cambian saldos: ND/NC/bonificación/saldo inicial; restringe edición de recorridos y recálculo de precios)
 - Fecha: 2026-10-19
@@ -53,12 +53,12 @@ Sin cambios de esquema ni migración (todo lo crea 0007 de T-017). Alta: insert 
 - Trampa: `PageProps<"/finanzas/comprobantes/nuevo">` no tipa hasta correr `dev`/`build`.
 
 ## Plan
-- [ ] 1. `doc-number.ts`, `document-rules.ts` + tests; ajuste de `ledger.ts`/constants + tests.
-- [ ] 2. `documents.ts`, acciones (alta/anulación), `isUniqueViolation` compartido.
-- [ ] 3. Páginas `/finanzas/comprobantes` y `/nuevo` + sidebar.
-- [ ] 4. Secciones y botones en `/finanzas/cuentas/[id]`; filtro `voided_at` en `balances.ts`.
-- [ ] 5. `company.ts`, `pdf-brand.tsx`, PDF de comprobante interno + `next.config.ts`.
-- [ ] 6. Restricciones en `updateTrip` y `recalculateTripPrices`.
+- [x] 1. `doc-number.ts`, `document-rules.ts` + tests; ajuste de `ledger.ts`/constants + tests.
+- [x] 2. `documents.ts`, acciones (alta/anulación), `isUniqueViolation` compartido.
+- [x] 3. Páginas `/finanzas/comprobantes` y `/nuevo` + sidebar.
+- [x] 4. Secciones y botones en `/finanzas/cuentas/[id]`; filtro `voided_at` en `balances.ts`.
+- [x] 5. `company.ts`, `pdf-brand.tsx`, PDF de comprobante interno + `next.config.ts`.
+- [x] 6. Restricciones en `updateTrip` y `recalculateTripPrices`.
 
 ## Verificación
 - `npx tsc --noEmit` · `npm run lint` · `npm test` · `npm run build` (una vez, al final)
@@ -86,7 +86,17 @@ Sin cambios de esquema ni migración (todo lo crea 0007 de T-017). Alta: insert 
 ---
 
 ## Notas de implementación
-_(completa el implementador: desvíos del plan, decisiones, archivos tocados)_
+- Nuevos: `src/lib/doc-number.ts`, `document-rules.ts` (+tests), `documents.ts`, `db-errors.ts` (`isUniqueViolation`/`pgCode`, usados por contactos y ventas), `company.ts`, `pdf-brand.tsx`, `document-pdf.tsx`; `finanzas/comprobantes/{page,actions,void-dialog}.tsx`, `nuevo/{page,document-form}.tsx`; `api/comprobante/[id]/route.tsx`.
+- Tocados: `ledger.ts` (líneas informativas factura/interno con debe=haber=0, rank de débitos; `documentNumber` delega en `formatDocNumber`), `constants.ts` (MOVEMENT_KINDS + factura/interno), `balances.ts` (`getStatement` arma el ledger con todo y filtra por período; devuelve `debits`/`unappliedCredit`/`currentBalance` a hoy), `cuentas/[id]/page.tsx`, `ventas/actions.ts`, `rates.ts`, `app-sidebar.tsx`, `next.config.ts`.
+- Decisión extra: todo comprobante salvo saldo inicial debe tener fecha ≥ `CC_START` (antes el ledger lo ignoraba en silencio). `VoidDialog` en archivo propio (page.tsx no puede exportar componentes).
+- NC/bonificación/ND sin observación guardan el detalle de sus ítems en `notes` (es lo que muestra el estado de cuenta). Factura/interno guardan `due_date` explícito (fecha + `payment_days` por defecto).
+- "Pendientes de cobro" usa el ledger completo (a hoy), no el período elegido. Totales del listado excluyen anulados salvo con filtro "Anulados".
+- Prueba manual en navegador con "PRUEBA T-018" (todo borrado). PDF: 200 y `application/pdf` (~760 KB por el PNG del logo); no se pudo ver renderizado desde el navegador automatizado.
 
 ## Revisión
-_(completa el revisor)_
+Veredicto: APROBADO
+Criterios: CA1 ✅ · CA2 ✅ · CA3 ✅ · CA4 ✅ (reintento una vez ante 23505) · CA5 ✅ · CA6 ✅ · CA7 ✅ · CA8 ✅ · CA9 ✅ (PDF no visto renderizado) · CA10 ✅ · CA11 ✅ · CA12 ✅
+Desvíos del implementador: todos correctos (fecha ≥ CC_START salvo saldo inicial evita que el ledger ignore en silencio; notes con detalle de ítems y due_date explícito son coherentes con el estado de cuenta; getStatement con historial completo filtrando por período es necesario para los pendientes y el FIFO).
+Hallazgos:
+1. [MENOR] src/lib/rates.ts:~70 — recalculateTripPrices saltea en silencio los recorridos con comprobante vigente (solo verificado con tsc) → tras cargar una tarifa nueva, esos recorridos conservan el precio viejo sin aviso → si molesta, informar la cantidad salteada en el mensaje de la acción de tarifas.
+2. [MENOR] src/app/(app)/finanzas/comprobantes/actions.ts:~115 — la unicidad recorrido↔comprobante se valida sin transacción (carrera aceptada en la spec, un solo operador) → sin acción.

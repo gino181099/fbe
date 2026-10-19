@@ -15,6 +15,15 @@ Una entrada por tarea terminada, **la más nueva arriba**. Formato fijo y breve 
 
 ---
 
+## 2026-10-19 · T-018 · Pantallas de cuenta corriente y comprobantes + PDF de comprobante interno
+- Resultado: `/finanzas/comprobantes` (filtros, totales, anular con motivo) y `/nuevo` (factura A/B/C, interno X numerado automático, ND/saldo inicial con ítems, NC/bonificación); cuenta del cliente con "Nuevo comprobante", factura/interno como líneas informativas, "Recorridos sin comprobante" y "Pendientes de cobro"; PDF `/api/comprobante/[id]` con logo y datos de la empresa; `updateTrip`/recálculo de tarifas respetan recorridos en comprobante vigente.
+- Archivos: `src/lib/{doc-number,document-rules,documents,db-errors,company,pdf-brand,document-pdf}.ts(x)` (+tests), `finanzas/comprobantes/**`, `finanzas/cuentas/[id]/page.tsx`, `ledger.ts`, `balances.ts`, `constants.ts`, `ventas/actions.ts`, `rates.ts`, `app-sidebar.tsx`, `next.config.ts`.
+- Datos: sin migración. Datos "PRUEBA T-018" (cliente 79, 3 recorridos, 5 comprobantes) creados desde la app y borrados.
+- Verificación: tsc · lint · npm test 100/100 · build OK · navegador: factura (saldo igual, quedan sin comprobante), número repetido → error, interno X 0001-00000001 + PDF 200 (404 para factura), ND 2 ítems, NC, saldo inicial, anular factura (libera recorridos, tachado), cambio de precio de recorrido en interno → error.
+- Revisión: APROBADO (0 bloqueantes, 0 importantes). Menores pendientes: `recalculateTripPrices` saltea en silencio recorridos con comprobante (informar cuántos); unicidad recorrido↔comprobante sin transacción (riesgo aceptado por la spec). PDF no visto renderizado; pesa ~760 KB por el logo.
+- Pendiente: PDF pesa ~760 KB por el logo PNG (convendría una versión liviana); no se vio el PDF renderizado (solo status/tamaño); NC con relacionado no probada en UI.
+- Costo: spec ~35k (tanda T-018..T-020 105k) · impl 227k · rev 36k tokens · 21 min
+
 ## 2026-10-19 · T-017 · Cuenta corriente con comprobantes: modelo, corte y saldo inicial
 - Resultado: tablas `document`/`document_item` (anular = `voided_at`, D4 alternativa) y `client.payment_days`; ledger puro con corte 19/10/2026, FIFO y vencimientos; saldos, estado de cuenta y PDF calculados desde el corte. Borrar recorrido en comprobante / cliente con comprobantes da error legible.
 - Archivos: `src/lib/ledger.ts` (+test), `src/lib/balances.ts`, `src/lib/constants.ts`, `src/db/schema.ts`, `src/lib/statement.ts`, `finanzas/cuentas/[id]/page.tsx`, `statement-pdf.tsx`, acciones de ventas y contactos.

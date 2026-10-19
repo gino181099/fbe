@@ -6,6 +6,7 @@ import {
   type DocumentType,
   type MovementKind,
 } from "./constants";
+import { formatDocNumber } from "./doc-number";
 
 export type LedgerTrip = {
   id: number;
@@ -133,13 +134,7 @@ export function addDays(date: string, days: number) {
 export function documentNumber(
   d: Pick<LedgerDocument, "letter" | "pos" | "number">,
 ) {
-  const num =
-    d.number == null
-      ? null
-      : d.pos == null
-        ? String(d.number).padStart(8, "0")
-        : `${String(d.pos).padStart(4, "0")}-${String(d.number).padStart(8, "0")}`;
-  return [d.letter, num].filter(Boolean).join(" ");
+  return formatDocNumber(d.letter, d.pos, d.number);
 }
 
 export function tripDescription(
@@ -174,15 +169,20 @@ function collectionDescription(c: LedgerCollection) {
     .join(" ");
 }
 
-// Orden en el mismo día: saldo inicial → débitos → créditos.
+// Orden en el mismo día: saldo inicial → débitos (y factura/interno informativos) → créditos.
 const rank = (kind: MovementKind) =>
   kind === "saldo_inicial"
     ? 0
-    : kind === "recorrido" || kind === "nota_debito"
+    : kind === "recorrido" ||
+        kind === "nota_debito" ||
+        kind === "factura" ||
+        kind === "interno"
       ? 1
       : 2;
 
 const DOC_LABELS: Partial<Record<DocumentType, string>> = {
+  factura: "Factura",
+  interno: "Comprobante interno",
   nota_debito: "Nota de débito",
   nota_credito: "Nota de crédito",
   bonificacion: "Bonificación",
@@ -191,7 +191,8 @@ const DOC_LABELS: Partial<Record<DocumentType, string>> = {
 /**
  * Arma la cuenta corriente desde el corte: líneas ordenadas con saldo corrido (desde 0), débitos con
  * lo aplicado (asignaciones explícitas y luego FIFO a lo más viejo) y el sobrante de créditos (saldo a favor).
- * Factura/interno no mueven saldo (solo dan vencimiento a sus recorridos); los anulados no cuentan.
+ * Factura/interno no mueven saldo (línea informativa sin importe; dan vencimiento a sus recorridos);
+ * los anulados no cuentan.
  */
 export function buildLedger(input: LedgerInput) {
   const cutoff = input.cutoff ?? CC_START;
@@ -267,7 +268,25 @@ export function buildLedger(input: LedgerInput) {
   for (const d of docs) {
     // Solo el saldo inicial cuenta aunque sea anterior al corte.
     if (d.date < cutoff) continue;
-    if (d.type === "nota_debito") {
+    if (GROUPING_TYPES.includes(d.type)) {
+      // Línea informativa: documenta recorridos ya contados (no mueve el saldo).
+      const n = d.items.filter((it) => it.tripId != null).length;
+      moves.push({
+        date: d.date,
+        kind: d.type as "factura" | "interno",
+        description: [
+          DOC_LABELS[d.type],
+          documentNumber(d) || null,
+          `· ${n} ${n === 1 ? "recorrido" : "recorridos"}`,
+          d.notes ? `– ${d.notes}` : null,
+        ]
+          .filter(Boolean)
+          .join(" "),
+        debit: 0,
+        credit: 0,
+        order: order++,
+      });
+    } else if (d.type === "nota_debito") {
       const description = documentDescription(d, DOC_LABELS.nota_debito!);
       moves.push({
         date: d.date,

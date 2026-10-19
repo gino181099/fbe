@@ -34,9 +34,11 @@ export const DOCUMENT_TYPE_LABELS: Record<DocumentType, string> = {
   saldo_inicial: "Saldo inicial",
 };
 
-/** Tipos de línea del estado de cuenta. */
+/** Tipos de línea del estado de cuenta (factura/interno: líneas informativas sin importe). */
 export const MOVEMENT_KINDS = [
   "recorrido",
+  "factura",
+  "interno",
   "saldo_inicial",
   "nota_debito",
   "nota_credito",
@@ -47,6 +49,8 @@ export const MOVEMENT_KINDS = [
 export type MovementKind = (typeof MOVEMENT_KINDS)[number];
 export const MOVEMENT_KIND_LABELS: Record<MovementKind, string> = {
   recorrido: "Recorrido",
+  factura: "Factura",
+  interno: "Comprobante interno",
   saldo_inicial: "Saldo inicial",
   nota_debito: "Nota de débito",
   nota_credito: "Nota de crédito",

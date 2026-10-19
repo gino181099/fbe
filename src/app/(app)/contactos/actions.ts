@@ -7,6 +7,7 @@ import { z } from "zod";
 import { db } from "@/db";
 import { CLIENT_STATUSES, CLIENT_TYPES, clientNotes, clients, collections, documents, rates, routes, trips } from "@/db/schema";
 import { LEAD_PRIORITIES, LEAD_STAGE_LABELS, LEAD_STAGES } from "@/lib/constants";
+import { isUniqueViolation } from "@/lib/db-errors";
 import { today } from "@/lib/format";
 import { firstError, formToObject, zDate, zMoney, zText } from "@/lib/forms";
 import { type ActionResult, checkPermission } from "@/lib/permissions";
@@ -32,11 +33,6 @@ function nullify<T extends Record<string, unknown>>(obj: T) {
   return Object.fromEntries(Object.entries(obj).map(([k, v]) => [k, v ?? null])) as {
     [K in keyof T]-?: undefined extends T[K] ? Exclude<T[K], undefined> | null : T[K];
   };
-}
-
-function isUniqueViolation(e: unknown) {
-  const err = e as { code?: string; cause?: { code?: string } };
-  return err?.code === "23505" || err?.cause?.code === "23505";
 }
 
 export async function createClient(formData: FormData): Promise<ActionResult> {

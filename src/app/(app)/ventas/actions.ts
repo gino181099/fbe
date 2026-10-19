@@ -5,14 +5,11 @@ import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { db } from "@/db";
 import { clients, DEFAULT_FUEL_SUPPLIER, trips } from "@/db/schema";
+import { pgCode } from "@/lib/db-errors";
+import { tripsInActiveDocument } from "@/lib/documents";
 import { firstError, formToObject, zDate, zIntOpt, zMoneyOpt, zText } from "@/lib/forms";
 import { type ActionResult, checkPermission } from "@/lib/permissions";
 import { findRate, ratesInForce } from "@/lib/rates";
-
-function pgCode(e: unknown) {
-  const err = e as { code?: string; cause?: { code?: string } };
-  return err?.code ?? err?.cause?.code;
-}
 
 // ON DELETE RESTRICT dispara 23001 (restrict_violation); NO ACTION, 23503 (foreign_key_violation).
 const isInUse = (e: unknown) => ["23001", "23503"].includes(pgCode(e) ?? "");
@@ -115,6 +112,21 @@ export async function updateTrip(id: number, formData: FormData): Promise<Action
   if (error) return error;
   const built = await buildTrip(formData);
   if ("error" in built) return { ok: false, error: built.error! };
+  // Un recorrido en factura/interno vigente no cambia precio, cliente ni fecha (se anula el comprobante primero).
+  const [[current], inDocument] = await Promise.all([
+    db.select({ price: trips.price, clientId: trips.clientId, date: trips.date }).from(trips).where(eq(trips.id, id)),
+    tripsInActiveDocument([id]),
+  ]);
+  if (!current) return { ok: false, error: "El recorrido no existe." };
+  const doc = inDocument.get(id);
+  if (
+    doc &&
+    (current.price !== built.values.price ||
+      current.clientId !== built.values.clientId ||
+      current.date !== built.values.date)
+  ) {
+    return { ok: false, error: `Está en ${doc.label}.` };
+  }
   await db.update(trips).set(built.values).where(eq(trips.id, id));
   revalidate();
   return { ok: true, message: "Recorrido actualizado" };

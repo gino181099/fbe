@@ -85,13 +85,16 @@ describe("buildLedger · corte", () => {
     expect(l.balance).toBe(200);
   });
 
-  it("factura/interno no generan movimiento ni duplican la deuda; dan el vencimiento", () => {
+  it("factura/interno: línea informativa sin importe, no duplican la deuda; dan el vencimiento", () => {
     const l = ledger({
       trips: [trip({ id: 7, price: 1000 })],
       documents: [
         doc({
           id: 1,
           type: "factura",
+          letter: "A",
+          pos: 1,
+          number: 99,
           date: "2026-10-21",
           dueDate: "2026-11-05",
           amount: 1000,
@@ -101,9 +104,43 @@ describe("buildLedger · corte", () => {
         }),
       ],
     });
-    expect(rows(l)).toEqual([["2026-10-20", "recorrido", 1000, 0, 1000]]);
+    expect(rows(l)).toEqual([
+      ["2026-10-20", "recorrido", 1000, 0, 1000],
+      ["2026-10-21", "factura", 0, 0, 1000],
+    ]);
+    expect(l.lines[1].description).toBe("Factura A 0001-00000099 · 1 recorrido");
     expect(l.balance).toBe(1000);
-    expect(l.debits[0].dueDate).toBe("2026-11-05");
+    expect(l.totalDebit).toBe(1000);
+    expect(l.debits).toHaveLength(1);
+    expect(l.debits[0]).toMatchObject({ tripId: 7, documentId: null, dueDate: "2026-11-05" });
+  });
+
+  it("interno informativo: mismo día va con los débitos, antes de los créditos", () => {
+    const l = ledger({
+      trips: [trip({ id: 7, price: 1000 }), trip({ id: 8, price: 500 })],
+      collections: [cobro({ date: "2026-10-20", amount: 200 })],
+      documents: [
+        doc({
+          type: "interno",
+          letter: "X",
+          pos: 1,
+          number: 3,
+          notes: "octubre",
+          amount: 1500,
+          items: [
+            { tripId: 7, date: "2026-10-20", description: "x", amount: 1000 },
+            { tripId: 8, date: "2026-10-20", description: "y", amount: 500 },
+          ],
+        }),
+      ],
+    });
+    expect(rows(l)).toEqual([
+      ["2026-10-20", "recorrido", 1000, 0, 1000],
+      ["2026-10-20", "recorrido", 500, 0, 1500],
+      ["2026-10-20", "interno", 0, 0, 1500],
+      ["2026-10-20", "cobro", 0, 200, 1300],
+    ]);
+    expect(l.lines[2].description).toBe("Comprobante interno X 0001-00000003 · 2 recorridos – octubre");
   });
 
   it("comprobante sin vencimiento: su fecha + días de pago", () => {
@@ -150,7 +187,21 @@ describe("buildLedger · corte", () => {
       ],
     });
     expect(l.balance).toBe(1000);
+    expect(l.lines.map((x) => x.kind)).toEqual(["recorrido"]);
     expect(l.debits[0].dueDate).toBe("2026-11-19");
+  });
+
+  it("los débitos exponen su origen (recorrido o comprobante)", () => {
+    const l = ledger({
+      trips: [trip({ id: 7, price: 100 })],
+      documents: [
+        doc({ id: 4, type: "nota_debito", amount: 50, items: [{ tripId: null, date: "2026-10-20", description: "x", amount: 50 }] }),
+      ],
+    });
+    expect(l.debits.map((d) => [d.kind, d.tripId, d.documentId])).toEqual([
+      ["recorrido", 7, null],
+      ["nota_debito", null, 4],
+    ]);
   });
 });
 

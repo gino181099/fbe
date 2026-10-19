@@ -18,12 +18,6 @@ Prioridad: `Alta` · `Media` · `Baja`.
 
 > Rediseño de Finanzas (T-017…T-022), acordado el 2026-10-19. Plan completo: `C:\Users\ginof\.claude\plans\vamos-a-hacer-algunos-buzzing-diffie.md`. Hacerlas en orden.
 
-### T-018 · Pantallas de cuenta corriente y comprobantes + PDF de comprobante interno
-- Estado: Aprobada
-- Prioridad: Alta
-- Spec: specs/T-018-cc-pantallas-comprobantes.md
-- Descripción: `/finanzas/cuentas/[id]` con movimientos tipificados y saldo corrido, y listas de recorridos "sin comprobante" y "sin cancelar". Acciones: registrar factura, emitir comprobante interno, ND/NC/bonificación y saldo inicial con ítems. `/finanzas/comprobantes`: listado con filtros. El alta se hace con cliente + período → tildar recorridos sin comprobante (+ ítems libres). PDF del comprobante interno (X 0001-00000001, numeración automática desde 1).
-
 ### T-019 · Recibos numerados con PDF
 - Estado: Aprobada
 - Prioridad: Alta
@@ -100,6 +94,11 @@ Prioridad: `Alta` · `Media` · `Baja`.
 ---
 
 ## ✅ Hechas
+
+### T-018 · Pantallas de cuenta corriente y comprobantes + PDF de comprobante interno
+- Estado: Hecha (2026-10-19)
+- Spec: specs/T-018-cc-pantallas-comprobantes.md
+- Descripción: `/finanzas/comprobantes` (listado, alta desde recorridos sin comprobante, anulación), ND/NC/bonificación/saldo inicial con ítems y PDF del comprobante interno con logo y numeración automática.
 
 ### T-017 · Cuenta corriente con comprobantes: modelo, corte y saldo inicial
 - Estado: Hecha (2026-10-19)
