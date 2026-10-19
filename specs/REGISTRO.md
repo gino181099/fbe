@@ -15,6 +15,15 @@ Una entrada por tarea terminada, **la más nueva arriba**. Formato fijo y breve 
 
 ---
 
+## 2026-10-19 · T-021 · Proveedores y cuenta corriente con proveedores
+- Resultado: `/finanzas/proveedores` (ABM, filtros texto/rubro/estado, saldo, total a pagar) y `/[id]` (movimientos con saldo corrido, desde/hasta con saldo anterior, registrar/editar/borrar pagos); estaciones suman gasoil por día + cargas extras; pestaña Combustible suma `supplier_payment`. Sidebar "Proveedores".
+- Archivos: `src/lib/{supplier-ledger(+test),suppliers,db-errors,constants}.ts`, `schema.ts`, `finanzas/{actions,fields}.tsx?`, `finanzas/gastos/page.tsx`, `finanzas/proveedores/**`, `app-sidebar.tsx`.
+- Datos: `0009_proveedores` (supplier, supplier_payment, expense.supplier_id/paid + backfill idempotente): 2 proveedores, 19 gastos vinculados; montos sin cambios; saldos Axion 9.911.285,13 / Shell −176.047,37 iguales antes/después. Datos PRUEBA creados por script y borrados.
+- Verificación: tsc · lint · npm test 135/135 · build OK · script contra la base (saldos, pago, duplicado 23505, borrar en uso 23001). Sin clics en navegador.
+- Revisión: APROBADO (0 bloqueantes, 0 importantes). Menores pendientes: Combustible compara nombres de estación exactos y el detalle usa lower(trim) (podrían divergir); una estación sin gastos ni pagos se puede borrar (sin FK desde trip/fuel_load); puente de `saveExpense` por nombre hasta T-022.
+- Pendiente: T-022 (form de gastos con proveedor/a pagar); hasta entonces `saveExpense` vincula `supplier_id` por nombre.
+- Costo: spec ~39k (tanda T-021..T-022 78k) · impl 138k · rev 32k tokens · 11 min
+
 ## 2026-10-19 · T-019 · Recibos numerados con PDF
 - Resultado: `/finanzas/recibos` (listado, filtros, total, PDF, anular) y `/nuevo` (saldo, recorridos pendientes tildables, monto ≥ Σ tildados, excedente FIFO); recibo X 0001-NNNNNNNN correlativo; PDF con monto en letras; ledger/saldos/Inicio/reportes cuentan recibos vigentes; Cobros queda como historial de solo lectura; "Registrar recibo" en la cuenta corriente.
 - Archivos: `src/lib/{amount-words,receipts,receipt-pdf}.ts(x)`, `ledger.ts` (+tests), `balances.ts`, `reports.ts`, `rates.ts`, `finanzas/recibos/**`, `api/recibo/[id]`, `finanzas/{cobros,cuentas/[id]}`, `(app)/page.tsx`, acciones de ventas/contactos, sidebar.

@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { and, asc, desc, eq, gte, isNotNull, lte, type SQL } from "drizzle-orm";
+import { and, asc, desc, eq, gte, isNotNull, lte, type SQL, sql } from "drizzle-orm";
 import { Pencil, Plus } from "lucide-react";
 import { ConfirmButton } from "@/components/confirm-button";
 import { FormDialog } from "@/components/form-dialog";
@@ -12,8 +12,9 @@ import { NativeSelect, NativeSelectOption } from "@/components/ui/native-select"
 import { Table, TableBody, TableCell, TableFooter, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { db } from "@/db";
-import { drivers, EXPENSE_CATEGORIES, expenses, fuelLoads, trips, vehicles } from "@/db/schema";
+import { drivers, EXPENSE_CATEGORIES, expenses, fuelLoads, supplierPayments, suppliers, trips, vehicles } from "@/db/schema";
 import { sumOf } from "@/lib/balances";
+import { FUEL_SUPPLIER_CATEGORY } from "@/lib/constants";
 import { formatDate, formatMoney, formatNumber, today } from "@/lib/format";
 import { can, requirePermission } from "@/lib/permissions";
 import { deleteExpense, deleteFuelLoad, saveExpense, saveFuelLoad } from "../actions";
@@ -48,7 +49,12 @@ export default async function ExpensesPage({ searchParams }: PageProps<"/finanza
   const categoryFilters = categoria ? [...expFilters, eq(expenses.category, categoria)] : [...expFilters];
   if (vehiculo) categoryFilters.push(eq(expenses.vehicleId, vehiculo));
 
-  const [expenseRows, byCategory, loads, tripFuel, fuelPayments, conceptRows, driverList, vehicleList] = await Promise.all([
+  const payFilters: SQL[] = [];
+  if (desde) payFilters.push(gte(supplierPayments.date, desde));
+  if (hasta) payFilters.push(lte(supplierPayments.date, hasta));
+  const stationName = sql<string | null>`coalesce(${suppliers.name}, ${expenses.supplier})`;
+
+  const [expenseRows, byCategory, loads, tripFuel, fuelPayments, supplierPaid, conceptRows, driverList, vehicleList] = await Promise.all([
     db
       .select({ expense: expenses, vehiclePlate: vehicles.plate })
       .from(expenses)
@@ -71,11 +77,20 @@ export default async function ExpensesPage({ searchParams }: PageProps<"/finanza
       .from(trips)
       .where(and(...tripFilters))
       .groupBy(trips.fuelSupplier),
+    // Pagos a estación: gastos de combustible (por proveedor vinculado o, si no, el texto) + pagos a
+    // proveedor (T-021). Mismo criterio que la cuenta del proveedor.
     db
-      .select({ supplier: expenses.supplier, total: sumOf(expenses.amount) })
+      .select({ supplier: stationName, total: sumOf(expenses.amount) })
       .from(expenses)
+      .leftJoin(suppliers, eq(suppliers.id, expenses.supplierId))
       .where(and(...expFilters, eq(expenses.category, "combustible")))
-      .groupBy(expenses.supplier),
+      .groupBy(stationName),
+    db
+      .select({ supplier: suppliers.name, category: suppliers.category, total: sumOf(supplierPayments.amount) })
+      .from(supplierPayments)
+      .innerJoin(suppliers, eq(suppliers.id, supplierPayments.supplierId))
+      .where(and(...payFilters))
+      .groupBy(suppliers.name, suppliers.category),
     db.selectDistinct({ concept: expenses.concept }).from(expenses).where(isNotNull(expenses.concept)).orderBy(asc(expenses.concept)),
     db.select({ id: drivers.id, name: drivers.name, active: drivers.active }).from(drivers).orderBy(asc(drivers.name)),
     db
@@ -108,6 +123,9 @@ export default async function ExpensesPage({ searchParams }: PageProps<"/finanza
     station(l.supplier).liters += l.liters ?? 0;
   }
   for (const p of fuelPayments) station(p.supplier).paid += p.total;
+  // Pagos a proveedor: solo de estaciones (rubro Combustible o con consumo/pagos en la tabla).
+  for (const p of supplierPaid)
+    if (stations.has(p.supplier) || p.category === FUEL_SUPPLIER_CATEGORY) station(p.supplier).paid += p.total;
   const stationRows = [...stations.entries()].sort((a, b) => a[0].localeCompare(b[0]));
   const fuelTotals = stationRows.reduce(
     (acc, [, s]) => ({ consumption: acc.consumption + s.trips + s.loads, paid: acc.paid + s.paid }),
@@ -304,8 +322,9 @@ export default async function ExpensesPage({ searchParams }: PageProps<"/finanza
             </Table>
           </div>
           <p className="text-xs text-muted-foreground">
-            Saldo positivo: combustible consumido todavía no pagado a la estación. Los pagos se registran como gastos
-            de categoría Combustible indicando la estación.
+            Saldo positivo: combustible consumido todavía no pagado a la estación. Los pagos se registran desde la
+            cuenta de la estación en <Link href="/finanzas/proveedores" className="underline">Proveedores</Link> (los
+            gastos de categoría Combustible ya cargados siguen contando como pagos).
           </p>
           <h2 className="mt-2 text-sm font-medium">Cargas extras (no asociadas a un recorrido)</h2>
           {loads.length === 0 ? (

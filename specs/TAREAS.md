@@ -24,12 +24,6 @@ Prioridad: `Alta` · `Media` · `Baja`.
 - Spec: specs/T-020-vencimientos-semaforo.md
 - Descripción: El vencimiento es el del comprobante que incluye al débito o, si no tiene, la fecha + `payment_days` del cliente. Semáforo: al día / verde ≤30 días de atraso / amarillo ≤60 / rojo >60. Se muestra en el listado de cuentas corrientes (saldo, vencido, filtro por mora), en el estado de cuenta y en su PDF.
 
-### T-021 · Proveedores y cuenta corriente con proveedores
-- Estado: Aprobada
-- Prioridad: Media
-- Spec: specs/T-021-proveedores-cc.md
-- Descripción: Tabla `supplier` (nombre único, CUIT, factura sí/no, rubro, activo, notas), con ABM en `/finanzas/proveedores`. Backfill de Axion Sarmiento y Shell Maza. `supplier_payment` para los pagos. Saldo del proveedor = gastos "a pagar" − pagos; las estaciones suman además el gasoil de recorridos y `fuel_load`, como hoy. Detalle `/finanzas/proveedores/[id]` con movimientos.
-
 ### T-022 · Gastos nuevos (general o por vehículo, con comprobante)
 - Estado: Aprobada
 - Prioridad: Media
@@ -88,6 +82,11 @@ Prioridad: `Alta` · `Media` · `Baja`.
 ---
 
 ## ✅ Hechas
+
+### T-021 · Proveedores y cuenta corriente con proveedores
+- Estado: Hecha (2026-10-19)
+- Spec: specs/T-021-proveedores-cc.md
+- Descripción: `/finanzas/proveedores` (ABM y cuenta corriente con pagos). Backfill de Axion Sarmiento y Shell Maza; saldos de estaciones sin cambios.
 
 ### T-019 · Recibos numerados con PDF
 - Estado: Hecha (2026-10-19)

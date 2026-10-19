@@ -1,10 +1,11 @@
 "use server";
 
-import { eq } from "drizzle-orm";
+import { and, eq, sql } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { db } from "@/db";
-import { EXPENSE_CATEGORIES, expenses, fuelLoads } from "@/db/schema";
+import { EXPENSE_CATEGORIES, expenses, fuelLoads, supplierPayments, suppliers } from "@/db/schema";
+import { isInUse, isUniqueViolation } from "@/lib/db-errors";
 import { firstError, formToObject, zDate, zIntOpt, zMoney, zMoneyOpt, zText } from "@/lib/forms";
 import { type ActionResult, checkPermission } from "@/lib/permissions";
 
@@ -30,6 +31,15 @@ const expenseSchema = z.object({
   driverId: zIntOpt,
 });
 
+async function supplierIdByName(name: string | undefined) {
+  if (!name) return null;
+  const [s] = await db
+    .select({ id: suppliers.id })
+    .from(suppliers)
+    .where(sql`lower(${suppliers.name}) = lower(${name.trim()})`);
+  return s?.id ?? null;
+}
+
 export async function saveExpense(id: number | null, formData: FormData): Promise<ActionResult> {
   const { error } = await checkPermission("finanzas");
   if (error) return error;
@@ -39,6 +49,8 @@ export async function saveExpense(id: number | null, formData: FormData): Promis
     ...parsed.data,
     concept: parsed.data.concept ?? null,
     supplier: parsed.data.supplier ?? null,
+    // T-021: hasta que el formulario elija proveedor (T-022), se vincula por nombre.
+    supplierId: await supplierIdByName(parsed.data.supplier),
     notes: parsed.data.notes ?? null,
     vehicleId: parsed.data.vehicleId ?? null,
     driverId: parsed.data.driverId ?? null,
@@ -90,4 +102,90 @@ export async function deleteFuelLoad(id: number): Promise<ActionResult> {
   await db.delete(fuelLoads).where(eq(fuelLoads.id, id));
   revalidate();
   return { ok: true, message: "Carga eliminada" };
+}
+
+/* ─────────────────────────────── Proveedores ───────────────────────────── */
+
+const supplierSchema = z.object({
+  name: z.string({ error: "El nombre es obligatorio" }).min(1, "El nombre es obligatorio").max(200, "El nombre es demasiado largo"),
+  cuit: z.string().max(20, "CUIT inválido").optional(),
+  invoices: z.enum(["si", "no"], { error: "Indicá si emite factura" }).default("si"),
+  category: z.string().max(100, "El rubro es demasiado largo").optional(),
+  notes: zText,
+});
+
+export async function saveSupplier(id: number | null, formData: FormData): Promise<ActionResult> {
+  const { error } = await checkPermission("finanzas");
+  if (error) return error;
+  const parsed = supplierSchema.safeParse(formToObject(formData));
+  if (!parsed.success) return { ok: false, error: firstError(parsed.error) };
+  const values = {
+    // formToObject ya recorta los extremos; además se unifican los espacios internos.
+    name: parsed.data.name.replace(/\s+/g, " "),
+    cuit: parsed.data.cuit ?? null,
+    invoices: parsed.data.invoices === "si",
+    category: parsed.data.category ?? null,
+    notes: parsed.data.notes ?? null,
+  };
+  try {
+    if (id) await db.update(suppliers).set(values).where(eq(suppliers.id, id));
+    else await db.insert(suppliers).values(values);
+  } catch (e) {
+    if (isUniqueViolation(e)) return { ok: false, error: "Ya existe un proveedor con ese nombre" };
+    throw e;
+  }
+  revalidate();
+  return { ok: true, message: id ? "Proveedor actualizado" : "Proveedor creado" };
+}
+
+export async function toggleSupplier(id: number, active: boolean): Promise<ActionResult> {
+  const { error } = await checkPermission("finanzas");
+  if (error) return error;
+  await db.update(suppliers).set({ active }).where(eq(suppliers.id, id));
+  revalidate();
+  return { ok: true, message: active ? "Proveedor activado" : "Proveedor desactivado" };
+}
+
+export async function deleteSupplier(id: number): Promise<ActionResult> {
+  const { error } = await checkPermission("finanzas");
+  if (error) return error;
+  try {
+    await db.delete(suppliers).where(eq(suppliers.id, id));
+  } catch (e) {
+    if (isInUse(e)) return { ok: false, error: "No se puede eliminar: tiene gastos o pagos; desactivalo" };
+    throw e;
+  }
+  revalidate();
+  return { ok: true, message: "Proveedor eliminado" };
+}
+
+const supplierPaymentSchema = z.object({
+  date: zDate,
+  amount: zMoney.refine((n) => n > 0, "El monto debe ser mayor a cero"),
+  method: z.string().max(100, "El medio de pago es demasiado largo").optional(),
+  notes: zText,
+});
+
+export async function saveSupplierPayment(supplierId: number, id: number | null, formData: FormData): Promise<ActionResult> {
+  const { error } = await checkPermission("finanzas");
+  if (error) return error;
+  const parsed = supplierPaymentSchema.safeParse(formToObject(formData));
+  if (!parsed.success) return { ok: false, error: firstError(parsed.error) };
+  const values = { ...parsed.data, method: parsed.data.method ?? null, notes: parsed.data.notes ?? null };
+  if (id)
+    await db
+      .update(supplierPayments)
+      .set(values)
+      .where(and(eq(supplierPayments.id, id), eq(supplierPayments.supplierId, supplierId)));
+  else await db.insert(supplierPayments).values({ ...values, supplierId });
+  revalidate();
+  return { ok: true, message: id ? "Pago actualizado" : "Pago registrado" };
+}
+
+export async function deleteSupplierPayment(id: number): Promise<ActionResult> {
+  const { error } = await checkPermission("finanzas");
+  if (error) return error;
+  await db.delete(supplierPayments).where(eq(supplierPayments.id, id));
+  revalidate();
+  return { ok: true, message: "Pago eliminado" };
 }

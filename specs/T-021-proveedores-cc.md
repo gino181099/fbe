@@ -1,6 +1,6 @@
 # T-021 · Proveedores y cuenta corriente con proveedores
 
-- Estado: Aprobada
+- Estado: Implementada
 - Prioridad: Media
 - Riesgo: Alto <!-- esquema + migración con backfill sobre producción + saldos -->
 - Fecha: 2026-10-19
@@ -13,16 +13,16 @@ Hoy el proveedor es texto libre (`expense.supplier`, `trip.fuel_supplier`, `fuel
 ABM de proveedores en `/finanzas/proveedores` con saldo por proveedor, y detalle `/finanzas/proveedores/[id]` con movimientos y saldo corrido, donde se registran pagos. Las estaciones muestran el mismo saldo que la pestaña Combustible.
 
 ## Criterios de aceptación
-- [ ] CA1 Existe la tabla `supplier` (nombre único, CUIT, factura sí/no, rubro, activo, notas) y `supplier_payment`; `expense` tiene `supplier_id` (FK restrict, nullable) y `paid` (bool, default `true`).
-- [ ] CA2 Tras migrar existen **Axion Sarmiento** y **Shell Maza** (rubro "Combustible") más un proveedor por cada texto distinto de `expense.supplier`, `trip.fuel_supplier` y `fuel_load.supplier`; cada `expense` con `supplier` texto tiene su `supplier_id`. Correr el backfill dos veces no duplica nada.
-- [ ] CA3 `/finanzas/proveedores` lista proveedores (nombre, rubro, CUIT, factura sí/no, estado, saldo) con filtro por texto/rubro/activos; alta/edición en `FormDialog`, activar/desactivar y borrar (si tiene movimientos: "No se puede eliminar: tiene gastos o pagos; desactivalo").
-- [ ] CA4 Nombre duplicado (ignorando mayúsculas y espacios extremos) da "Ya existe un proveedor con ese nombre".
-- [ ] CA5 `/finanzas/proveedores/[id]` muestra movimientos ordenados con saldo corrido: gastos a pagar (debe), gastos contado (informativos, no mueven saldo), pagos (haber); para estaciones además gasoil de recorridos (agrupado por día) y cargas extras (debe), y los gastos de categoría combustible como pagos (haber).
-- [ ] CA6 Desde el detalle se registra, edita y borra un pago (fecha, monto, medio, observaciones) y el saldo se actualiza.
-- [ ] CA7 La pestaña Combustible de `/finanzas/gastos` suma los `supplier_payment` de cada estación en "Pagado"; su saldo por estación coincide con el del detalle del proveedor (sin filtro de fechas).
-- [ ] CA8 Inicio (T-016) y Flota (T-001) muestran los mismos números que antes: `supplier_payment` **no** es gasto en reportes.
-- [ ] CA9 Lógica de movimientos/saldo en función pura con tests Vitest (vacío, contado, a pagar, pagos, estación con gasoil y cargas, saldo anterior con `desde`).
-- [ ] CA10 Sidebar de Finanzas tiene "Proveedores"; todo requiere `finanzas` (ver) y las acciones `finanzas` (editar).
+- [x] CA1 Existe la tabla `supplier` (nombre único, CUIT, factura sí/no, rubro, activo, notas) y `supplier_payment`; `expense` tiene `supplier_id` (FK restrict, nullable) y `paid` (bool, default `true`).
+- [x] CA2 Tras migrar existen **Axion Sarmiento** y **Shell Maza** (rubro "Combustible") más un proveedor por cada texto distinto de `expense.supplier`, `trip.fuel_supplier` y `fuel_load.supplier`; cada `expense` con `supplier` texto tiene su `supplier_id`. Correr el backfill dos veces no duplica nada.
+- [x] CA3 `/finanzas/proveedores` lista proveedores (nombre, rubro, CUIT, factura sí/no, estado, saldo) con filtro por texto/rubro/activos; alta/edición en `FormDialog`, activar/desactivar y borrar (si tiene movimientos: "No se puede eliminar: tiene gastos o pagos; desactivalo").
+- [x] CA4 Nombre duplicado (ignorando mayúsculas y espacios extremos) da "Ya existe un proveedor con ese nombre".
+- [x] CA5 `/finanzas/proveedores/[id]` muestra movimientos ordenados con saldo corrido: gastos a pagar (debe), gastos contado (informativos, no mueven saldo), pagos (haber); para estaciones además gasoil de recorridos (agrupado por día) y cargas extras (debe), y los gastos de categoría combustible como pagos (haber).
+- [x] CA6 Desde el detalle se registra, edita y borra un pago (fecha, monto, medio, observaciones) y el saldo se actualiza.
+- [x] CA7 La pestaña Combustible de `/finanzas/gastos` suma los `supplier_payment` de cada estación en "Pagado"; su saldo por estación coincide con el del detalle del proveedor (sin filtro de fechas).
+- [x] CA8 Inicio (T-016) y Flota (T-001) muestran los mismos números que antes: `supplier_payment` **no** es gasto en reportes.
+- [x] CA9 Lógica de movimientos/saldo en función pura con tests Vitest (vacío, contado, a pagar, pagos, estación con gasoil y cargas, saldo anterior con `desde`).
+- [x] CA10 Sidebar de Finanzas tiene "Proveedores"; todo requiere `finanzas` (ver) y las acciones `finanzas` (editar).
 
 ## Diseño
 ### Datos
@@ -50,11 +50,11 @@ Módulo `finanzas`: `view` para ver listado/detalle, `edit` para ABM y pagos.
 - No tocar: `src/lib/reports.ts` (Inicio) ni la query de gastos de `src/app/(app)/flota/page.tsx` (l.55–59).
 
 ## Plan
-- [ ] 1. Schema + constants; `npm run db:generate -- --name proveedores`; agregar backfill al SQL; `npm run db:migrate`; verificar conteos (proveedores creados, gastos con `supplier_id`).
-- [ ] 2. `supplier-ledger.ts` + tests.
-- [ ] 3. `suppliers.ts` (queries) y acciones.
-- [ ] 4. Listado y detalle; sidebar.
-- [ ] 5. Pestaña Combustible con pagos a proveedor.
+- [x] 1. Schema + constants; `npm run db:generate -- --name proveedores`; agregar backfill al SQL; `npm run db:migrate`; verificar conteos (proveedores creados, gastos con `supplier_id`).
+- [x] 2. `supplier-ledger.ts` + tests.
+- [x] 3. `suppliers.ts` (queries) y acciones.
+- [x] 4. Listado y detalle; sidebar.
+- [x] 5. Pestaña Combustible con pagos a proveedor.
 
 ## Verificación
 - `npx tsc --noEmit` · `npm run lint` · `npm test` · `npm run build`
@@ -77,7 +77,21 @@ Módulo `finanzas`: `view` para ver listado/detalle, `edit` para ABM y pagos.
 ---
 
 ## Notas de implementación
-_(completa el implementador: desvíos del plan, decisiones, archivos tocados)_
+- Migración `drizzle/0009_proveedores.sql`: DDL generado + backfill (estaciones, `DISTINCT ON lower(trim)` de `trip.fuel_supplier`/`fuel_load.supplier`/gastos combustible con rubro Combustible, resto de `expense.supplier` sin rubro; `UPDATE expense … supplier_id IS NULL` por `lower(trim)`). Resultado en producción: 2 proveedores (Axion Sarmiento id 1, Shell Maza id 2; no había otros textos), 19/19 gastos con texto vinculados (24.763.131,37). Re-ejecutado el backfill: sin duplicados ni cambios. Totales de `expense` (90 · 72.387.945,38), gasoil de `trip` y `fuel_load` idénticos antes/después.
+- Unicidad: `uniqueIndex("supplier_name_idx")` sobre `lower(name)` (expresión) + la acción guarda el nombre recortado y con espacios internos unificados; `23505` → "Ya existe un proveedor con ese nombre" (probado: `prueba zz` vs `PRUEBA ZZ` da 23505).
+- Saldos verificados por script (`tsx --conditions=react-server`): Axion 9.911.285,13 y Shell −176.047,37, iguales a la fórmula de la pestaña Combustible antes de migrar; pago PRUEBA de 1.000 bajó Axion a 9.910.285,13 y al borrarlo volvió; borrar Axion da 23001. Datos PRUEBA borrados.
+- Decisión extra: `saveExpense` (form actual) resuelve `supplier_id` por nombre del texto `supplier` (null si no existe) para que listado/detalle y pestaña Combustible no se desincronicen hasta T-022, que lo reemplaza por un selector.
+- Pestaña Combustible: los gastos combustible se agrupan por `coalesce(supplier.name, expense.supplier)`; los `supplier_payment` se suman solo a estaciones (nombre ya presente en la tabla o rubro Combustible), con los mismos filtros de fecha. El texto al pie ahora remite a Proveedores.
+- Vínculo estación ↔ recorridos/cargas por `lower(trim(nombre))` (sin FK); el campo nombre del form avisa que debe coincidir. Renombrar una estación corta ese vínculo (fuera de alcance).
+- `isInUse` agregado a `src/lib/db-errors.ts` (flota/ventas siguen con su copia local, no se tocaron).
+- Listado: filtro estado por defecto "Activos"; StatCard "Total a pagar" = suma de saldos positivos de lo listado. Detalle: sin `desde` muestra todo el historial (coincide con Combustible sin filtro).
+- Archivos: `src/db/schema.ts`, `src/lib/{constants,db-errors,supplier-ledger(+test),suppliers}.ts`, `src/app/(app)/finanzas/{actions.ts,fields.tsx,gastos/page.tsx,proveedores/page.tsx,proveedores/[id]/page.tsx}`, `src/components/app-sidebar.tsx`, `drizzle/0009_proveedores.sql` (+ meta).
+- No probado con clics en el navegador (páginas compilan en build; lógica probada por script y Vitest).
 
 ## Revisión
-_(completa el revisor solo si Riesgo: Alto; si no, "No aplica (riesgo bajo, autochequeo del implementador)")_
+Veredicto: APROBADO
+Criterios: CA1 ✅ · CA2 ✅ (migración idempotente, ON CONFLICT sobre lower(name)) · CA3 ✅ · CA4 ✅ · CA5 ✅ · CA6 ✅ · CA7 ✅ · CA8 ✅ (reports.ts y flota sin tocar) · CA9 ✅ · CA10 ✅. Sin prueba en navegador (declarado).
+Hallazgos:
+1. [MENOR] gastos/page.tsx:~125 — la pestaña Combustible compara el nombre de estación exacto (`stations.has(p.supplier)`, y agrupa `trips.fuelSupplier` crudo), mientras el detalle vincula por lower(trim) → si el texto de un recorrido difiere solo en mayúsculas/espacios del proveedor, aparecen dos filas y el saldo difiere entre ambas vistas. Hoy no ocurre (datos idénticos); normalizar clave si aparece.
+2. [MENOR] actions.ts deleteSupplier — una estación con solo gasoil/cargas por texto (sin gastos ni pagos) se puede borrar y su historial deja de verse en la cuenta; no hay FK. Aceptable por decisión de diseño (vínculo por nombre).
+3. [MENOR] saveExpense: el desvío de completar supplier_id por nombre es coherente con la pestaña Combustible y con el detalle; sin riesgo, T-022 lo reemplaza.

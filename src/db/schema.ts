@@ -12,6 +12,7 @@ import {
   timestamp,
   uniqueIndex,
 } from "drizzle-orm/pg-core";
+import { sql } from "drizzle-orm";
 import type { AdapterAccountType } from "next-auth/adapters";
 import { CLIENT_TYPES, COLLECTION_KINDS, DOCUMENT_TYPES, LEAD_STAGES } from "@/lib/constants";
 
@@ -365,6 +366,42 @@ export const receiptTrips = pgTable(
   (t) => [index("receipt_trip_receipt_idx").on(t.receiptId), index("receipt_trip_trip_idx").on(t.tripId)],
 );
 
+// Proveedor (T-021). Las estaciones se vinculan con trip.fuel_supplier / fuel_load.supplier por nombre.
+export const suppliers = pgTable(
+  "supplier",
+  {
+    id: integer("id").primaryKey().generatedAlwaysAsIdentity(),
+    name: text("name").notNull(),
+    cuit: text("cuit"),
+    // "Emite factura".
+    invoices: boolean("invoices").notNull().default(true),
+    // Rubro (texto libre con sugerencias SUPPLIER_CATEGORIES).
+    category: text("category"),
+    active: boolean("active").notNull().default(true),
+    notes: text("notes"),
+    createdAt: timestamp("created_at", { mode: "date" }).notNull().defaultNow(),
+  },
+  // Único ignorando mayúsculas (la acción guarda el nombre sin espacios extremos).
+  (t) => [uniqueIndex("supplier_name_idx").on(sql`lower(${t.name})`)],
+);
+
+// Pago a un proveedor: baja el saldo general (no se aplica a gastos puntuales). No es gasto en reportes.
+export const supplierPayments = pgTable(
+  "supplier_payment",
+  {
+    id: integer("id").primaryKey().generatedAlwaysAsIdentity(),
+    supplierId: integer("supplier_id")
+      .notNull()
+      .references(() => suppliers.id, { onDelete: "restrict" }),
+    date: date("date", { mode: "string" }).notNull(),
+    amount: money("amount").notNull(),
+    method: text("method"),
+    notes: text("notes"),
+    createdAt: timestamp("created_at", { mode: "date" }).notNull().defaultNow(),
+  },
+  (t) => [index("supplier_payment_supplier_date_idx").on(t.supplierId, t.date)],
+);
+
 export const EXPENSE_CATEGORIES =["combustible", "sueldo", "varios"] as const;
 export const expenseCategory = pgEnum("expense_category", EXPENSE_CATEGORIES);
 
@@ -378,6 +415,10 @@ export const expenses = pgTable(
     concept: text("concept"),
     // Proveedor: para combustible, la estación de servicio.
     supplier: text("supplier"),
+    // T-021: proveedor vinculado (el texto `supplier` queda como histórico) y si se pagó en el momento.
+    supplierId: integer("supplier_id").references(() => suppliers.id, { onDelete: "restrict" }),
+    // false = "a pagar": suma al saldo del proveedor hasta que se registren pagos.
+    paid: boolean("paid").notNull().default(true),
     amount: money("amount").notNull(),
     notes: text("notes"),
     vehicleId: integer("vehicle_id").references(() => vehicles.id, { onDelete: "restrict" }),
@@ -389,6 +430,7 @@ export const expenses = pgTable(
   (t) => [
     index("expense_date_idx").on(t.date),
     index("expense_vehicle_idx").on(t.vehicleId),
+    index("expense_supplier_idx").on(t.supplierId),
     uniqueIndex("expense_legacy_idx").on(t.legacySource, t.legacyId),
   ],
 );

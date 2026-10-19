@@ -2,8 +2,15 @@ import { Field } from "@/components/page-header";
 import { Input } from "@/components/ui/input";
 import { NativeSelect, NativeSelectOption } from "@/components/ui/native-select";
 import { Textarea } from "@/components/ui/textarea";
-import { DEFAULT_FUEL_SUPPLIER, type expenses, FUEL_SUPPLIERS, type fuelLoads } from "@/db/schema";
-import { VEHICLE_EXPENSE_CONCEPTS } from "@/lib/constants";
+import {
+  DEFAULT_FUEL_SUPPLIER,
+  type expenses,
+  FUEL_SUPPLIERS,
+  type fuelLoads,
+  type supplierPayments,
+  type suppliers,
+} from "@/db/schema";
+import { PAYMENT_METHODS, SUPPLIER_CATEGORIES, VEHICLE_EXPENSE_CONCEPTS } from "@/lib/constants";
 
 export function SupplierField({ defaultValue, className }: { defaultValue?: string | null; className?: string }) {
   return (
@@ -109,6 +116,78 @@ export function FuelLoadFields({ value, defaultDate }: { value?: typeof fuelLoad
       </Field>
       <SupplierField defaultValue={value?.supplier ?? DEFAULT_FUEL_SUPPLIER} className="sm:col-span-3" />
       <Field label="Observaciones" htmlFor="notes" className="sm:col-span-3">
+        <Textarea id="notes" name="notes" rows={2} defaultValue={value?.notes ?? ""} />
+      </Field>
+    </div>
+  );
+}
+
+export function SupplierFormFields({
+  value,
+  categories,
+}: {
+  value?: typeof suppliers.$inferSelect;
+  categories: string[];
+}) {
+  const options = [...new Set([...SUPPLIER_CATEGORIES, ...categories])];
+  return (
+    <div className="grid gap-4 sm:grid-cols-2">
+      <Field
+        label="Nombre"
+        htmlFor="name"
+        className="sm:col-span-2"
+        hint="Para estaciones: igual al usado en recorridos y cargas (así se vincula el gasoil)."
+      >
+        <Input id="name" name="name" defaultValue={value?.name ?? ""} required />
+      </Field>
+      <Field label="Rubro" htmlFor="category">
+        <Input id="category" name="category" list="supplier-categories" defaultValue={value?.category ?? ""} />
+        <datalist id="supplier-categories">
+          {options.map((c) => (
+            <option key={c} value={c} />
+          ))}
+        </datalist>
+      </Field>
+      <Field label="CUIT" htmlFor="cuit">
+        <Input id="cuit" name="cuit" defaultValue={value?.cuit ?? ""} />
+      </Field>
+      <Field label="Emite factura" htmlFor="invoices">
+        <NativeSelect id="invoices" name="invoices" className="w-full" defaultValue={value?.invoices === false ? "no" : "si"}>
+          <NativeSelectOption value="si">Sí</NativeSelectOption>
+          <NativeSelectOption value="no">No</NativeSelectOption>
+        </NativeSelect>
+      </Field>
+      <Field label="Observaciones" htmlFor="notes" className="sm:col-span-2">
+        <Textarea id="notes" name="notes" rows={2} defaultValue={value?.notes ?? ""} />
+      </Field>
+    </div>
+  );
+}
+
+export function SupplierPaymentFields({
+  value,
+  defaultDate,
+}: {
+  value?: typeof supplierPayments.$inferSelect;
+  defaultDate: string;
+}) {
+  return (
+    <div className="grid gap-4 sm:grid-cols-2">
+      <Field label="Fecha" htmlFor="date">
+        <Input id="date" name="date" type="date" defaultValue={value?.date ?? defaultDate} required />
+      </Field>
+      <Field label="Monto" htmlFor="amount">
+        <Input id="amount" name="amount" inputMode="decimal" defaultValue={value?.amount ?? ""} required />
+      </Field>
+      <Field label="Medio de pago" htmlFor="method" className="sm:col-span-2">
+        <Input id="method" name="method" list="payment-methods" defaultValue={value?.method ?? ""} />
+        <datalist id="payment-methods">
+          {PAYMENT_METHODS.map((m) => (
+            <option key={m} value={m} />
+          ))}
+        </datalist>
+      </Field>
+      <Field label="Observaciones" htmlFor="notes" className="sm:col-span-2">
         <Textarea id="notes" name="notes" rows={2} defaultValue={value?.notes ?? ""} />
       </Field>
     </div>

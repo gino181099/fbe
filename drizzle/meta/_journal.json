@@ -64,6 +64,13 @@
       "when": 1792424284158,
       "tag": "0008_recibos",
       "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "7",
+      "when": 1792425109923,
+      "tag": "0009_proveedores",
+      "breakpoints": true
     }
   ]
 }

@@ -98,3 +98,17 @@ export const LEAD_STAGE_LABELS: Record<LeadStage, string> = {
 export const LEAD_PRIORITIES = ["alta", "media", "baja"] as const;
 export type LeadPriority = (typeof LEAD_PRIORITIES)[number];
 export const LEAD_PRIORITY_LABELS: Record<LeadPriority, string> = { alta: "Alta", media: "Media", baja: "Baja" };
+
+/** Rubros sugeridos de proveedores (T-021; se puede escribir otro). */
+export const SUPPLIER_CATEGORIES = [
+  "Combustible",
+  "Mecánica",
+  "Repuestos",
+  "Cubiertas",
+  "Seguros",
+  "Lavadero",
+  "Servicios",
+  "Estudio contable",
+  "Otros",
+];
+export const FUEL_SUPPLIER_CATEGORY = "Combustible";

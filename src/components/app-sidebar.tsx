@@ -46,6 +46,7 @@ const NAV: NavItem[] = [
       { title: "Recibos", href: "/finanzas/recibos" },
       { title: "Cobros (historial)", href: "/finanzas/cobros" },
       { title: "Gastos", href: "/finanzas/gastos" },
+      { title: "Proveedores", href: "/finanzas/proveedores" },
     ],
   },
   { title: "Usuarios", href: "/usuarios", icon: ShieldCheck, module: "usuarios" },
