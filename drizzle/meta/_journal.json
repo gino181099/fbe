@@ -78,6 +78,20 @@
       "when": 1792425847178,
       "tag": "0010_gastos_nuevos",
       "breakpoints": true
+    },
+    {
+      "idx": 11,
+      "version": "7",
+      "when": 1792543133363,
+      "tag": "0011_modulo_leads",
+      "breakpoints": true
+    },
+    {
+      "idx": 12,
+      "version": "7",
+      "when": 1792543163803,
+      "tag": "0012_leads",
+      "breakpoints": true
     }
   ]
 }

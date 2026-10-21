@@ -14,9 +14,14 @@ export function formatDate(iso: string | null | undefined) {
   return `${d}/${m}/${y}`;
 }
 
+const arDay = new Intl.DateTimeFormat("en-CA", { timeZone: "America/Argentina/Buenos_Aires" });
+
+/** Día (en Argentina) de un instante, como "YYYY-MM-DD". */
+export const dayInAR = (d: Date) => arDay.format(d);
+
 /** Fecha de hoy en Argentina como "YYYY-MM-DD". */
 export function today() {
-  return new Intl.DateTimeFormat("en-CA", { timeZone: "America/Argentina/Buenos_Aires" }).format(new Date());
+  return dayInAR(new Date());
 }
 
 /** Resta días a una fecha ISO. */

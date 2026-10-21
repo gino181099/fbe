@@ -1,5 +1,12 @@
 import { Badge } from "@/components/ui/badge";
-import { CLIENT_TYPE_LABELS, type ClientType, LEAD_STAGE_LABELS, type LeadStage } from "@/lib/constants";
+import {
+  CLIENT_TYPE_LABELS,
+  type ClientType,
+  LEAD_STAGE_LABELS,
+  type LeadStage,
+  OPPORTUNITY_STAGE_LABELS,
+  type OpportunityStage,
+} from "@/lib/constants";
 
 export function ClientTypeBadge({ type }: { type: ClientType }) {
   const variant = type === "recurrente" ? "default" : type === "especial" ? "secondary" : "outline";
@@ -22,6 +29,22 @@ export function LeadStageBadge({ stage }: { stage: LeadStage }) {
   return (
     <Badge variant="outline" className={STAGE_CLASSES[stage]}>
       {LEAD_STAGE_LABELS[stage]}
+    </Badge>
+  );
+}
+
+const OPPORTUNITY_CLASSES: Record<OpportunityStage, string> = {
+  nuevo: "border-amber-300 bg-amber-50 text-amber-800 dark:border-amber-800 dark:bg-amber-950 dark:text-amber-200",
+  contacto: "border-sky-300 bg-sky-50 text-sky-800 dark:border-sky-800 dark:bg-sky-950 dark:text-sky-200",
+  propuesta: "border-violet-300 bg-violet-50 text-violet-800 dark:border-violet-800 dark:bg-violet-950 dark:text-violet-200",
+  ganado: STAGE_CLASSES.ganado,
+  perdido: STAGE_CLASSES.perdido,
+};
+
+export function OpportunityStageBadge({ stage }: { stage: OpportunityStage }) {
+  return (
+    <Badge variant="outline" className={OPPORTUNITY_CLASSES[stage]}>
+      {OPPORTUNITY_STAGE_LABELS[stage]}
     </Badge>
   );
 }

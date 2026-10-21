@@ -5,13 +5,25 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { z } from "zod";
 import { db } from "@/db";
-import { CLIENT_STATUSES, CLIENT_TYPES, clientNotes, clients, collections, documents, rates, receipts, routes, trips } from "@/db/schema";
-import { LEAD_PRIORITIES, LEAD_STAGE_LABELS, LEAD_STAGES } from "@/lib/constants";
+import {
+  CLIENT_STATUSES,
+  CLIENT_TYPES,
+  clientNotes,
+  clients,
+  collections,
+  documents,
+  leads,
+  rates,
+  receipts,
+  routes,
+  trips,
+} from "@/db/schema";
+import { LEAD_PRIORITIES, LEAD_STAGE_LABELS } from "@/lib/constants";
 import { isUniqueViolation } from "@/lib/db-errors";
 import { today } from "@/lib/format";
 import { firstError, formToObject, zDate, zMoney, zText } from "@/lib/forms";
 import { type ActionResult, checkPermission } from "@/lib/permissions";
-import { canDeleteNote, formLeadStage, stageTransition } from "@/lib/prospects";
+import { canDeleteNote, formLeadStage } from "@/lib/prospects";
 import { applyNewRates } from "@/lib/rates";
 
 const clientSchema = z.object({
@@ -103,17 +115,21 @@ export async function updateClient(id: number, formData: FormData): Promise<Acti
 export async function deleteClient(id: number): Promise<ActionResult> {
   const { error } = await checkPermission("contactos");
   if (error) return error;
-  const [[t], [c], [d], [r]] = await Promise.all([
+  const [[t], [c], [d], [r], [l]] = await Promise.all([
     db.select({ n: count() }).from(trips).where(eq(trips.clientId, id)),
     db.select({ n: count() }).from(collections).where(eq(collections.clientId, id)),
     db.select({ n: count() }).from(documents).where(eq(documents.clientId, id)),
     db.select({ n: count() }).from(receipts).where(eq(receipts.clientId, id)),
+    db.select({ n: count() }).from(leads).where(eq(leads.clientId, id)),
   ]);
   if (t.n > 0 || c.n > 0 || d.n > 0 || r.n > 0) {
     return {
       ok: false,
       error: `No se puede eliminar: tiene ${t.n} recorridos, ${c.n} cobros, ${r.n} recibos y ${d.n} comprobantes. Podés marcarlo como inactivo.`,
     };
+  }
+  if (l.n > 0) {
+    return { ok: false, error: `No se puede eliminar: tiene ${l.n} oportunidades en Leads. Borralas o desvinculalas primero.` };
   }
   await db.delete(clients).where(eq(clients.id, id));
   revalidatePath("/contactos");
@@ -224,41 +240,12 @@ function revalidateClient(clientId: number) {
   revalidatePath(`/contactos/${clientId}`);
 }
 
-const stageSchema = z.object({
-  leadStage: z.enum(LEAD_STAGES, { error: "Elegí una etapa" }),
-  type: z.string().optional(),
-});
-
-/** Mueve un potencial de etapa y deja la nota automática en el seguimiento. */
-export async function changeLeadStage(clientId: number, formData: FormData): Promise<ActionResult> {
-  const { user, error } = await checkPermission("contactos");
-  if (error) return error;
-  const parsed = stageSchema.safeParse(formToObject(formData));
-  if (!parsed.success) return { ok: false, error: firstError(parsed.error) };
-  const [client] = await db.select({ leadStage: clients.leadStage }).from(clients).where(eq(clients.id, clientId));
-  if (!client) return { ok: false, error: "El contacto no existe." };
-  if (!client.leadStage) return { ok: false, error: "Este contacto no está en el embudo de potenciales." };
-  const t = stageTransition(client.leadStage, parsed.data.leadStage, parsed.data.type);
-  if (!t.ok) return { ok: false, error: t.error };
-  await db.batch([
-    db.update(clients).set({ leadStage: t.leadStage, status: t.status, type: t.type }).where(eq(clients.id, clientId)),
-    db.insert(clientNotes).values({ clientId, date: today(), text: t.noteText, auto: true, userId: user.id }),
-  ]);
-  revalidateClient(clientId);
-  revalidatePath("/ventas");
-  if (t.leadStage === "ganado") {
-    const extra = t.type === "recurrente" ? " Cargá su tarifario." : "";
-    return { ok: true, message: `¡Cliente ganado! Ahora es un cliente activo.${extra}` };
-  }
-  return { ok: true, message: "Etapa actualizada" };
-}
-
 const noteSchema = z.object({
   date: zDate,
   text: z
-    .string({ error: "Escribí la observación" })
-    .min(1, "Escribí la observación")
-    .max(2000, "La observación no puede superar los 2000 caracteres"),
+    .string({ error: "Escribí la nota" })
+    .min(1, "Escribí la nota")
+    .max(2000, "La nota no puede superar los 2000 caracteres"),
 });
 
 export async function addClientNote(clientId: number, formData: FormData): Promise<ActionResult> {
@@ -268,10 +255,10 @@ export async function addClientNote(clientId: number, formData: FormData): Promi
   if (!parsed.success) return { ok: false, error: firstError(parsed.error) };
   await db.insert(clientNotes).values({ clientId, ...parsed.data, auto: false, userId: user.id });
   revalidateClient(clientId);
-  return { ok: true, message: "Observación agregada" };
+  return { ok: true, message: "Nota agregada" };
 }
 
-/** Solo el autor borra sus observaciones; las automáticas no se borran (ni el admin). */
+/** Solo el autor borra sus notas; las automáticas no se borran (ni el admin). */
 export async function deleteClientNote(clientId: number, noteId: number): Promise<ActionResult> {
   const { user, error } = await checkPermission("contactos");
   if (error) return error;
@@ -279,10 +266,10 @@ export async function deleteClientNote(clientId: number, noteId: number): Promis
     .select({ auto: clientNotes.auto, userId: clientNotes.userId })
     .from(clientNotes)
     .where(and(eq(clientNotes.id, noteId), eq(clientNotes.clientId, clientId)));
-  if (!note) return { ok: false, error: "La observación no existe." };
-  if (note.auto) return { ok: false, error: "Las observaciones automáticas no se pueden borrar." };
-  if (!canDeleteNote(note, user.id)) return { ok: false, error: "Solo el autor puede borrar esta observación." };
+  if (!note) return { ok: false, error: "La nota no existe." };
+  if (note.auto) return { ok: false, error: "Las notas automáticas no se pueden borrar." };
+  if (!canDeleteNote(note, user.id)) return { ok: false, error: "Solo el autor puede borrar esta nota." };
   await db.delete(clientNotes).where(eq(clientNotes.id, noteId));
   revalidateClient(clientId);
-  return { ok: true, message: "Observación eliminada" };
+  return { ok: true, message: "Nota eliminada" };
 }

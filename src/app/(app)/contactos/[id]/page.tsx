@@ -1,21 +1,21 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { cache } from "react";
 import { asc, desc, eq, sql } from "drizzle-orm";
-import { ArrowLeft, FileText, Pencil, Plus } from "lucide-react";
-import { ClientStatusBadge, ClientTypeBadge, LeadStageBadge } from "@/components/badges";
+import { ArrowLeft, FileText, Pencil } from "lucide-react";
+import { ClientStatusBadge, ClientTypeBadge, OpportunityStageBadge } from "@/components/badges";
 import { ConfirmButton } from "@/components/confirm-button";
 import { FormDialog } from "@/components/form-dialog";
 import { EmptyState, Field, PageHeader, StatCard } from "@/components/page-header";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { NativeSelect, NativeSelectOption } from "@/components/ui/native-select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Textarea } from "@/components/ui/textarea";
 import { db } from "@/db";
-import { clientNotes, clients, drivers, rates, routes, trips, users } from "@/db/schema";
+import { clientNotes, clients, drivers, leadNotes, leads, rates, routes, trips, users } from "@/db/schema";
+import { mergeNotes, NotesPanel } from "@/components/notes-panel";
 import { getBalances } from "@/lib/balances";
 import { formatDate, formatMoney, today } from "@/lib/format";
 import { can, requirePermission } from "@/lib/permissions";
@@ -24,7 +24,6 @@ import { canDeleteNote } from "@/lib/prospects";
 import { ratesInForce } from "@/lib/rates";
 import {
   addClientNote,
-  changeLeadStage,
   deleteClient,
   deleteClientNote,
   deleteRate,
@@ -32,12 +31,17 @@ import {
   updateRate,
 } from "../actions";
 import { ClientFields } from "../client-fields";
-import { LeadStageControl } from "./lead-stage-control";
 import { RateVersionDialog } from "./rate-version-dialog";
+
+// Compartido entre generateMetadata y la página: una sola consulta por request.
+const getClient = cache(async (id: number) => {
+  const [c] = await db.select().from(clients).where(eq(clients.id, id));
+  return c;
+});
 
 export async function generateMetadata({ params }: PageProps<"/contactos/[id]">): Promise<Metadata> {
   const id = Number((await params).id);
-  const [c] = Number.isInteger(id) ? await db.select({ name: clients.name }).from(clients).where(eq(clients.id, id)) : [];
+  const c = Number.isInteger(id) ? await getClient(id) : undefined;
   return { title: c?.name ?? "Contacto" };
 }
 
@@ -47,11 +51,9 @@ export default async function ClientPage({ params, searchParams }: PageProps<"/c
   if (!Number.isInteger(id)) notFound();
   const sp = await searchParams;
 
-  const [client] = await db.select().from(clients).where(eq(clients.id, id));
-  if (!client) notFound();
-
   const date = today();
-  const [current, history, routeList, recentTrips, balances, notes] = await Promise.all([
+  const [client, current, history, routeList, recentTrips, balances, notes, opportunities, oppNotes] = await Promise.all([
+    getClient(id),
     ratesInForce(id, date),
     db
       .select({
@@ -85,7 +87,7 @@ export default async function ClientPage({ params, searchParams }: PageProps<"/c
       .where(eq(trips.clientId, id))
       .orderBy(desc(trips.date), desc(trips.id))
       .limit(15),
-    getBalances(),
+    getBalances(id),
     db
       .select({
         id: clientNotes.id,
@@ -99,20 +101,58 @@ export default async function ClientPage({ params, searchParams }: PageProps<"/c
       .leftJoin(users, eq(users.id, clientNotes.userId))
       .where(eq(clientNotes.clientId, id))
       .orderBy(desc(clientNotes.date), desc(clientNotes.id)),
+    db
+      .select({ id: leads.id, title: leads.title, stage: leads.stage, expectedAmount: leads.expectedAmount })
+      .from(leads)
+      .where(eq(leads.clientId, id))
+      .orderBy(desc(leads.updatedAt)),
+    db
+      .select({
+        id: leadNotes.id,
+        leadId: leadNotes.leadId,
+        leadTitle: leads.title,
+        date: leadNotes.date,
+        text: leadNotes.text,
+        auto: leadNotes.auto,
+        author: sql<string | null>`coalesce(${users.name}, ${users.username}, ${users.email})`,
+      })
+      .from(leadNotes)
+      .innerJoin(leads, eq(leads.id, leadNotes.leadId))
+      .leftJoin(users, eq(users.id, leadNotes.userId))
+      .where(eq(leads.clientId, id)),
   ]);
+  if (!client) notFound();
 
   const canEdit = can(user, "contactos", "edit");
   const canFinance = can(user, "finanzas", "view");
   const canSales = can(user, "ventas", "view");
+  const canLeads = can(user, "leads", "view") && opportunities.length > 0;
   const balance = balances.get(id);
+  // Notas del contacto + las de sus oportunidades (solo lectura acá, con link a la oportunidad).
+  const allNotes = mergeNotes(
+    notes.map((n) => ({
+      key: `c${n.id}`,
+      ...n,
+      onDelete: canEdit && canDeleteNote(n, user.id) ? deleteClientNote.bind(null, id, n.id) : undefined,
+    })),
+    canLeads
+      ? oppNotes.map((n) => ({
+          key: `l${n.id}`,
+          ...n,
+          source: { label: `Oportunidad: ${n.leadTitle}`, href: `/leads/${n.leadId}` },
+        }))
+      : [],
+  );
   const defaultTab =
     typeof sp.tab === "string"
       ? sp.tab
       : client.type === "recurrente"
         ? "tarifario"
         : client.type === "potencial"
-          ? "seguimiento"
-          : "datos";
+          ? canLeads
+            ? "oportunidades"
+            : "notas"
+          : "notas";
   const priority = client.leadPriority as LeadPriority | null;
 
   // Matriz de tarifas vigentes: filas = recorridos, columnas = capacidades.
@@ -135,16 +175,12 @@ export default async function ClientPage({ params, searchParams }: PageProps<"/c
         title={
           <span className="flex flex-wrap items-center gap-2">
             {client.name} <ClientTypeBadge type={client.type} /> <ClientStatusBadge status={client.status} />
-            {client.leadStage && <LeadStageBadge stage={client.leadStage} />}
           </span>
         }
         description={[client.contactPerson, client.phone, client.email].filter(Boolean).join(" · ") || undefined}
         actions={
           canEdit && (
             <>
-              {client.leadStage && client.leadStage !== "ganado" && (
-                <LeadStageControl current={client.leadStage} action={changeLeadStage.bind(null, id)} />
-              )}
               <FormDialog
                 title="Editar contacto"
                 action={updateClient.bind(null, id)}
@@ -188,8 +224,40 @@ export default async function ClientPage({ params, searchParams }: PageProps<"/c
           <TabsTrigger value="historial">Historial de tarifas</TabsTrigger>
           <TabsTrigger value="recorridos">Recorridos</TabsTrigger>
           <TabsTrigger value="datos">Datos</TabsTrigger>
-          <TabsTrigger value="seguimiento">Seguimiento</TabsTrigger>
+          <TabsTrigger value="notas">Notas{allNotes.length > 0 && ` (${allNotes.length})`}</TabsTrigger>
+          {canLeads && <TabsTrigger value="oportunidades">Oportunidades</TabsTrigger>}
         </TabsList>
+
+        {canLeads && (
+          <TabsContent value="oportunidades" className="pt-2">
+            <div className="rounded-xl border">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Oportunidad</TableHead>
+                    <TableHead>Etapa</TableHead>
+                    <TableHead className="text-right">Monto estimado</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {opportunities.map((o) => (
+                    <TableRow key={o.id}>
+                      <TableCell>
+                        <Link href={`/leads/${o.id}`} className="font-medium hover:underline">
+                          {o.title}
+                        </Link>
+                      </TableCell>
+                      <TableCell>
+                        <OpportunityStageBadge stage={o.stage} />
+                      </TableCell>
+                      <TableCell className="text-right tabular-nums">{formatMoney(o.expectedAmount)}</TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
+          </TabsContent>
+        )}
 
         <TabsContent value="tarifario" className="grid gap-4 pt-2">
           <div className="flex flex-wrap items-center justify-between gap-2">
@@ -404,70 +472,8 @@ export default async function ClientPage({ params, searchParams }: PageProps<"/c
           )}
         </TabsContent>
 
-        <TabsContent value="seguimiento" className="grid gap-3 pt-2">
-          {canEdit && (
-            <FormDialog
-              title="Nueva observación"
-              action={addClientNote.bind(null, id)}
-              successMessage="Observación agregada"
-              trigger={
-                <Button variant="outline" className="w-fit">
-                  <Plus /> Nueva observación
-                </Button>
-              }
-            >
-              <div className="grid gap-4">
-                <Field label="Fecha" htmlFor="note-date">
-                  <Input id="note-date" name="date" type="date" defaultValue={date} required className="w-44" />
-                </Field>
-                <Field label="Observación" htmlFor="note-text">
-                  <Textarea id="note-text" name="text" rows={4} maxLength={2000} required />
-                </Field>
-              </div>
-            </FormDialog>
-          )}
-          {notes.length === 0 ? (
-            <EmptyState>Todavía no hay observaciones.</EmptyState>
-          ) : (
-            <div className="rounded-xl border">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead className="w-28">Fecha</TableHead>
-                    <TableHead>Observación</TableHead>
-                    <TableHead className="w-40">Autor</TableHead>
-                    {canEdit && <TableHead className="w-12" />}
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {notes.map((n) => (
-                    <TableRow key={n.id} className={n.auto ? "text-muted-foreground" : undefined}>
-                      <TableCell className="align-top">{formatDate(n.date)}</TableCell>
-                      <TableCell className="whitespace-pre-wrap align-top">
-                        {n.auto && (
-                          <Badge variant="outline" className="mr-2">
-                            Automática
-                          </Badge>
-                        )}
-                        {n.text}
-                      </TableCell>
-                      <TableCell className="align-top">{n.author ?? (n.auto ? "Sistema" : "—")}</TableCell>
-                      {canEdit && (
-                        <TableCell className="align-top">
-                          {canDeleteNote(n, user.id) && (
-                            <ConfirmButton
-                              action={deleteClientNote.bind(null, id, n.id)}
-                              title="¿Eliminar observación?"
-                            />
-                          )}
-                        </TableCell>
-                      )}
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </div>
-          )}
+        <TabsContent value="notas" className="pt-2">
+          <NotesPanel notes={allNotes} addAction={canEdit ? addClientNote.bind(null, id) : undefined} date={date} />
         </TabsContent>
       </Tabs>
     </>

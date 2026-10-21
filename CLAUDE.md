@@ -5,14 +5,11 @@
 ERP de Frabel (transporte de pasajeros, Mendoza). UI y textos en **español rioplatense**, montos en ARS.
 Módulos: Contactos (clientes + tarifarios versionados), Ventas (recorridos), Finanzas (cuentas corrientes, cobros, gastos, combustible, PDF de estado de cuenta), Usuarios (permisos por módulo).
 
-## Flujo de trabajo (spec-driven)
+## Flujo de trabajo
 
-- Backlog: `specs/TAREAS.md` · Specs: `specs/T-XXX-*.md` (plantilla `specs/_plantilla.md`)
 - Conocimiento estable (reglas de negocio, decisiones, trampas): `specs/MEMORIA.md` — **leer antes de explorar código**
-- Registro de lo hecho: `specs/REGISTRO.md` (más nuevo arriba)
-- Comandos: `/tareas [IDs] [auto] [nocommit] [revisar] [recomendar]` corre el arnés (commit por tarea por defecto, nunca push) · `/nueva-tarea <texto>` · `/recomendar`
-- Subagentes: `especificador` (spec con "Mapa de código", Riesgo y decisiones propuestas), `implementador` (ejecuta la spec, se autochequea y escribe REGISTRO/TAREAS), `revisor` (Sonnet; revisa el `git diff` solo en tareas de `Riesgo: Alto`)
-- Checklist de calidad compartida: `specs/CHECKLIST.md`
+- Backlog: `specs/TAREAS.md` · Registro de lo hecho: `specs/REGISTRO.md` (más nuevo arriba) · Checklist de calidad: `specs/CHECKLIST.md`
+- **Arnés spec-driven DESACTIVADO** (2026-10-20, por costo): los comandos `/tareas`, `/nueva-tarea`, `/recomendar` y los subagentes `especificador`/`implementador`/`revisor` están guardados en `.claude/_desactivado/`. No usarlos ni imitarlos: trabajar directo en la sesión. Para reactivarlo, volver a mover `commands/` y `agents/` a `.claude/`.
 
 ## Stack y comandos
 

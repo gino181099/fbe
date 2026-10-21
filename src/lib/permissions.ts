@@ -14,9 +14,14 @@ async function loadCurrentUser() {
   const session = await auth();
   const id = session?.user?.id;
   if (!id) return null;
-  const [user] = await db.select().from(users).where(eq(users.id, id));
+  // Usuario y permisos en una sola consulta (una ida a la base por request).
+  const rows = await db
+    .select({ user: users, module: permissions.module, level: permissions.level })
+    .from(users)
+    .leftJoin(permissions, eq(permissions.userId, users.id))
+    .where(eq(users.id, id));
+  const user = rows[0]?.user;
   if (!user) return null;
-  const rows = await db.select().from(permissions).where(eq(permissions.userId, id));
   const perms = Object.fromEntries(
     MODULES.map((m) => [m, user.isAdmin ? "edit" : (rows.find((r) => r.module === m)?.level ?? "none")]),
   ) as Record<Module, Level>;

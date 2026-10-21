@@ -8,26 +8,24 @@ import { LEAD_PRIORITIES, LEAD_PRIORITY_LABELS } from "@/lib/constants";
 type Client = typeof clients.$inferSelect;
 
 export function ClientFields({ client }: { client?: Client }) {
+  // Los prospectos nuevos se cargan en Leads; "Potencial" solo aparece si el contacto ya lo es.
+  const prospect = client?.type === "potencial";
   return (
     <div className="grid gap-4 sm:grid-cols-2">
       <Field label="Nombre / Razón social" htmlFor="name" className="sm:col-span-2">
         <Input id="name" name="name" defaultValue={client?.name} required autoFocus />
       </Field>
-      <Field
-        label="Tipo"
-        htmlFor="type"
-        hint="Recurrente: tiene tarifario por recorrido. Especial: servicios puntuales. Potencial: prospecto."
-      >
+      <Field label="Tipo" htmlFor="type" hint="Recurrente: tiene tarifario por recorrido. Especial: servicios puntuales.">
         <NativeSelect id="type" name="type" defaultValue={client?.type ?? "especial"} className="w-full">
           <NativeSelectOption value="recurrente">Recurrente</NativeSelectOption>
           <NativeSelectOption value="especial">Especial</NativeSelectOption>
-          <NativeSelectOption value="potencial">Potencial</NativeSelectOption>
+          {prospect && <NativeSelectOption value="potencial">Potencial</NativeSelectOption>}
         </NativeSelect>
       </Field>
-      <Field label="Estado" htmlFor="status" hint="Potencial: todavía no es cliente (va con tipo Potencial).">
+      <Field label="Estado" htmlFor="status">
         <NativeSelect id="status" name="status" defaultValue={client?.status ?? "activo"} className="w-full">
           <NativeSelectOption value="activo">Activo</NativeSelectOption>
-          <NativeSelectOption value="potencial">Potencial</NativeSelectOption>
+          {client?.status === "potencial" && <NativeSelectOption value="potencial">Potencial</NativeSelectOption>}
           <NativeSelectOption value="inactivo">Inactivo</NativeSelectOption>
         </NativeSelect>
       </Field>

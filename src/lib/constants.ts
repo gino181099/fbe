@@ -92,6 +92,17 @@ export const LEAD_STAGE_LABELS: Record<LeadStage, string> = {
   perdido: "Perdido",
 };
 
+/** Etapas de una oportunidad del CRM (módulo Leads). Ganado y Perdido cierran la oportunidad. */
+export const OPPORTUNITY_STAGES = ["nuevo", "contacto", "propuesta", "ganado", "perdido"] as const;
+export type OpportunityStage = (typeof OPPORTUNITY_STAGES)[number];
+export const OPPORTUNITY_STAGE_LABELS: Record<OpportunityStage, string> = {
+  nuevo: "Nuevo",
+  contacto: "Contacto",
+  propuesta: "Propuesta",
+  ganado: "Ganado",
+  perdido: "Perdido",
+};
+
 export const LEAD_PRIORITIES = ["alta", "media", "baja"] as const;
 export type LeadPriority = (typeof LEAD_PRIORITIES)[number];
 export const LEAD_PRIORITY_LABELS: Record<LeadPriority, string> = { alta: "Alta", media: "Media", baja: "Baja" };

@@ -1,16 +1,12 @@
 # Tareas
 
-Cómo usar este archivo:
+Backlog del ERP. Agregá tareas en "Pendientes" (título + descripción) y pedíselas a Claude directamente en la sesión.
+> El arnés `/tareas` está desactivado desde el 2026-10-20 (archivos en `.claude/_desactivado/`).
 
-1. **Agregá tus tareas** en "Pendientes" copiando el bloque de ejemplo (o con `/nueva-tarea <descripción>`). Alcanza con título y descripción; el resto lo completa el especificador.
-2. Corré `/tareas` (todas las listas) o `/tareas T-004 T-007` (algunas). Por defecto se frena para que apruebes cada spec antes de implementar; `/tareas auto` no se frena.
-3. Las **recomendaciones** las agrega Claude en su sección (`/recomendar` pide más). Para hacer una, movela a "Pendientes" con estado `Nueva`, o corré `/tareas T-XXX` con su ID. Las recomendaciones **no** se ejecutan solas.
-
-Estados: `Nueva` → `Especificada` (spec escrita, espera aprobación) → `Aprobada` → `En curso` → (`En revisión`, solo riesgo alto) → `Hecha` · también `Bloqueada` (con motivo).
-Opciones de `/tareas`: `auto` (sin preguntar) · `nocommit` (por defecto hace un commit por tarea) · `revisar` (revisor también en riesgo bajo) · `recomendar`.
+Estados: `Nueva` → `Especificada` → `Aprobada` → `En curso` → `Hecha` · también `Bloqueada` (con motivo).
 Prioridad: `Alta` · `Media` · `Baja`.
 
-**Próximo ID: T-023**
+**Próximo ID: T-024**
 
 ---
 
@@ -76,6 +72,11 @@ Prioridad: `Alta` · `Media` · `Baja`.
 ---
 
 ## ✅ Hechas
+
+### T-023 · Leads (CRM de oportunidades), notas y velocidad
+- Estado: Hecha (2026-10-20)
+- Plan: `C:\Users\ginof\.claude\plans\bueno-ahora-que-lo-spicy-yeti.md`
+- Descripción: Sección `/leads` con Kanban (Nuevo/Contacto/Propuesta/Ganado/Perdido) y lista, permiso propio; los 29 potenciales pasaron a leads y salieron de Contactos. Notas unificadas ("Agregar nota") en contactos y leads. Esqueleto de carga, una consulta menos por página y región `gru1` para Vercel.
 
 ### T-022 · Gastos nuevos (general o por vehículo, con comprobante)
 - Estado: Hecha (2026-10-19)

@@ -57,7 +57,9 @@ type Balance = {
  * collected = cobros + recibos vigentes; adjusted = ajustes + NC + bonificación. `trips` = conteo histórico total.
  * Factura/interno no suman; los comprobantes y recibos anulados no cuentan.
  */
-export async function getBalances() {
+export async function getBalances(clientId?: number) {
+  // Opcional: un solo cliente (ficha de contacto) en vez de todos.
+  const only = (col: AnyColumn) => (clientId === undefined ? undefined : eq(col, clientId));
   const [tripRows, docRows, collectionRows, receiptRows] = await Promise.all([
     db
       .select({
@@ -66,6 +68,7 @@ export async function getBalances() {
         trips: count(),
       })
       .from(trips)
+      .where(only(trips.clientId))
       .groupBy(trips.clientId),
     db
       .select({
@@ -77,6 +80,7 @@ export async function getBalances() {
       // Solo el saldo inicial cuenta aunque sea anterior al corte.
       .where(
         and(
+          only(documents.clientId),
           isNull(documents.voidedAt),
           or(
             eq(documents.type, "saldo_inicial"),
@@ -92,12 +96,12 @@ export async function getBalances() {
         ajustes: sumOfKind("ajuste"),
       })
       .from(collections)
-      .where(gte(collections.date, CC_START))
+      .where(and(only(collections.clientId), gte(collections.date, CC_START)))
       .groupBy(collections.clientId),
     db
       .select({ clientId: receipts.clientId, total: sumOf(receipts.amount) })
       .from(receipts)
-      .where(and(isNull(receipts.voidedAt), gte(receipts.date, CC_START)))
+      .where(and(only(receipts.clientId), isNull(receipts.voidedAt), gte(receipts.date, CC_START)))
       .groupBy(receipts.clientId),
   ]);
   const map = new Map<number, Balance>();

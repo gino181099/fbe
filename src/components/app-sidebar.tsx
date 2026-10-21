@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Bus, LayoutDashboard, LogOut, Receipt, Route, ShieldCheck, Truck, Users } from "lucide-react";
+import { Bus, LayoutDashboard, LogOut, Receipt, Route, ShieldCheck, Target, Truck, Users } from "lucide-react";
 import { logout } from "@/app/(auth)/actions";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
@@ -33,6 +33,7 @@ type NavItem = {
 const NAV: NavItem[] = [
   { title: "Inicio", href: "/", icon: LayoutDashboard },
   { title: "Contactos", href: "/contactos", icon: Users, module: "contactos" },
+  { title: "Leads", href: "/leads", icon: Target, module: "leads" },
   { title: "Ventas", href: "/ventas", icon: Route, module: "ventas" },
   { title: "Flota", href: "/flota", icon: Truck, module: "ventas" },
   {

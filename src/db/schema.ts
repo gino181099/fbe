@@ -22,6 +22,7 @@ import {
   EXPENSE_CATEGORIES,
   EXPENSE_SCOPES,
   LEAD_STAGES,
+  OPPORTUNITY_STAGES,
   VOUCHER_TYPES,
 } from "@/lib/constants";
 
@@ -86,7 +87,7 @@ export const verificationTokens = pgTable(
   (t) => [primaryKey({ columns: [t.identifier, t.token] })],
 );
 
-export const MODULES = ["contactos", "ventas", "finanzas", "usuarios"] as const;
+export const MODULES = ["contactos", "leads", "ventas", "finanzas", "usuarios"] as const;
 export type Module = (typeof MODULES)[number];
 export const moduleEnum = pgEnum("module", MODULES);
 
@@ -158,6 +159,64 @@ export const clientNotes = pgTable(
     createdAt: timestamp("created_at", { mode: "date" }).notNull().defaultNow(),
   },
   (t) => [index("client_note_client_idx").on(t.clientId, t.date)],
+);
+
+/* ──────────────────────────────── Leads (CRM) ──────────────────────────────── */
+
+export { OPPORTUNITY_STAGES } from "@/lib/constants";
+export const opportunityStage = pgEnum("opportunity_stage", OPPORTUNITY_STAGES);
+
+// Oportunidad comercial: un prospecto nuevo o una propuesta a un cliente existente (client_id).
+// Los datos de la empresa viven en el lead; al ganarlo se crea o actualiza el cliente.
+export const leads = pgTable(
+  "lead",
+  {
+    id: integer("id").primaryKey().generatedAlwaysAsIdentity(),
+    title: text("title").notNull(),
+    clientId: integer("client_id").references(() => clients.id, { onDelete: "restrict" }),
+    company: text("company").notNull(),
+    contactPerson: text("contact_person"),
+    phone: text("phone"),
+    email: text("email"),
+    website: text("website"),
+    address: text("address"),
+    segment: text("segment"),
+    // alta | media | baja (LEAD_PRIORITIES).
+    priority: text("priority"),
+    stage: opportunityStage("stage").notNull().default("nuevo"),
+    expectedAmount: money("expected_amount"),
+    expectedClose: date("expected_close", { mode: "string" }),
+    ownerId: text("owner_id").references(() => users.id, { onDelete: "set null" }),
+    nextAction: text("next_action"),
+    nextActionDate: date("next_action_date", { mode: "string" }),
+    lostReason: text("lost_reason"),
+    notes: text("notes"),
+    // Fecha en que pasó a ganado/perdido (null si está abierta).
+    closedAt: date("closed_at", { mode: "string" }),
+    createdAt: timestamp("created_at", { mode: "date" }).notNull().defaultNow(),
+    updatedAt: timestamp("updated_at", { mode: "date" })
+      .notNull()
+      .defaultNow()
+      .$onUpdate(() => new Date()),
+  },
+  (t) => [index("lead_stage_idx").on(t.stage), index("lead_client_idx").on(t.clientId)],
+);
+
+// Seguimiento de una oportunidad. auto=true: generada por el sistema (cambio de etapa), no se borra.
+export const leadNotes = pgTable(
+  "lead_note",
+  {
+    id: integer("id").primaryKey().generatedAlwaysAsIdentity(),
+    leadId: integer("lead_id")
+      .notNull()
+      .references(() => leads.id, { onDelete: "cascade" }),
+    date: date("date", { mode: "string" }).notNull(),
+    text: text("text").notNull(),
+    auto: boolean("auto").notNull().default(false),
+    userId: text("user_id").references(() => users.id, { onDelete: "set null" }),
+    createdAt: timestamp("created_at", { mode: "date" }).notNull().defaultNow(),
+  },
+  (t) => [index("lead_note_lead_idx").on(t.leadId, t.date)],
 );
 
 // Catálogo de recorridos (Alta Montaña, Bodegas, ...).

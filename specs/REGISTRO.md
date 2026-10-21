@@ -15,6 +15,13 @@ Una entrada por tarea terminada, **la más nueva arriba**. Formato fijo y breve 
 
 ---
 
+## 2026-10-20 · T-023 · Leads (CRM de oportunidades), notas y velocidad
+- Resultado: `/leads` (Kanban con arrastre + "Mover a…", lista con filtros, ficha con notas); ganar crea/activa el cliente, perder pide motivo; Contactos sin potenciales y con pestaña Oportunidades; `NotesPanel` común con notas cruzadas contacto↔oportunidad; `loading.tsx`, usuario+permisos en una consulta, saldo de un solo cliente en la ficha.
+- Archivos: `src/app/(app)/leads/**`, `src/lib/{leads(+test),lead-options,balances,permissions,format,constants}.ts`, `src/components/{notes-panel,badges,app-sidebar}.tsx`, `contactos/**`, `usuarios/*`, `(app)/loading.tsx`, `schema.ts`, `vercel.json`.
+- Datos: `0011_modulo_leads` (enum) y `0012_leads` (tablas + 29 leads/29 notas desde potenciales + permiso `leads` = nivel de contactos). Clientes 38 antes y después; datos PRUEBA creados y borrados.
+- Verificación: tsc · lint · npm test 149/149 · build OK · navegador en `next start`: crear, arrastrar Nuevo→Contacto, Propuesta, Ganado (creó cliente), reabrir, Perdido con motivo, nota cruzada visible en el contacto.
+- Pendiente: probar un usuario sin permiso `leads`; mover el proyecto fuera de OneDrive para que `npm run dev` ande rápido.
+
 ## 2026-10-19 · T-022 · Gastos nuevos (general o por vehículo, con comprobante)
 - Resultado: gasto con alcance General/Vehículo, categorías vehiculo/personal/generales/combustible + subcategoría, qué/para qué, comprobante (tipo + N°), proveedor (select) y Contado/A pagar; listado con filtros alcance/proveedor/estado y StatCards + "A pagar"; Flota suma gastos de vehículo sin combustible con link a Gastos.
 - Archivos: `src/lib/{constants,expense-rules(+test)}.ts`, `schema.ts`, `finanzas/{actions.ts,fields.tsx,gastos/page.tsx}`, `flota/page.tsx`, `scripts/migrate-legacy.ts`.

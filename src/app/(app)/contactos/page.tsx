@@ -1,8 +1,8 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { and, asc, eq, ilike, or, type SQL } from "drizzle-orm";
+import { and, asc, eq, ilike, ne, or, type SQL } from "drizzle-orm";
 import { Plus } from "lucide-react";
-import { ClientStatusBadge, ClientTypeBadge, LeadStageBadge } from "@/components/badges";
+import { ClientStatusBadge, ClientTypeBadge } from "@/components/badges";
 import { FormDialog } from "@/components/form-dialog";
 import { EmptyState, PageHeader } from "@/components/page-header";
 import { Button } from "@/components/ui/button";
@@ -10,7 +10,7 @@ import { Input } from "@/components/ui/input";
 import { NativeSelect, NativeSelectOption } from "@/components/ui/native-select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { db } from "@/db";
-import { CLIENT_STATUSES, CLIENT_TYPES, LEAD_STAGES, clients } from "@/db/schema";
+import { CLIENT_STATUSES, CLIENT_TYPES, clients } from "@/db/schema";
 import { getBalances } from "@/lib/balances";
 import { formatMoney } from "@/lib/format";
 import { can, requirePermission } from "@/lib/permissions";
@@ -23,18 +23,14 @@ export default async function ContactsPage({ searchParams }: PageProps<"/contact
   const user = await requirePermission("contactos");
   const sp = await searchParams;
   const q = typeof sp.q === "string" ? sp.q.trim() : "";
-  const tipo = CLIENT_TYPES.find((t) => t === sp.tipo);
-  const estado = CLIENT_STATUSES.find((s) => s === sp.estado);
-  // El filtro y la columna Etapa aparecen al mirar potenciales.
-  const showStage = estado === "potencial" || tipo === "potencial";
-  const etapa = showStage ? LEAD_STAGES.find((s) => s === sp.etapa) : undefined;
+  const tipo = CLIENT_TYPES.find((t) => t === sp.tipo && t !== "potencial");
+  const estado = CLIENT_STATUSES.find((s) => s === sp.estado && s !== "potencial");
 
-  const filters: SQL[] = [];
+  // Los potenciales (prospectos) se gestionan en Leads.
+  const filters: SQL[] = [ne(clients.type, "potencial")];
   if (q) filters.push(or(ilike(clients.name, `%${q}%`), ilike(clients.contactPerson, `%${q}%`))!);
   if (tipo) filters.push(eq(clients.type, tipo));
-  // Con una etapa elegida manda la etapa (perdidos = inactivos, ganados = activos).
-  if (etapa) filters.push(eq(clients.leadStage, etapa));
-  else if (estado) filters.push(eq(clients.status, estado));
+  if (estado) filters.push(eq(clients.status, estado));
 
   const [rows, balances] = await Promise.all([
     db.select().from(clients).where(and(...filters)).orderBy(asc(clients.name)),
@@ -47,7 +43,15 @@ export default async function ContactsPage({ searchParams }: PageProps<"/contact
     <>
       <PageHeader
         title="Contactos"
-        description="Clientes actuales y potenciales."
+        description={
+          <>
+            Clientes actuales. Los prospectos y propuestas están en{" "}
+            <Link href="/leads" className="underline">
+              Leads
+            </Link>
+            .
+          </>
+        }
         actions={
           canEdit && (
             <FormDialog
@@ -71,23 +75,12 @@ export default async function ContactsPage({ searchParams }: PageProps<"/contact
           <NativeSelectOption value="">Todos los tipos</NativeSelectOption>
           <NativeSelectOption value="recurrente">Recurrentes</NativeSelectOption>
           <NativeSelectOption value="especial">Especiales</NativeSelectOption>
-          <NativeSelectOption value="potencial">Potenciales</NativeSelectOption>
         </NativeSelect>
         <NativeSelect name="estado" defaultValue={estado ?? ""}>
           <NativeSelectOption value="">Todos los estados</NativeSelectOption>
           <NativeSelectOption value="activo">Activos</NativeSelectOption>
-          <NativeSelectOption value="potencial">Potenciales</NativeSelectOption>
           <NativeSelectOption value="inactivo">Inactivos</NativeSelectOption>
         </NativeSelect>
-        {showStage && (
-          <NativeSelect name="etapa" defaultValue={etapa ?? ""} aria-label="Etapa">
-            <NativeSelectOption value="">Todas las etapas</NativeSelectOption>
-            <NativeSelectOption value="sin_contactar">Sin contactar</NativeSelectOption>
-            <NativeSelectOption value="contactado">Contactados</NativeSelectOption>
-            <NativeSelectOption value="ganado">Ganados</NativeSelectOption>
-            <NativeSelectOption value="perdido">Perdidos</NativeSelectOption>
-          </NativeSelect>
-        )}
         <Button type="submit" variant="secondary">
           Filtrar
         </Button>
@@ -108,7 +101,6 @@ export default async function ContactsPage({ searchParams }: PageProps<"/contact
                 <TableHead>Nombre</TableHead>
                 <TableHead>Tipo</TableHead>
                 <TableHead>Estado</TableHead>
-                {showStage && <TableHead>Etapa</TableHead>}
                 <TableHead>Contacto</TableHead>
                 <TableHead className="text-right">Recorridos</TableHead>
                 {showBalance && <TableHead className="text-right">Saldo</TableHead>}
@@ -130,7 +122,6 @@ export default async function ContactsPage({ searchParams }: PageProps<"/contact
                     <TableCell>
                       <ClientStatusBadge status={c.status} />
                     </TableCell>
-                    {showStage && <TableCell>{c.leadStage ? <LeadStageBadge stage={c.leadStage} /> : "—"}</TableCell>}
                     <TableCell className="text-muted-foreground">
                       {[c.contactPerson, c.phone, c.email].filter(Boolean).join(" · ") || "—"}
                     </TableCell>

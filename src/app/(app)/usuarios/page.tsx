@@ -16,6 +16,7 @@ export const metadata: Metadata = { title: "Usuarios" };
 
 const MODULE_LABELS: Record<Module, string> = {
   contactos: "Contactos",
+  leads: "Leads",
   ventas: "Ventas",
   finanzas: "Finanzas",
   usuarios: "Usuarios",

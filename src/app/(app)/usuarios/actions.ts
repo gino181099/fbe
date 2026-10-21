@@ -11,6 +11,7 @@ const level = z.enum(LEVELS);
 const schema = z.object({
   status: z.enum(["pending", "active", "disabled"]),
   contactos: level,
+  leads: level,
   ventas: level,
   finanzas: level,
   usuarios: level,
