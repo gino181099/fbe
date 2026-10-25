@@ -1,5 +1,7 @@
 import Link from "next/link";
 import { and, asc, count, desc, eq, gte, isNull, lte, ne } from "drizzle-orm";
+import { CalendarDays } from "lucide-react";
+import { ActivityList } from "@/components/activity-list";
 import { MonthlyChart } from "@/components/monthly-chart";
 import { EmptyState, PageHeader, StatCard } from "@/components/page-header";
 import { Button } from "@/components/ui/button";
@@ -8,6 +10,8 @@ import { NativeSelect, NativeSelectOption } from "@/components/ui/native-select"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { db } from "@/db";
 import { clients, collections, receipts, routes, trips, users } from "@/db/schema";
+import { getActivities, getActivityLinkOptions } from "@/lib/activities";
+import { getUserNames, getUsers } from "@/lib/audit";
 import { getBalances, sumOf } from "@/lib/balances";
 import { firstDayOfMonth, formatDate, formatMoney, today } from "@/lib/format";
 import { buildMonthlySeries, formatMonth, resolveRange, totalsOf } from "@/lib/monthly";
@@ -36,6 +40,13 @@ export default async function DashboardPage({ searchParams }: PageProps<"/">) {
   const range = resolveRange(desde, hasta, end);
   const period = `${formatMonth(range.months[0])} – ${formatMonth(range.months[range.months.length - 1])}`;
 
+  // Mis actividades vencidas y de hoy (se piden en paralelo con el resto).
+  const activitiesData = Promise.all([
+    getActivities({ assignedTo: user.id, done: false, to: end }),
+    getUsers(),
+    getUserNames(),
+    getActivityLinkOptions(),
+  ]);
   const [[monthTrips], [monthCollected], recent, balances, clientRows, [pending], monthly, topRoutes] = await Promise.all([
     canSales
       ? db
@@ -108,10 +119,46 @@ export default async function DashboardPage({ searchParams }: PageProps<"/">) {
     .slice(0, 5);
   const totalOwed = [...balances.values()].reduce((s, b) => s + b.balance, 0);
   const firstName = (user.name ?? user.username ?? "").split(" ")[0];
+  const [todayActivities, activityUsers, names, linkOptions] = await activitiesData;
+  const overdueCount = todayActivities.filter((r) => r.activity.dueDate < end).length;
 
   return (
     <>
       <PageHeader title={`Hola${firstName ? `, ${firstName}` : ""}`} description={`Resumen de ${month}.`} />
+
+      <section className="grid content-start gap-3">
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <div>
+            <h2 className="font-medium">Tus actividades de hoy</h2>
+            <p className="text-sm text-muted-foreground">
+              {todayActivities.length === 0
+                ? "Nada pendiente para hoy."
+                : [
+                    todayActivities.length > overdueCount && `${todayActivities.length - overdueCount} para hoy`,
+                    overdueCount > 0 && `${overdueCount} vencida${overdueCount === 1 ? "" : "s"}`,
+                  ]
+                    .filter(Boolean)
+                    .join(" · ")}
+            </p>
+          </div>
+          <Button variant="outline" size="sm" asChild>
+            <Link href="/agenda">
+              <CalendarDays /> Ver agenda
+            </Link>
+          </Button>
+        </div>
+        <ActivityList
+          rows={todayActivities}
+          ctx={{
+            users: activityUsers.map((u) => ({ id: u.id, name: u.name ?? u.username ?? "—" })),
+            names,
+            currentUserId: user.id,
+            today: end,
+            linkOptions,
+          }}
+          empty="No tenés actividades para hoy ni vencidas. ¡Todo al día!"
+        />
+      </section>
 
       {canUsers && pending.n > 0 && (
         <div className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-amber-300 bg-amber-50 p-4 text-sm dark:border-amber-800 dark:bg-amber-950/30">

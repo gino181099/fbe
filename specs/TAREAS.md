@@ -64,6 +64,10 @@ Prioridad: `Alta` · `Media` · `Baja`.
 
 ## ✅ Hechas
 
+### T-027 · Actividades de hoy en el Inicio
+- Estado: Hecha (2026-10-25)
+- Descripción: sección "Tus actividades de hoy" (vencidas + hoy del usuario) arriba del tablero.
+
 ### T-026 · Calendario de la agenda y actividades por vehículo
 - Estado: Hecha (2026-10-25)
 - Descripción: calendario mensual con colores de Odoo y arrastrar para reprogramar; ficha de vehículo con actividades y gastos.
