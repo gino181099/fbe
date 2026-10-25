@@ -51,7 +51,7 @@ export default async function DocumentsPage({ searchParams }: PageProps<"/finanz
 
   return (
     <>
-      <PageHeader
+      <PageHeader help="comprobantes"
         title="Comprobantes"
         description="Facturas (hechas en ARCA), comprobantes internos, notas de débito y crédito, bonificaciones y saldos iniciales. No se editan ni se borran: se anulan."
         actions={

@@ -52,7 +52,7 @@ export default async function StatementPage({ params, searchParams }: PageProps<
           <ArrowLeft /> Cuentas corrientes
         </Link>
       </Button>
-      <PageHeader
+      <PageHeader help="cuentas"
         title={`Estado de cuenta · ${data.client.name}`}
         description={`Del ${formatDate(data.from)} al ${formatDate(hasta)} · cuenta corriente desde el ${formatDate(CC_START)}`}
         actions={

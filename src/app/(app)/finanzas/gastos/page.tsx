@@ -177,7 +177,7 @@ export default async function ExpensesPage({ searchParams }: PageProps<"/finanza
 
   return (
     <>
-      <PageHeader
+      <PageHeader help="gastos"
         title="Gastos"
         description="Pagos realizados y control de combustible."
         actions={

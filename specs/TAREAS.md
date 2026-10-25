@@ -6,7 +6,7 @@ Backlog del ERP. Agregá tareas en "Pendientes" (título + descripción) y pedí
 Estados: `Nueva` → `Especificada` → `Aprobada` → `En curso` → `Hecha` · también `Bloqueada` (con motivo).
 Prioridad: `Alta` · `Media` · `Baja`.
 
-**Próximo ID: T-024**
+**Próximo ID: T-030**
 
 ---
 
@@ -63,6 +63,10 @@ Prioridad: `Alta` · `Media` · `Baja`.
 ---
 
 ## ✅ Hechas
+
+### T-029 · Ayuda (i) en cada módulo
+- Estado: Hecha (2026-10-25)
+- Descripción: botón (i) junto al título de cada página; panel con para qué sirve el módulo y glosario. Textos en `src/lib/help.ts`.
 
 ### T-027 · Actividades de hoy en el Inicio
 - Estado: Hecha (2026-10-25)

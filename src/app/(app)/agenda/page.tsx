@@ -70,7 +70,7 @@ export default async function AgendaPage({ searchParams }: PageProps<"/agenda">)
 
   return (
     <>
-      <PageHeader
+      <PageHeader help="agenda"
         title="Agenda"
         description={`${whose}: lo que hay que hacer, para cuándo y de quién es.`}
         actions={

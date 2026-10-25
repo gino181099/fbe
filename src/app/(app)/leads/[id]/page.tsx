@@ -132,7 +132,7 @@ export default async function LeadPage({ params }: PageProps<"/leads/[id]">) {
           <ArrowLeft /> Leads
         </Link>
       </Button>
-      <PageHeader
+      <PageHeader help="leads"
         title={
           <span className="flex flex-wrap items-center gap-2">
             {lead.title} <OpportunityStageBadge stage={lead.stage} />

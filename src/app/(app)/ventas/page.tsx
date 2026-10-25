@@ -107,7 +107,7 @@ export default async function SalesPage({ searchParams }: PageProps<"/ventas">) 
 
   return (
     <>
-      <PageHeader
+      <PageHeader help="ventas"
         title="Ventas"
         description="Recorridos realizados."
         actions={

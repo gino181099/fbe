@@ -48,7 +48,7 @@ export default async function ReceiptsPage({ searchParams }: PageProps<"/finanza
 
   return (
     <>
-      <PageHeader
+      <PageHeader help="recibos"
         title="Recibos"
         description="Pagos de clientes con recibo numerado. No se editan ni se borran: se anulan."
         actions={

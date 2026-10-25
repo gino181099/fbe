@@ -41,7 +41,7 @@ export default async function ContactsPage({ searchParams }: PageProps<"/contact
 
   return (
     <>
-      <PageHeader
+      <PageHeader help="contactos"
         title="Contactos"
         description={
           <>

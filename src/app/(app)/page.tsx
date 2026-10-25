@@ -124,7 +124,7 @@ export default async function DashboardPage({ searchParams }: PageProps<"/">) {
 
   return (
     <>
-      <PageHeader title={`Hola${firstName ? `, ${firstName}` : ""}`} description={`Resumen de ${month}.`} />
+      <PageHeader help="inicio" title={`Hola${firstName ? `, ${firstName}` : ""}`} description={`Resumen de ${month}.`} />
 
       <section className="grid content-start gap-3">
         <div className="flex flex-wrap items-center justify-between gap-2">

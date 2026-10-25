@@ -1,18 +1,26 @@
 import type { ReactNode } from "react";
+import { PageHelp } from "@/components/page-help";
+import type { HelpKey } from "@/lib/help";
 
 export function PageHeader({
   title,
   description,
   actions,
+  help,
 }: {
   title: ReactNode;
   description?: ReactNode;
   actions?: ReactNode;
+  /** Ayuda del módulo (botón (i) al lado del título); textos en `src/lib/help.ts`. */
+  help?: HelpKey;
 }) {
   return (
     <div className="flex flex-wrap items-start justify-between gap-4">
       <div className="grid gap-1">
-        <h1 className="text-2xl font-semibold tracking-tight">{title}</h1>
+        <div className="flex items-center gap-1">
+          <h1 className="text-2xl font-semibold tracking-tight">{title}</h1>
+          {help && <PageHelp topic={help} />}
+        </div>
         {description && <p className="text-sm text-muted-foreground">{description}</p>}
       </div>
       {actions && <div className="flex flex-wrap items-center gap-2">{actions}</div>}

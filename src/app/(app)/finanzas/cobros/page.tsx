@@ -51,7 +51,7 @@ export default async function CollectionsPage({ searchParams }: PageProps<"/fina
 
   return (
     <>
-      <PageHeader
+      <PageHeader help="cobros"
         title="Cobros (historial)"
         description="Historial de cobros anterior a la cuenta corriente. Solo lectura: los pagos nuevos se registran como recibos."
         actions={

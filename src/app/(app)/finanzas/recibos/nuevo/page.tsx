@@ -37,7 +37,7 @@ export default async function NewReceiptPage({ searchParams }: PageProps<"/finan
           <ArrowLeft /> {data ? `Cuenta de ${data.client.name}` : "Recibos"}
         </Link>
       </Button>
-      <PageHeader
+      <PageHeader help="recibos"
         title="Nuevo recibo"
         description="Tildá los recorridos que paga el cliente o cargá un monto libre: lo que no se asigne se aplica a lo más viejo."
       />

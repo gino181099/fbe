@@ -51,7 +51,7 @@ export default async function NewDocumentPage({ searchParams }: PageProps<"/fina
           <ArrowLeft /> {client ? `Cuenta de ${client.name}` : "Comprobantes"}
         </Link>
       </Button>
-      <PageHeader
+      <PageHeader help="comprobantes"
         title="Nuevo comprobante"
         description={`Elegí cliente y tipo. Factura y comprobante interno documentan recorridos desde el ${formatDate(CC_START)}; lo anterior va como saldo inicial.`}
       />

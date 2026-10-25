@@ -38,7 +38,7 @@ export default async function AccountsPage({ searchParams }: PageProps<"/finanza
 
   return (
     <>
-      <PageHeader
+      <PageHeader help="cuentas"
         title="Cuentas corrientes"
         description="Cuenta corriente desde el 19/10/2026: recorridos, notas de débito y saldo inicial, menos cobros, ajustes, notas de crédito y bonificaciones."
         actions={

@@ -174,7 +174,7 @@ export default async function ClientPage({ params, searchParams }: PageProps<"/c
           <ArrowLeft /> Contactos
         </Link>
       </Button>
-      <PageHeader
+      <PageHeader help="contactos"
         title={
           <span className="flex flex-wrap items-center gap-2">
             {client.name} <ClientTypeBadge type={client.type} /> <ClientStatusBadge status={client.status} />

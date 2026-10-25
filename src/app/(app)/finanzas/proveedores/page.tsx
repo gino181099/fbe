@@ -61,7 +61,7 @@ export default async function SuppliersPage({ searchParams }: PageProps<"/finanz
 
   return (
     <>
-      <PageHeader
+      <PageHeader help="proveedores"
         title="Proveedores"
         description="Lista de proveedores y saldo a pagar"
         actions={

@@ -50,7 +50,7 @@ export default async function SupplierPage({ params, searchParams }: PageProps<"
           <ArrowLeft /> Proveedores
         </Link>
       </Button>
-      <PageHeader
+      <PageHeader help="proveedores"
         title={s.name}
         description={details}
         actions={

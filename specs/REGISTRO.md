@@ -15,6 +15,13 @@ Una entrada por tarea terminada, **la más nueva arriba**. Formato fijo y breve 
 
 ---
 
+## 2026-10-25 · T-029 · Ayuda (i) en cada módulo
+- Resultado: botón (i) al lado del título de las 19 páginas (salvo Usuarios, oculto); abre un panel lateral con "Para qué sirve", "Qué significa cada cosa" y "A tener en cuenta". 12 temas; las fichas y los "nuevo" usan el de su módulo.
+- Archivos: `src/lib/help.ts` (textos), `src/components/{page-help,page-header}.tsx` (prop `help`), páginas de `src/app/(app)/`.
+- Datos: —
+- Verificación: tsc · lint · test · build · navegador en `npm start` (panel abierto en Ventas; botón presente en todas las rutas).
+- Pendiente: que el equipo revise los textos.
+
 ## 2026-10-25 · Auditoría · Peso de páginas y PDF de estado de cuenta
 - Resultado: auditoría sin errores (tsc, lint, tests, todas las rutas 200, consola limpia). Los campos de edición por fila de Gastos y de Tarifas pasaron a componentes cliente: las listas viajan una vez y no por fila (Gastos 3,5 MB → 1,1 MB de HTML; contacto 464 → 214 KB). El estado de cuenta usa `PdfBrandHeader` (logo + datos fiscales) y los PDFs incrustan un logo de 256 px (`frabel-logo-pdf.png`, 38 KB; antes 750 KB por PDF).
 - Archivos: `src/app/(app)/finanzas/fields.tsx`, `src/app/(app)/contactos/[id]/{page.tsx,rate-fields.tsx}`, `src/lib/{statement-pdf.tsx,pdf-brand.tsx}`, `public/brand/frabel-logo-pdf.png`.

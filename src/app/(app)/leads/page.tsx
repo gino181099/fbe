@@ -93,7 +93,7 @@ export default async function LeadsPage({ searchParams }: PageProps<"/leads">) {
 
   return (
     <>
-      <PageHeader
+      <PageHeader help="leads"
         title="Leads"
         description="Oportunidades comerciales: prospectos nuevos y propuestas a clientes."
         actions={
