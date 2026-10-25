@@ -20,6 +20,7 @@ Una entrada por tarea terminada, **la más nueva arriba**. Formato fijo y breve 
 - Archivos: `src/app/(app)/page.tsx` (consulta en paralelo con el resto del tablero).
 - Datos: —
 - Verificación: tsc · lint · build · navegador: con 4 PRUEBA (vencida, hoy, futura, de otro usuario) solo salen las 2 correctas; marcar hecha la saca y baja el contador del menú. PRUEBA borradas.
+- Publicación: subido a Bitbucket (`origin/main`) el 2026-10-25.
 
 ## 2026-10-25 · T-026 · Calendario de la agenda y actividades por vehículo
 - Resultado: `/agenda` abre en calendario mensual (lunes a domingo, ← → y "Hoy", filtro de usuario) con colores de Odoo (rojo vencida, amarillo hoy, verde planificada, gris hecha); arrastrar una actividad a otro día la reprograma; clic abre el detalle con hecha/reprogramar/editar/eliminar. Lista también con punto de color. Ficha `/flota/[id]` con actividades y últimos gastos; en Flota la patente enlaza a la ficha con punto de color y cantidad pendiente.
