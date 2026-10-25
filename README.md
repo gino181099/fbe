@@ -17,6 +17,8 @@ Se entra con la clave única **`belinda2156`** (definida en `src/lib/config.ts`,
 
 ## Instalación en la PC servidor (una sola vez)
 
+> Guía paso a paso, para cualquiera: **[GUIA-INSTALACION.md](GUIA-INSTALACION.md)**. Abajo, el resumen.
+
 Requisitos: Windows x64, [Node 22+](https://nodejs.org) y [Git](https://git-scm.com).
 
 ```bat
