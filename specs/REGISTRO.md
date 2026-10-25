@@ -21,6 +21,7 @@ Una entrada por tarea terminada, **la más nueva arriba**. Formato fijo y breve 
 - Datos: —
 - Verificación: tsc · lint · test · build · navegador en `npm start` (panel abierto en Ventas; botón presente en todas las rutas).
 - Pendiente: que el equipo revise los textos.
+- Publicación: subido a Bitbucket (origin/main) el 2026-10-25.
 
 ## 2026-10-25 · Auditoría · Peso de páginas y PDF de estado de cuenta
 - Resultado: auditoría sin errores (tsc, lint, tests, todas las rutas 200, consola limpia). Los campos de edición por fila de Gastos y de Tarifas pasaron a componentes cliente: las listas viajan una vez y no por fila (Gastos 3,5 MB → 1,1 MB de HTML; contacto 464 → 214 KB). El estado de cuenta usa `PdfBrandHeader` (logo + datos fiscales) y los PDFs incrustan un logo de 256 px (`frabel-logo-pdf.png`, 38 KB; antes 750 KB por PDF).
