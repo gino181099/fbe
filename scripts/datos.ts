@@ -3,8 +3,10 @@
 //   tsx scripts/datos.ts backup                      → BACKUP_DIR/frabel-AAAA-MM-DD-HHMM.json.gz
 //   tsx scripts/datos.ts restore <archivo>           → reemplaza la base local (antes hace backup)
 //   tsx scripts/datos.ts copiar-neon                 → ídem, trayendo todo desde NEON_DATABASE_URL (una sola vez)
+//   tsx scripts/datos.ts exportar-inicial            → datos-iniciales/frabel-inicial.json.gz (va al repo)
+//   tsx scripts/datos.ts inicializar                 → carga los datos iniciales SOLO si la base no tiene datos
 // Los valores viajan como texto (sin conversiones de JS), así fechas y montos quedan idénticos.
-// Origen y destino tienen que tener aplicadas las mismas migraciones.
+// El volcado tiene que ser de la misma migración que la base o de una anterior (las migraciones son aditivas).
 import fs from "node:fs";
 import path from "node:path";
 import zlib from "node:zlib";
@@ -15,6 +17,7 @@ type TableDump = { columns: string[]; rows: (string | null)[][] };
 type Dump = { version: 1; createdAt: string; migration: string | null; tables: Record<string, TableDump> };
 
 const KEEP_BACKUPS = 60;
+const INITIAL_FILE = path.join(process.cwd(), "datos-iniciales", "frabel-inicial.json.gz");
 const rawTypes = { getTypeParser: () => (v: string) => v };
 
 function connect(url: string) {
@@ -28,9 +31,13 @@ function connect(url: string) {
 
 const q = (name: string) => `"${name.replace(/"/g, '""')}"`;
 
+async function migrations(c: Client) {
+  const { rows } = await c.query(`select hash from drizzle.__drizzle_migrations order by created_at`);
+  return rows.map((r) => r.hash as string);
+}
+
 async function lastMigration(c: Client) {
-  const { rows } = await c.query(`select hash from drizzle.__drizzle_migrations order by created_at desc limit 1`);
-  return (rows[0]?.hash as string | undefined) ?? null;
+  return (await migrations(c)).at(-1) ?? null;
 }
 
 async function tableNames(c: Client) {
@@ -60,22 +67,27 @@ async function rowCount(c: Client, t: string) {
   return Number(rows[0].n);
 }
 
+/** ¿Tiene datos cargados por la gente? (las migraciones siembran vehículos/choferes/proveedores, eso no cuenta) */
+async function hasBusinessData(c: Client) {
+  for (const t of ["client", "trip", "expense", "user"]) if ((await rowCount(c, t)) > 0) return true;
+  return false;
+}
+
 /**
  * Reemplaza todo el contenido de la base local por el volcado, en una transacción (o todo o nada).
- * Antes guarda un backup de lo que había, si había algo.
+ * Antes guarda un backup de lo que había, si había datos.
  */
 async function writeAll(dump: Dump) {
   const c = connect(DATABASE_URL);
   await c.connect();
   try {
-    const local = await lastMigration(c);
-    if (dump.migration !== local) {
-      throw new Error("Las migraciones del origen y de la base local no coinciden. Correr `npm run db:migrate` (o actualizar el origen) antes.");
+    const local = await migrations(c);
+    if (dump.migration && !local.includes(dump.migration)) {
+      throw new Error("El volcado es de una versión más nueva del ERP que esta. Actualizar (git pull + npm run db:migrate) antes.");
     }
+    if (dump.migration !== local.at(-1)) console.log("Aviso: el volcado es de una versión anterior; se carga igual.");
     const localTables = await tableNames(c);
-    let hasData = false;
-    for (const t of localTables) hasData ||= (await rowCount(c, t)) > 0;
-    if (hasData) await backup();
+    if (await hasBusinessData(c)) await backup();
     await c.query("begin");
     // Sin chequeo de claves foráneas ni triggers durante la carga: el orden de las tablas no importa.
     await c.query("set local session_replication_role = replica");
@@ -118,21 +130,29 @@ async function writeAll(dump: Dump) {
   }
 }
 
-export async function backup() {
+async function readLocal() {
   const c = connect(DATABASE_URL);
   await c.connect();
-  let dump: Dump;
   try {
-    dump = await readAll(c);
+    return await readAll(c);
   } finally {
     await c.end();
   }
-  fs.mkdirSync(BACKUP_DIR, { recursive: true });
-  const stamp = new Date().toLocaleString("sv-SE", { timeZone: "America/Argentina/Buenos_Aires" }).slice(0, 16);
-  const file = path.join(BACKUP_DIR, `frabel-${stamp.replace(" ", "-").replace(":", "")}.json.gz`);
+}
+
+function writeDumpFile(dump: Dump, file: string, label: string) {
+  fs.mkdirSync(path.dirname(file), { recursive: true });
   fs.writeFileSync(file, zlib.gzipSync(JSON.stringify(dump)));
   const total = Object.values(dump.tables).reduce((s, t) => s + t.rows.length, 0);
-  console.log(`Backup: ${file} (${total} filas)`);
+  console.log(`${label}: ${file} (${total} filas)`);
+}
+
+const readDumpFile = (file: string) => JSON.parse(zlib.gunzipSync(fs.readFileSync(file)).toString("utf8")) as Dump;
+
+export async function backup() {
+  const stamp = new Date().toLocaleString("sv-SE", { timeZone: "America/Argentina/Buenos_Aires" }).slice(0, 16);
+  const file = path.join(BACKUP_DIR, `frabel-${stamp.replace(" ", "-").replace(":", "")}.json.gz`);
+  writeDumpFile(await readLocal(), file, "Backup");
   // Se conservan los últimos KEEP_BACKUPS.
   const old = fs.readdirSync(BACKUP_DIR).filter((f) => /^frabel-.*\.json\.gz$/.test(f)).sort().slice(0, -KEEP_BACKUPS);
   for (const f of old) fs.rmSync(path.join(BACKUP_DIR, f));
@@ -140,7 +160,25 @@ export async function backup() {
 }
 
 async function restore(file: string) {
-  await writeAll(JSON.parse(zlib.gunzipSync(fs.readFileSync(file)).toString("utf8")) as Dump);
+  await writeAll(readDumpFile(file));
+}
+
+/** En la PC de desarrollo: deja la base actual como punto de partida de producción (se sube al repo). */
+async function exportInitial() {
+  writeDumpFile(await readLocal(), INITIAL_FILE, "Datos iniciales");
+  console.log('Ahora: git add datos-iniciales && git commit -m "Datos iniciales" && git push');
+}
+
+/** En la instalación: carga los datos iniciales solo si la base está vacía. Nunca pisa datos de producción. */
+async function initialize() {
+  const c = connect(DATABASE_URL);
+  await c.connect();
+  const hasData = await hasBusinessData(c).finally(() => c.end());
+  if (hasData) return console.log("La base ya tiene datos: no se cargan los datos iniciales.");
+  if (!fs.existsSync(INITIAL_FILE)) return console.log("No hay datos iniciales en el repo: la base arranca vacía.");
+  const dump = readDumpFile(INITIAL_FILE);
+  console.log(`Cargando datos iniciales (exportados el ${dump.createdAt.slice(0, 10)}) ...`);
+  await writeAll(dump);
 }
 
 async function copyFromNeon() {
@@ -148,12 +186,7 @@ async function copyFromNeon() {
   if (!url) throw new Error("Falta NEON_DATABASE_URL (en .env.local).");
   const c = connect(url);
   await c.connect();
-  let dump: Dump;
-  try {
-    dump = await readAll(c);
-  } finally {
-    await c.end();
-  }
+  const dump = await readAll(c).finally(() => c.end());
   await writeAll(dump);
 }
 
@@ -167,7 +200,13 @@ if (isMain) {
         ? restore(arg)
         : cmd === "copiar-neon"
           ? copyFromNeon()
-          : Promise.reject(new Error("Uso: tsx scripts/datos.ts backup | restore <archivo> | copiar-neon"));
+          : cmd === "exportar-inicial"
+            ? exportInitial()
+            : cmd === "inicializar"
+              ? initialize()
+              : Promise.reject(
+                  new Error("Uso: tsx scripts/datos.ts backup | restore <archivo> | copiar-neon | exportar-inicial | inicializar"),
+                );
   run.catch((e) => {
     console.error(e instanceof Error ? e.message : e);
     process.exit(1);

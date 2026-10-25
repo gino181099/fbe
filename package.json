@@ -18,6 +18,8 @@
     "db:studio": "drizzle-kit studio",
     "db:backup": "tsx scripts/datos.ts backup",
     "db:restore": "tsx scripts/datos.ts restore",
+    "db:exportar-inicial": "tsx scripts/datos.ts exportar-inicial",
+    "db:inicializar": "tsx scripts/datos.ts inicializar",
     "db:copiar-neon": "tsx --env-file-if-exists=.env.local scripts/datos.ts copiar-neon",
     "db:import-legacy": "tsx --env-file-if-exists=.env.local scripts/migrate-legacy.ts",
     "db:saldar-historico": "tsx --env-file-if-exists=.env.local scripts/saldar-historico.ts",

@@ -1,5 +1,6 @@
 @echo off
-rem Trae la ultima version desde git y la deja lista. Antes CERRAR la ventana de iniciar-erp.bat.
+rem Trae la ultima version del codigo desde git y la deja lista. NO toca los datos (solo aplica
+rem migraciones de tablas). Antes CERRAR la ventana de iniciar-erp.bat.
 cd /d "%~dp0"
 echo == Backup de la base ==
 call npm run db:start || goto error
@@ -18,6 +19,6 @@ pause
 exit /b 0
 :error
 echo.
-echo *** Algo fallo. El ERP sigue con la version anterior de los datos (hay backup). ***
+echo *** Algo fallo. Los datos no se tocaron (y hay backup). ***
 pause
 exit /b 1

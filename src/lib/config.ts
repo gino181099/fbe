@@ -14,9 +14,13 @@ export const PG_USER = "postgres";
 export const PG_PASSWORD = "belinda2156";
 export const PG_DATABASE = "frabel";
 
-/** Datos de Postgres fuera de OneDrive (OneDrive bloquea/corrompe los archivos de la base). */
-export const PG_DATA_DIR = process.env.PG_DATA_DIR ?? path.join(os.homedir(), "frabel-erp-datos", "postgres");
-export const BACKUP_DIR = process.env.BACKUP_DIR ?? path.join(os.homedir(), "frabel-erp-datos", "backups");
+/**
+ * Datos separados del código: el repo (C:\FrabelERP) se actualiza con git y nunca toca esta carpeta.
+ * Ruta fija de la PC (no del usuario de Windows) y fuera de OneDrive (bloquea/corrompe los archivos de la base).
+ */
+export const DATA_ROOT = process.env.FRABEL_DATA_DIR ?? (process.platform === "win32" ? "C:\\FrabelERP-datos" : path.join(os.homedir(), "FrabelERP-datos"));
+export const PG_DATA_DIR = process.env.PG_DATA_DIR ?? path.join(DATA_ROOT, "postgres");
+export const BACKUP_DIR = process.env.BACKUP_DIR ?? path.join(DATA_ROOT, "backups");
 
 export const DATABASE_URL =
   process.env.DATABASE_URL ?? `postgres://${PG_USER}:${PG_PASSWORD}@localhost:${PG_PORT}/${PG_DATABASE}`;

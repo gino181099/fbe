@@ -30,7 +30,9 @@ Conocimiento estable que no se deduce fácil del código. Leer antes de explorar
 
 ## Decisiones técnicas
 
-- **Todo local desde 2026-10-25 (T-024)**: Postgres 18 con binarios de npm (`@embedded-postgres/windows-x64`, manejado por `scripts/db.ts` con `pg_ctl`, puerto 5433, solo localhost) + Drizzle `node-postgres`. Datos en `%USERPROFILE%\frabel-erp-datos\` (fuera de OneDrive). Neon quedó solo como respaldo viejo. La base de producción es la de la PC de la oficina.
+- **Todo local desde 2026-10-25 (T-024)**: Postgres 18 con binarios de npm (`@embedded-postgres/windows-x64`, manejado por `scripts/db.ts` con `pg_ctl`, puerto 5433, solo localhost) + Drizzle `node-postgres`. Datos en `C:\FrabelERP-datos\{postgres,backups}` (ruta fija de la PC, no del usuario de Windows; fuera del repo y de OneDrive; override `FRABEL_DATA_DIR`). Neon quedó solo como respaldo viejo.
+- **Dos PCs**: esta = desarrollo (datos de prueba); oficina = producción (la única base que vale). Los cambios de código no llevan datos. Primera instalación: `npm run db:exportar-inicial` → `datos-iniciales/frabel-inicial.json.gz` al repo → `instalar.bat` corre `db:inicializar`, que carga solo si no hay datos de negocio (`client|trip|expense|user`). Con producción andando, quitar `datos-iniciales/` del repo. Volcados de una migración anterior se aceptan (migraciones aditivas); de una posterior, no.
+- `instalar.bat` también: regla de firewall (pide UAC vía `Start-Process -Verb RunAs`), acceso directo minimizado en la carpeta Inicio, `powercfg standby-timeout-ac 0`, muestra la IP.
 - Config fija en `src/lib/config.ts` (pedido del usuario: nada en `.env`): clave única `belinda2156`, `AUTH_SECRET`, URL de la base. Login = un solo campo; entra como el usuario compartido `frabel` (admin). Usuarios oculto del sidebar; sin Google ni adapter.
 - Escrituras múltiples con `db.transaction(async (tx) => …)` (ya no `db.batch`). Sin `pg_dump`: backup/restore/copia en `scripts/datos.ts` (JSON.gz, valores como texto, `session_replication_role=replica`, reajusta secuencias). Backup automático en cada `npm start`.
 - Despliegue: `instalar.bat` / `iniciar-erp.bat` / `actualizar.bat` (git pull desde Bitbucket); `next start -H 0.0.0.0` para la red.
@@ -55,6 +57,8 @@ Conocimiento estable que no se deduce fácil del código. Leer antes de explorar
 - Fechas de `timestamp` (createdAt) a día: `dayInAR(d)` de `src/lib/format.ts`, nunca `toISOString()` (de noche en AR da el día siguiente).
 - Windows: cortar `npm start`/`npx next start` en background no mata el `node` hijo; liberar el puerto con `Stop-Process` sobre el PID que escucha (`Get-NetTCPConnection -LocalPort 3000`). Postgres sigue corriendo aparte (`npm run db:stop`).
 - `StatCard` con montos de millones: más de 3 por fila desbordaba (Gastos tenía 6 en `lg`). `StatCard` ahora achica la letra y corta antes de desbordar; filas de muchas tarjetas: `sm:grid-cols-3 2xl:grid-cols-6`.
+- **Nunca mover/copiar la carpeta de datos con Postgres corriendo**, y antes de cambiar `DATA_ROOT`/`PG_DATA_DIR` detenerlo con la ruta vieja (`db:stop` usa la ruta de la config actual y dice "no estaba corriendo"). Si pasa: matar `postgres.exe`, borrar `postmaster.pid`, arrancar (hace recuperación) y comparar contra un volcado (`compare` de tablas JSON).
+- Probar instalación limpia sin tocar la base real: `FRABEL_DATA_DIR=%TEMP%\x` + `PG_PORT=5434` y correr `db:setup` / `db:inicializar`.
 - Probar UI siempre en `npm run build && npm start` contra la base local (es la forma en que corre en la oficina).
 - Los clics de prueba en el navegador pueden fallar antes de la hidratación en dev: esperar y reintentar.
 - "Jest worker encountered 2 child process exceptions" en dev = murió el worker de static paths (todas las rutas `[id]`); pasó con un `npm run dev` lanzado desde una terminal ya cerrada (EPIPE en `.next/dev/logs/next-development.log`). Fix: matar el server, borrar `.next/` y relanzar desde una terminal viva.

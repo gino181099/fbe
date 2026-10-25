@@ -15,47 +15,16 @@ Stack: Next.js 16 · PostgreSQL 18 local (binarios por npm, `@embedded-postgres/
 
 Se entra con la clave única **`belinda2156`** (definida en `src/lib/config.ts`, junto con el resto de la configuración). No hay `.env` obligatorio.
 
-## Instalación en la PC servidor (una sola vez)
+## Producción (PC de la oficina)
 
-> Guía paso a paso, para cualquiera: **[GUIA-INSTALACION.md](GUIA-INSTALACION.md)**. Abajo, el resumen.
+> Guía paso a paso, con el tutorial para fijar la IP: **[GUIA-INSTALACION.md](GUIA-INSTALACION.md)**. Abajo, el resumen.
 
-Requisitos: Windows x64, [Node 22+](https://nodejs.org) y [Git](https://git-scm.com).
-
-```bat
-git clone <url del repo de Bitbucket> C:\FrabelERP
-cd C:\FrabelERP
-instalar.bat
-```
-
-`instalar.bat` instala dependencias (incluido Postgres), crea la base y la compila. Los datos quedan en `%USERPROFILE%\frabel-erp-datos\` (fuera del proyecto: **nunca dentro de OneDrive**).
-
-Para traer los datos desde otra PC: copiar un backup (`.json.gz`) y correr
-
-```bat
-npm run db:restore -- "C:\ruta\frabel-AAAA-MM-DD-HHMM.json.gz"
-```
-
-### Uso diario
-
-- `iniciar-erp.bat`: arranca la base y el ERP. Dejar la ventana abierta.
-- En esa PC: http://localhost:3000 · Desde otras PCs: `http://<IP de la PC servidor>:3000` (ver la IP con `ipconfig`; conviene fijarla en el router).
-- Para que arranque solo al prender la PC: `Win + R` → `shell:startup` → crear ahí un acceso directo a `iniciar-erp.bat`.
-- Firewall (una vez, en una consola **como administrador**):
-  ```bat
-  netsh advfirewall firewall add rule name="Frabel ERP" dir=in action=allow protocol=TCP localport=3000
-  ```
-
-### Actualizar a una versión nueva
-
-1. Cerrar la ventana de `iniciar-erp.bat`.
-2. Doble clic en `actualizar.bat` (backup → `git pull` → dependencias → migraciones → compilación).
-3. Abrir de nuevo `iniciar-erp.bat`.
-
-### Backups
-
-- Se hace uno automático cada vez que arranca el ERP y antes de cada actualización/restauración, en `%USERPROFILE%\frabel-erp-datos\backups\` (se guardan los últimos 60).
-- Manual: `npm run db:backup`. Conviene copiar esa carpeta a un pendrive o disco externo de vez en cuando.
-- Restaurar: `npm run db:restore -- "<archivo>"` (reemplaza toda la base; antes guarda un backup de lo que había).
+- **Código y datos separados:** el código vive en `C:\FrabelERP` (repo, se actualiza con git) y los datos en `C:\FrabelERP-datos` (Postgres y backups; git nunca los toca).
+- **Instalar (un comando):** en tu PC, `npm run db:exportar-inicial` + commit + push. En la oficina:
+  `git clone <repo> C:\FrabelERP && C:\FrabelERP\instalar.bat`. Eso instala, crea la base, carga `datos-iniciales/` **solo si la base está vacía**, compila, abre el firewall, configura el arranque automático y desactiva la suspensión.
+- **Usar:** arranca solo con Windows (`iniciar-erp.bat`). `http://localhost:3000`, o `http://<IP>:3000` desde la red.
+- **Actualizar:** cerrar el ERP y correr `actualizar.bat` (backup → `git pull` → `npm ci` → migraciones → build). No toca los datos.
+- **Backups:** automáticos en cada arranque y antes de cada actualización, en `C:\FrabelERP-datos\backups\` (los últimos 60). Manual: `npm run db:backup`. Restaurar: `npm run db:restore -- "<archivo>"` (reemplaza todo; antes guarda backup).
 
 ## Desarrollo (esta PC)
 

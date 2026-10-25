@@ -15,6 +15,13 @@ Una entrada por tarea terminada, **la más nueva arriba**. Formato fijo y breve 
 
 ---
 
+## 2026-10-25 · Instalación de producción en un comando
+- Resultado: datos separados del código en `C:\FrabelERP-datos`; datos iniciales por el repo (`db:exportar-inicial` / `db:inicializar`, nunca pisa una base con datos); `instalar.bat` hace todo (firewall, arranque automático, sin suspensión, muestra IP); guía reescrita con tutorial para fijar la IP.
+- Archivos: `scripts/datos.ts`, `src/lib/config.ts`, `instalar.bat`, `actualizar.bat`, `GUIA-INSTALACION.md`, `README.md`, `datos-iniciales/frabel-inicial.json.gz`.
+- Datos: base de desarrollo movida a `C:\FrabelERP-datos` (se movió con Postgres corriendo; recuperada y verificada idéntica al volcado previo, 23 tablas).
+- Verificación: tsc · instalación simulada en carpeta/puerto temporal: 860 filas OK y segunda corrida no pisa.
+- Pendiente: re-exportar datos iniciales cuando el usuario termine de cargar; tras instalar producción, sacar `datos-iniciales/` del repo.
+
 ## 2026-10-25 · Fix · Tarjetas de Gastos desbordadas
 - Resultado: en `/finanzas/gastos` los 6 totales (millones) se pisaban; ahora 3 por fila (6 recién en `2xl`) y `StatCard` achica la letra y corta el monto en vez de desbordar (aplica a todas las pantallas).
 - Archivos: `src/app/(app)/finanzas/gastos/page.tsx`, `src/components/page-header.tsx`; `specs/TAREAS.md` (acciones manuales al día con el paso a local; T-002 quitada, sin sentido con clave única).

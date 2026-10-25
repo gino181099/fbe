@@ -58,7 +58,7 @@ scripts/                  db.ts (Postgres local) · local.ts (arranque) · datos
 - Varias escrituras juntas: `db.transaction(async (tx) => { ... })` (no hay `db.batch`, eso era de Neon).
 - `tsx` no puede cargar `@react-pdf/renderer` (ESM); probar el PDF desde la app.
 - En Windows, heredocs con comillas/backticks fallan en Bash: editar archivos con Edit/Write.
-- Nunca subir `frabel-database*` ni `.env*` (ya están en `.gitignore`). La base local de esta PC tiene datos reales copiados (la de producción es la de la PC de la oficina): datos de prueba se crean y se borran. Los datos de Postgres viven fuera de OneDrive (`%USERPROFILE%\frabel-erp-datos`).
+- Nunca subir `frabel-database*` ni `.env*` (ya están en `.gitignore`). La base local de esta PC tiene datos reales copiados (la de producción es la de la PC de la oficina): datos de prueba se crean y se borran. Los datos de Postgres viven en `C:\FrabelERP-datos` (fuera del repo y de OneDrive). Los cambios de código **no** llevan datos: la base válida es la de producción. `datos-iniciales/` es solo para la primera instalación.
 
 ## Uso eficiente de tokens
 
