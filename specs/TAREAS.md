@@ -23,12 +23,6 @@ Prioridad: `Alta` · `Media` · `Baja`.
 
 ## 💡 Recomendadas por Claude (No implementar)
 
-### T-002 · Cambiar contraseña del admin desde la app
-- Estado: Recomendada
-- Prioridad: Alta
-- Spec: —
-- Descripción: Pantalla "Mi cuenta" para que el usuario con login por usuario/contraseña cambie su clave (mínimo 8 caracteres). Hoy solo se puede por script y `2156` es débil para un sitio público. Hacer antes del deploy.
-
 ### T-004 · Cargas de combustible duplicadas (datos viejos)
 - Estado: Recomendada
 - Prioridad: Media
@@ -62,12 +56,12 @@ Prioridad: `Alta` · `Media` · `Baja`.
 
 ## 🔧 Acciones manuales del equipo (fuera del código)
 
-- [ ] Crear credenciales OAuth de Google y completar `AUTH_GOOGLE_ID` / `AUTH_GOOGLE_SECRET` (pasos en README).
-- [ ] Cambiar la contraseña de Neon (se compartió en el chat) y actualizar `.env.local`.
+- [ ] Crear el repo privado en Bitbucket y hacer push (`git remote add origin <url>`).
+- [ ] Instalar en la PC de la oficina: `git clone` → `instalar.bat` → `npm run db:restore -- <último backup>`; regla de firewall del puerto 3000, IP fija y acceso directo en `shell:startup` (README).
+- [ ] Cuando la oficina ya trabaje en local: borrar `NEON_DATABASE_URL` de `.env.local` y dar de baja la base de Neon.
 - [ ] Cargar el tarifario de Huentata y marcar "recalcular" (2 viajes con precio $0).
 - [ ] Revisar el viaje City Tours de 8 plazas del 03/04/2026 (no existe esa tarifa).
 - [ ] Responder: ¿Shell Maza es cuenta corriente o pago en el momento?
-- [ ] Deploy en Vercel (README).
 
 ---
 

@@ -15,6 +15,12 @@ Una entrada por tarea terminada, **la más nueva arriba**. Formato fijo y breve 
 
 ---
 
+## 2026-10-25 · Fix · Tarjetas de Gastos desbordadas
+- Resultado: en `/finanzas/gastos` los 6 totales (millones) se pisaban; ahora 3 por fila (6 recién en `2xl`) y `StatCard` achica la letra y corta el monto en vez de desbordar (aplica a todas las pantallas).
+- Archivos: `src/app/(app)/finanzas/gastos/page.tsx`, `src/components/page-header.tsx`; `specs/TAREAS.md` (acciones manuales al día con el paso a local; T-002 quitada, sin sentido con clave única).
+- Datos: —
+- Verificación: tsc · lint · build · navegador en `npm start`: Gastos y Combustible bien.
+
 ## 2026-10-25 · T-024 · ERP local (Postgres por npm) y clave única
 - Resultado: base Postgres 18 local instalada con npm (`@embedded-postgres/windows-x64`), datos de Neon copiados; login con clave única `belinda2156`; arranque/instalación/actualización por `.bat`; backups automáticos.
 - Archivos: `src/lib/config.ts`, `src/db/index.ts`, `src/auth.ts`, `src/app/(auth)/**`, `scripts/{db,local,datos}.ts`, `*.bat`, `drizzle.config.ts`, `package.json`, `README.md`; `db.batch` → `db.transaction` en `rates.ts`, `contactos`, `leads`, `usuarios`, `saldar-historico`. Borrados `seed-admin.ts`, `vercel.json`.

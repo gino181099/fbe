@@ -47,9 +47,10 @@ export function Field({
 
 export function StatCard({ label, value, hint }: { label: string; value: ReactNode; hint?: ReactNode }) {
   return (
-    <div className="rounded-xl border bg-card p-4">
+    <div className="min-w-0 rounded-xl border bg-card p-4">
       <p className="text-sm text-muted-foreground">{label}</p>
-      <p className="mt-1 text-2xl font-semibold tabular-nums">{value}</p>
+      {/* Montos grandes: achica la letra antes que desbordar la tarjeta. */}
+      <p className="mt-1 text-xl font-semibold tabular-nums [overflow-wrap:anywhere] xl:text-2xl">{value}</p>
       {hint && <p className="mt-1 text-xs text-muted-foreground">{hint}</p>}
     </div>
   );

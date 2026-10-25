@@ -266,7 +266,7 @@ export default async function ExpensesPage({ searchParams }: PageProps<"/finanza
         </TabsList>
 
         <TabsContent value="gastos" className="grid gap-4 pt-2">
-          <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-6">
+          <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 2xl:grid-cols-6">
             <StatCard label="Total" value={formatMoney(totalExpenses)} />
             {EXPENSE_CATEGORIES.map((c) => (
               <StatCard key={c} label={EXPENSE_CATEGORY_LABELS[c]} value={formatMoney(catTotal(c))} />

@@ -53,6 +53,8 @@ Conocimiento estable que no se deduce fácil del código. Leer antes de explorar
 - Velocidad: en dev Next compila cada ruta la primera vez y el proyecto está en OneDrive (sincroniza `.next/`): medir con `npm run build && npm start`. `(app)/loading.tsx` da respuesta inmediata al navegar.
 - `pg_ctl start` con stdio heredado deja colgado a quien lanzó el script (postgres hereda el pipe): usar `stdio: "ignore"`. Las migraciones siembran `vehicle`/`driver`/`supplier`: una base "nueva" no está vacía. Scripts `tsx` sin top-level await (salen en CJS).
 - Fechas de `timestamp` (createdAt) a día: `dayInAR(d)` de `src/lib/format.ts`, nunca `toISOString()` (de noche en AR da el día siguiente).
-- Windows: cortar `npx next start` en background no mata el `node` hijo; liberar el puerto con `Stop-Process` sobre el PID que escucha.
+- Windows: cortar `npm start`/`npx next start` en background no mata el `node` hijo; liberar el puerto con `Stop-Process` sobre el PID que escucha (`Get-NetTCPConnection -LocalPort 3000`). Postgres sigue corriendo aparte (`npm run db:stop`).
+- `StatCard` con montos de millones: más de 3 por fila desbordaba (Gastos tenía 6 en `lg`). `StatCard` ahora achica la letra y corta antes de desbordar; filas de muchas tarjetas: `sm:grid-cols-3 2xl:grid-cols-6`.
+- Probar UI siempre en `npm run build && npm start` contra la base local (es la forma en que corre en la oficina).
 - Los clics de prueba en el navegador pueden fallar antes de la hidratación en dev: esperar y reintentar.
 - "Jest worker encountered 2 child process exceptions" en dev = murió el worker de static paths (todas las rutas `[id]`); pasó con un `npm run dev` lanzado desde una terminal ya cerrada (EPIPE en `.next/dev/logs/next-development.log`). Fix: matar el server, borrar `.next/` y relanzar desde una terminal viva.
