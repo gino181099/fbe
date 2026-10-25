@@ -21,7 +21,7 @@ Se entra con la clave única **`belinda2156`** (definida en `src/lib/config.ts`,
 
 - **Código y datos separados:** el código vive en `C:\FrabelERP` (repo, se actualiza con git) y los datos en `C:\FrabelERP-datos` (Postgres y backups; git nunca los toca).
 - **Instalar (un comando):** en tu PC, `npm run db:exportar-inicial` + commit + push. En la oficina:
-  `git clone <repo> C:\FrabelERP && C:\FrabelERP\instalar.bat`. Eso instala, crea la base, carga `datos-iniciales/` **solo si la base está vacía**, compila, abre el firewall, configura el arranque automático y desactiva la suspensión.
+  `git clone https://gfs181099@bitbucket.org/gfs181099/frabel-erp.git C:\FrabelERP && C:\FrabelERP\instalar.bat`. Eso instala, crea la base, carga `datos-iniciales/` **solo si la base está vacía**, compila, abre el firewall, configura el arranque automático y desactiva la suspensión.
 - **Usar:** arranca solo con Windows (`iniciar-erp.bat`). `http://localhost:3000`, o `http://<IP>:3000` desde la red.
 - **Actualizar:** cerrar el ERP y correr `actualizar.bat` (backup → `git pull` → `npm ci` → migraciones → build). No toca los datos.
 - **Backups:** automáticos en cada arranque y antes de cada actualización, en `C:\FrabelERP-datos\backups\` (los últimos 60). Manual: `npm run db:backup`. Restaurar: `npm run db:restore -- "<archivo>"` (reemplaza todo; antes guarda backup).

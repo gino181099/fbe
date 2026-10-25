@@ -56,7 +56,7 @@ Prioridad: `Alta` · `Media` · `Baja`.
 
 ## 🔧 Acciones manuales del equipo (fuera del código)
 
-- [ ] Crear el repo privado en Bitbucket y hacer push (`git remote add origin <url>`).
+- [x] Repo privado en Bitbucket: `https://bitbucket.org/gfs181099/frabel-erp`, rama `main` (2026-10-25).
 - [ ] Al terminar de cargar datos acá: `npm run db:exportar-inicial` + commit + push.
 - [ ] Instalar en la PC de la oficina (`git clone … && instalar.bat`) y fijar la IP (GUIA-INSTALACION.md).
 - [ ] Con producción andando: quitar `datos-iniciales/` del repo (pedírselo a Claude).

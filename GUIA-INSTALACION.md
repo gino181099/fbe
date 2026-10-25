@@ -27,7 +27,7 @@ En la carpeta del proyecto:
 
 ```bat
 npm run db:exportar-inicial
-git add -A
+git add datos-iniciales
 git commit -m "Datos iniciales para producción"
 git push
 ```
@@ -36,14 +36,7 @@ git push
 
 > ⚠️ Lo que cargues en tu PC **después** de este paso no llega a la oficina. Exportá justo antes de instalar.
 
-Si todavía no creaste el repositorio en Bitbucket:
-
-1. En Bitbucket, crear un repositorio **privado** vacío (sin README), por ejemplo `frabel-erp`.
-2. Antes del `git push`, conectarlo:
-   ```bat
-   git remote add origin https://bitbucket.org/<tu-usuario>/frabel-erp.git
-   git push -u origin master
-   ```
+Repositorio (privado): `https://bitbucket.org/gfs181099/frabel-erp` · rama `main`.
 
 ---
 
@@ -61,7 +54,7 @@ Requisitos: **Windows 10/11 de 64 bits** con internet. Internet solo hace falta 
 Abrir una consola (tecla Windows → escribir `cmd` → Enter) y pegar:
 
 ```bat
-git clone https://bitbucket.org/<tu-usuario>/frabel-erp.git C:\FrabelERP && C:\FrabelERP\instalar.bat
+git clone https://gfs181099@bitbucket.org/gfs181099/frabel-erp.git C:\FrabelERP && C:\FrabelERP\instalar.bat
 ```
 
 - Bitbucket pide usuario y contraseña. Como contraseña va un **token de acceso**, no la clave de la cuenta. Se crea en Bitbucket → ⚙️ *Personal settings* → *API tokens* (o *App passwords*), con permiso de **lectura de repositorios**.
