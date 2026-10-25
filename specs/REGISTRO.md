@@ -21,6 +21,7 @@ Una entrada por tarea terminada, **la más nueva arriba**. Formato fijo y breve 
 - Datos: —
 - Verificación: tsc · lint · test · build · medición con curl en `npm start` · PDF revisado.
 - Pendiente: carrera menor en `createReceipt` (validación de pendientes fuera de transacción), poco probable con 4 usuarios.
+- Publicación: subido a Bitbucket (origin/main) el 2026-10-25.
 
 ## 2026-10-25 · T-028 · Pago del cliente al cargar el recorrido
 - Resultado: "Nuevo recorrido" tiene dos casillas (arrancan desmarcadas, excluyentes): "El cliente ya pagó" (por el precio) y "El cliente hizo un pago parcial" (monto + medio de pago). Al guardar crea el recorrido y un recibo X con fecha de hoy imputado a ese recorrido, en una transacción. Solo en el alta; recorridos anteriores al corte no aceptan pago.
