@@ -1,13 +1,14 @@
 "use client";
 
-import { type ReactNode, useEffect, useMemo, useState, useTransition } from "react";
+import { type ChangeEvent, type ReactNode, useEffect, useMemo, useState, useTransition } from "react";
 import { FormDialog } from "@/components/form-dialog";
 import { Field } from "@/components/page-header";
 import { Input } from "@/components/ui/input";
 import { NativeSelect, NativeSelectOption } from "@/components/ui/native-select";
 import { Textarea } from "@/components/ui/textarea";
-import { type ClientType, DEFAULT_FUEL_SUPPLIER, FUEL_SUPPLIERS } from "@/lib/constants";
-import { formatMoney } from "@/lib/format";
+import { CC_START, type ClientType, DEFAULT_FUEL_SUPPLIER, FUEL_SUPPLIERS, PAYMENT_METHODS } from "@/lib/constants";
+import { formatDate, formatMoney } from "@/lib/format";
+import { parseAmount } from "@/lib/parse-amount";
 import type { ActionResult } from "@/lib/permissions";
 import { getClientRates } from "./actions";
 
@@ -47,6 +48,8 @@ type Props = {
   defaults: TripDefaults;
   /** Debajo de los campos (ej. quién lo cargó). */
   footer?: ReactNode;
+  /** Solo en el alta: "el cliente ya pagó" / "pago parcial" generan un recibo imputado al recorrido. */
+  withPayment?: boolean;
 };
 
 export function TripFormDialog(props: Props) {
@@ -58,7 +61,7 @@ export function TripFormDialog(props: Props) {
   );
 }
 
-function TripFields({ clients, routes, drivers, vehicles, defaults }: Props) {
+function TripFields({ clients, routes, drivers, vehicles, defaults, withPayment }: Props) {
   // Chofer cargado como texto que no se pudo asociar a la lista: se conserva tal cual.
   const historicDriver = !defaults.driverId && defaults.driver ? defaults.driver : null;
   const [date, setDate] = useState(defaults.date);
@@ -70,6 +73,8 @@ function TripFields({ clients, routes, drivers, vehicles, defaults }: Props) {
   const [priceTouched, setPriceTouched] = useState(defaults.price != null);
   const [rates, setRates] = useState<Rate[]>([]);
   const [loading, startLoading] = useTransition();
+  // Siempre arranca sin marcar: el formulario se monta de nuevo cada vez que se abre el diálogo.
+  const [payment, setPayment] = useState<"" | "total" | "parcial">("");
 
   const client = clients.find((c) => String(c.id) === clientId);
   const recurring = client?.type === "recurrente";
@@ -296,6 +301,75 @@ function TripFields({ clients, routes, drivers, vehicles, defaults }: Props) {
       <Field label="Observaciones" htmlFor="notes" className="sm:col-span-6">
         <Textarea id="notes" name="notes" rows={2} defaultValue={defaults.notes ?? ""} />
       </Field>
+      {withPayment && (
+        <PaymentFields
+          payment={payment}
+          setPayment={setPayment}
+          price={effectivePrice}
+          beforeCutoff={!!date && date < CC_START}
+        />
+      )}
+    </div>
+  );
+}
+
+function PaymentFields({
+  payment,
+  setPayment,
+  price,
+  beforeCutoff,
+}: {
+  payment: "" | "total" | "parcial";
+  setPayment: (v: "" | "total" | "parcial") => void;
+  price: string;
+  beforeCutoff: boolean;
+}) {
+  const paidTotal = parseAmount(price);
+  // Las dos casillas se excluyen entre sí; destildar vuelve a "sin pago".
+  const toggle = (v: "total" | "parcial") => (e: ChangeEvent<HTMLInputElement>) =>
+    setPayment(e.target.checked ? v : "");
+  return (
+    <div className="grid gap-3 rounded-md border p-3 sm:col-span-6 sm:grid-cols-6">
+      <input type="hidden" name="payment" value={payment} />
+      <div className="flex flex-wrap gap-x-6 gap-y-2 text-sm sm:col-span-6">
+        <label className="flex items-center gap-2">
+          <input type="checkbox" className="size-4" checked={payment === "total"} onChange={toggle("total")} />
+          El cliente ya pagó
+        </label>
+        <label className="flex items-center gap-2">
+          <input type="checkbox" className="size-4" checked={payment === "parcial"} onChange={toggle("parcial")} />
+          El cliente hizo un pago parcial
+        </label>
+      </div>
+      {payment && beforeCutoff && (
+        <p className="text-sm text-destructive sm:col-span-6">
+          Solo se registra el pago de recorridos desde el {formatDate(CC_START)}.
+        </p>
+      )}
+      {payment && (
+        <>
+          {payment === "parcial" ? (
+            <Field label="Monto pagado" htmlFor="paidAmount" className="sm:col-span-3">
+              <Input id="paidAmount" name="paidAmount" inputMode="decimal" className="tabular-nums" required />
+            </Field>
+          ) : (
+            <Field label="Monto pagado" className="sm:col-span-3">
+              <Input value={paidTotal != null ? formatMoney(paidTotal) : "Precio del recorrido"} readOnly disabled />
+            </Field>
+          )}
+          <Field label="Medio de pago" htmlFor="paidMethod" className="sm:col-span-3">
+            <Input id="paidMethod" name="paidMethod" list="trip-payment-methods" maxLength={100} />
+            <datalist id="trip-payment-methods">
+              {PAYMENT_METHODS.map((m) => (
+                <option key={m} value={m} />
+              ))}
+            </datalist>
+          </Field>
+          <p className="text-xs text-muted-foreground sm:col-span-6">
+            Se genera un recibo con fecha de hoy imputado a este recorrido (se puede anular desde Finanzas → Recibos).
+          </p>
+        </>
+      )}
     </div>
   );
 }

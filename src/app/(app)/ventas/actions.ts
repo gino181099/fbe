@@ -4,14 +4,17 @@ import { eq } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { db } from "@/db";
-import { clients, DEFAULT_FUEL_SUPPLIER, trips } from "@/db/schema";
+import { clients, DEFAULT_FUEL_SUPPLIER, receiptTrips, receipts, trips } from "@/db/schema";
 import { created, updated } from "@/lib/audit";
-import { pgCode } from "@/lib/db-errors";
+import { CC_START } from "@/lib/constants";
+import { isUniqueViolation, pgCode } from "@/lib/db-errors";
+import { formatReceiptNumber } from "@/lib/doc-number";
+import { formatDate, formatMoney, today } from "@/lib/format";
 import { tripsInActiveDocument } from "@/lib/documents";
 import { firstError, formToObject, zDate, zIntOpt, zMoneyOpt, zText } from "@/lib/forms";
 import { type ActionResult, checkPermission } from "@/lib/permissions";
 import { findRate, ratesInForce } from "@/lib/rates";
-import { tripsInActiveReceipt } from "@/lib/receipts";
+import { nextReceiptNumber, tripsInActiveReceipt } from "@/lib/receipts";
 
 // ON DELETE RESTRICT dispara 23001 (restrict_violation); NO ACTION, 23503 (foreign_key_violation).
 const isInUse = (e: unknown) => ["23001", "23503"].includes(pgCode(e) ?? "");
@@ -96,17 +99,71 @@ function revalidate() {
   revalidatePath("/ventas");
   revalidatePath("/flota");
   revalidatePath("/finanzas", "layout");
+  revalidatePath("/contactos", "layout");
   revalidatePath("/");
 }
+
+// Cobro al cargar el recorrido (solo en el alta): genera un recibo X imputado a ese recorrido.
+const paymentSchema = z.object({
+  payment: z.enum(["", "total", "parcial"]).catch(""),
+  paidAmount: zMoneyOpt,
+  paidMethod: z.string().trim().max(100, "Medio de pago: máximo 100 caracteres").optional(),
+});
 
 export async function createTrip(formData: FormData): Promise<ActionResult> {
   const { user, error } = await checkPermission("ventas");
   if (error) return error;
   const built = await buildTrip(formData);
   if ("error" in built) return { ok: false, error: built.error! };
-  await db.insert(trips).values({ ...built.values, ...created(user.id) });
+  const pay = paymentSchema.safeParse(formToObject(formData));
+  if (!pay.success) return { ok: false, error: firstError(pay.error) };
+  const { payment, paidAmount, paidMethod } = pay.data;
+  const price = built.values.price;
+
+  let amount = 0;
+  if (payment) {
+    if (built.values.date < CC_START)
+      return { ok: false, error: `Solo se registra el pago de recorridos desde el ${formatDate(CC_START)}.` };
+    amount = payment === "total" ? price : Math.round((paidAmount ?? 0) * 100) / 100;
+    if (!(amount > 0)) return { ok: false, error: "Ingresá el monto que pagó el cliente." };
+    if (payment === "parcial" && amount >= price)
+      return { ok: false, error: `El pago parcial debe ser menor al precio (${formatMoney(price)}). Si pagó todo, marcá "El cliente ya pagó".` };
+  }
+
+  let receiptNumber: number | undefined;
+  for (let attempt = 0; ; attempt++) {
+    receiptNumber = payment ? await nextReceiptNumber() : undefined;
+    try {
+      await db.transaction(async (tx) => {
+        const [{ id: tripId }] = await tx
+          .insert(trips)
+          .values({ ...built.values, ...created(user.id) })
+          .returning({ id: trips.id });
+        if (receiptNumber === undefined) return;
+        const [{ id: receiptId }] = await tx
+          .insert(receipts)
+          .values({
+            number: receiptNumber,
+            date: today(),
+            clientId: built.values.clientId,
+            amount,
+            method: paidMethod || null,
+            notes: "Cargado desde Ventas al registrar el recorrido.",
+            ...created(user.id),
+          })
+          .returning({ id: receipts.id });
+        await tx.insert(receiptTrips).values({ receiptId, tripId, amount });
+      });
+      break;
+    } catch (e) {
+      // Otro alta tomó el mismo número de recibo: se reintenta una vez con el siguiente.
+      if (receiptNumber !== undefined && isUniqueViolation(e) && attempt === 0) continue;
+      throw e;
+    }
+  }
   revalidate();
-  return { ok: true, message: "Recorrido cargado" };
+  if (receiptNumber === undefined) return { ok: true, message: "Recorrido cargado" };
+  return { ok: true, message: `Recorrido cargado con el recibo ${formatReceiptNumber(receiptNumber)}` };
 }
 
 export async function updateTrip(id: number, formData: FormData): Promise<ActionResult> {

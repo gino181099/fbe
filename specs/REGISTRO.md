@@ -15,6 +15,13 @@ Una entrada por tarea terminada, **la más nueva arriba**. Formato fijo y breve 
 
 ---
 
+## 2026-10-25 · T-028 · Pago del cliente al cargar el recorrido
+- Resultado: "Nuevo recorrido" tiene dos casillas (arrancan desmarcadas, excluyentes): "El cliente ya pagó" (por el precio) y "El cliente hizo un pago parcial" (monto + medio de pago). Al guardar crea el recorrido y un recibo X con fecha de hoy imputado a ese recorrido, en una transacción. Solo en el alta; recorridos anteriores al corte no aceptan pago.
+- Archivos: `src/app/(app)/ventas/{actions.ts,trip-form.tsx,page.tsx}`.
+- Datos: —
+- Verificación: tsc · lint · build · prueba en `npm start` (parcial 40.000 de 100.000 → recibo + `receipt_trip` correctos; datos de prueba borrados).
+- Pendiente: —
+
 ## 2026-10-25 · T-027 · Actividades de hoy en el Inicio
 - Resultado: el Inicio arranca con "Tus actividades de hoy": las del usuario logueado vencidas (rojo) y de hoy (amarillo), con hecha/reprogramar/editar/eliminar y link a la agenda; resumen "N para hoy · M vencidas".
 - Archivos: `src/app/(app)/page.tsx` (consulta en paralelo con el resto del tablero).

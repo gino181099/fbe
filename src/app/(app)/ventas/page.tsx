@@ -116,6 +116,7 @@ export default async function SalesPage({ searchParams }: PageProps<"/ventas">) 
               {...formProps}
               title="Nuevo recorrido"
               action={createTrip}
+              withPayment
               defaults={{ date: today(), clientId: clienteId }}
               trigger={
                 <Button>
