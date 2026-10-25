@@ -40,7 +40,8 @@ src/app/api/estado-cuenta/[clientId]/route.tsx   PDF
 src/proxy.ts              (ex middleware) solo redirige sin sesión a /login
 src/lib/config.ts         clave única, AUTH_SECRET, puerto/carpetas/URL de la base
 src/lib/audit.ts          created()/updated() para las acciones, getUsers/getUserNames   · components/audit-info.tsx
-src/lib/activities.ts     consultas de la agenda   · components/activity-{fields,list}.tsx, activities-panel.tsx
+src/lib/activities.ts     consultas de la agenda   · components/activity-{fields,list,calendar}.tsx, calendar-dnd.tsx, activities-panel.tsx
+src/lib/activity-bucket.ts  grupos y colores Odoo (rojo/amarillo/verde)   · calendar.ts (monthGrid, meses)
 scripts/                  db.ts (Postgres local) · local.ts (arranque) · datos.ts (backup/restore) · migrate-legacy.ts      drizzle/  migraciones SQL
 ```
 

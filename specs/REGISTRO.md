@@ -15,6 +15,12 @@ Una entrada por tarea terminada, **la más nueva arriba**. Formato fijo y breve 
 
 ---
 
+## 2026-10-25 · T-026 · Calendario de la agenda y actividades por vehículo
+- Resultado: `/agenda` abre en calendario mensual (lunes a domingo, ← → y "Hoy", filtro de usuario) con colores de Odoo (rojo vencida, amarillo hoy, verde planificada, gris hecha); arrastrar una actividad a otro día la reprograma; clic abre el detalle con hecha/reprogramar/editar/eliminar. Lista también con punto de color. Ficha `/flota/[id]` con actividades y últimos gastos; en Flota la patente enlaza a la ficha con punto de color y cantidad pendiente.
+- Archivos: `src/lib/{calendar(+test),activity-bucket,activities}.ts`, `src/components/{activity-calendar,calendar-dnd,activity-list}.tsx`, `src/app/(app)/agenda/page.tsx`, `src/app/(app)/flota/{page,[id]/page}.tsx`.
+- Datos: — (sin migración).
+- Verificación: tsc · lint · npm test 161/161 · build · navegador en `npm start`: colores correctos con 6 actividades PRUEBA, arrastre del 22 al 28 (pasó de rojo a verde), detalle al clic, punto verde/rojo en Flota, ficha AH115DL. PRUEBA borradas.
+
 ## 2026-10-25 · T-025 · Usuarios, agenda y auditoría
 - Resultado: login eligiendo Gino/Gianella/Ale/Mingo + clave única (recuerda el último en la PC); `/agenda` (mías/de todos/de alguien, vencidas/hoy/7 días/después, hecha con resultado + "programar la siguiente", reprogramar, reabrir), contador en el menú, panel de actividades en contacto, oportunidad y proveedor (vehículo se elige en el form); "Creado/Modificado por" en diálogos de edición y fichas (recorridos, gastos, cargas, proveedores y pagos, flota, contactos, leads, comprobantes y recibos — en estos, al anular y en el `title` del estado).
 - Archivos: `src/db/schema.ts` (`activity`, `audited()`), `src/lib/{audit,activities,activity-bucket(+test),constants,format,permissions,rates}.ts`, `src/components/{activity-fields,activity-list,activities-panel,audit-info,app-sidebar,confirm-button}.tsx`, `src/app/(app)/agenda/**`, todas las `actions.ts` con alta/edición, `src/auth.ts`, login, `scripts/datos.ts`.

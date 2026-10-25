@@ -18,7 +18,7 @@ import { Input } from "@/components/ui/input";
 import { NativeSelect, NativeSelectOption } from "@/components/ui/native-select";
 import { Textarea } from "@/components/ui/textarea";
 import type { ActivityRow } from "@/lib/activities";
-import { activityBucket } from "@/lib/activity-bucket";
+import { ACTIVITY_COLOR_CLASSES, activityBucket, activityColor } from "@/lib/activity-bucket";
 import { ACTIVITY_TYPE_LABELS } from "@/lib/constants";
 import { formatDate, formatDateTime } from "@/lib/format";
 import { cn } from "@/lib/utils";
@@ -34,12 +34,6 @@ export type ActivityListContext = {
   showAssignee?: boolean;
 };
 
-const DUE_CLASSES = {
-  vencida: "text-destructive font-medium",
-  hoy: "text-amber-700 dark:text-amber-400 font-medium",
-  semana: "",
-  despues: "text-muted-foreground",
-};
 
 /** Lista de actividades con sus acciones: hecha, editar, eliminar (o reabrir si ya está hecha). */
 export function ActivityList({ rows, ctx, empty }: { rows: ActivityRow[]; ctx: ActivityListContext; empty?: string }) {
@@ -61,7 +55,7 @@ function ActivityItem({ row, ctx }: { row: ActivityRow; ctx: ActivityListContext
   const links = [
     a.clientId && row.clientName && { href: `/contactos/${a.clientId}`, label: row.clientName },
     a.leadId && row.leadTitle && { href: `/leads/${a.leadId}`, label: row.leadTitle },
-    a.vehicleId && row.vehiclePlate && { href: "/flota", label: row.vehiclePlate },
+    a.vehicleId && row.vehiclePlate && { href: `/flota/${a.vehicleId}`, label: row.vehiclePlate },
     a.supplierId && row.supplierName && { href: `/finanzas/proveedores/${a.supplierId}`, label: row.supplierName },
   ].filter((l): l is { href: string; label: string } => Boolean(l));
   const assignedByOther = a.createdBy && a.createdBy !== a.assignedTo;
@@ -93,7 +87,13 @@ function ActivityItem({ row, ctx }: { row: ActivityRow; ctx: ActivityListContext
               {a.doneNote && <> — “{a.doneNote}”</>}
             </>
           ) : (
-            <span className={DUE_CLASSES[bucket]}>
+            <span className={ACTIVITY_COLOR_CLASSES[activityColor(a.dueDate, ctx.today)].text}>
+              <span
+                className={cn(
+                  "mr-1 inline-block size-2 rounded-full align-middle",
+                  ACTIVITY_COLOR_CLASSES[activityColor(a.dueDate, ctx.today)].dot,
+                )}
+              />
               {bucket === "vencida" ? "Venció el " : bucket === "hoy" ? "Hoy · " : "Para el "}
               {formatDate(a.dueDate)}
             </span>

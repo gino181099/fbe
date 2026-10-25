@@ -1,5 +1,5 @@
 import "server-only";
-import { and, asc, count, desc, eq, inArray, isNotNull, isNull, lte, ne, notInArray, type SQL } from "drizzle-orm";
+import { and, asc, count, desc, eq, gte, inArray, isNotNull, isNull, lte, min, ne, notInArray, type SQL } from "drizzle-orm";
 import { db } from "@/db";
 import { activities, clients, leads, suppliers, users, vehicles } from "@/db/schema";
 import { today } from "./format";
@@ -10,13 +10,20 @@ export type ActivityLink = { clientId?: number; leadId?: number; vehicleId?: num
 export type ActivityFilter = ActivityLink & {
   /** Sin valor: de todos los usuarios. */
   assignedTo?: string;
-  done: boolean;
+  /** Sin valor: pendientes y hechas (calendario). */
+  done?: boolean;
+  /** Rango de vencimiento (calendario). */
+  from?: string;
+  to?: string;
   limit?: number;
 };
 
-/** Actividades con el nombre de lo vinculado. Pendientes: por vencimiento; hechas: las últimas primero. */
+/** Actividades con el nombre de lo vinculado. Pendientes y calendario: por vencimiento; hechas: las últimas primero. */
 export async function getActivities(f: ActivityFilter) {
-  const where: SQL[] = [f.done ? isNotNull(activities.doneAt) : isNull(activities.doneAt)];
+  const where: SQL[] = [];
+  if (f.done !== undefined) where.push(f.done ? isNotNull(activities.doneAt) : isNull(activities.doneAt));
+  if (f.from) where.push(gte(activities.dueDate, f.from));
+  if (f.to) where.push(lte(activities.dueDate, f.to));
   if (f.assignedTo) where.push(eq(activities.assignedTo, f.assignedTo));
   if (f.clientId) where.push(eq(activities.clientId, f.clientId));
   if (f.leadId) where.push(eq(activities.leadId, f.leadId));
@@ -37,7 +44,17 @@ export async function getActivities(f: ActivityFilter) {
     .leftJoin(suppliers, eq(suppliers.id, activities.supplierId))
     .where(and(...where))
     .orderBy(...(f.done ? [desc(activities.doneAt)] : [asc(activities.dueDate), asc(activities.id)]))
-    .limit(f.limit ?? 300);
+    .limit(f.limit ?? 500);
+}
+
+/** Por vehículo: cantidad de actividades pendientes y el vencimiento más próximo (para el punto de color). */
+export async function pendingByVehicle() {
+  const rows = await db
+    .select({ vehicleId: activities.vehicleId, n: count(), next: min(activities.dueDate) })
+    .from(activities)
+    .where(and(isNull(activities.doneAt), isNotNull(activities.vehicleId)))
+    .groupBy(activities.vehicleId);
+  return new Map(rows.map((r) => [r.vehicleId!, { n: r.n, next: r.next! }]));
 }
 
 export type ActivityRow = Awaited<ReturnType<typeof getActivities>>[number];

@@ -64,6 +64,10 @@ Prioridad: `Alta` · `Media` · `Baja`.
 
 ## ✅ Hechas
 
+### T-026 · Calendario de la agenda y actividades por vehículo
+- Estado: Hecha (2026-10-25)
+- Descripción: calendario mensual con colores de Odoo y arrastrar para reprogramar; ficha de vehículo con actividades y gastos.
+
 ### T-025 · Usuarios, agenda de actividades y auditoría (incluye T-006)
 - Estado: Hecha (2026-10-25)
 - Descripción: 4 usuarios (Gino, Gianella, Ale, Mingo) con la clave única; `/agenda` estilo Odoo (asignar a otro, hecha + programar la siguiente, reprogramar, contador en el menú, panel en contacto/oportunidad/proveedor); "creado/modificado por" en los registros principales.

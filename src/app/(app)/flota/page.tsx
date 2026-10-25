@@ -13,8 +13,10 @@ import { db } from "@/db";
 import { drivers, expenses, trips, vehicles } from "@/db/schema";
 import { sumOf } from "@/lib/balances";
 import { AuditInfo } from "@/components/audit-info";
+import { pendingByVehicle } from "@/lib/activities";
+import { ACTIVITY_COLOR_CLASSES, activityColor } from "@/lib/activity-bucket";
 import { getUserNames } from "@/lib/audit";
-import { addDays, firstDayOfMonth, formatMoney } from "@/lib/format";
+import { addDays, firstDayOfMonth, formatDate, formatMoney, today } from "@/lib/format";
 import { can, requirePermission } from "@/lib/permissions";
 import {
   deleteDriver,
@@ -40,7 +42,7 @@ export default async function FleetPage({ searchParams }: PageProps<"/flota">) {
   const hasta = isDate(str(sp.hasta)) ?? addDays(firstDayOfMonth(addDays(monthStart, 32)), -1);
   const tripPeriod = and(gte(trips.date, desde), lte(trips.date, hasta));
 
-  const [vehicleList, driverList, byVehicle, vehicleExpenses, byDriver, names] = await Promise.all([
+  const [vehicleList, driverList, byVehicle, vehicleExpenses, byDriver, names, vehicleActivities] = await Promise.all([
     db.select().from(vehicles).orderBy(asc(vehicles.plate)),
     db.select().from(drivers).orderBy(asc(drivers.name)),
     db
@@ -74,6 +76,7 @@ export default async function FleetPage({ searchParams }: PageProps<"/flota">) {
       .where(and(tripPeriod, isNotNull(trips.driverId)))
       .groupBy(trips.driverId),
     getUserNames(),
+    pendingByVehicle(),
   ]);
 
   const canEdit = can(user, "ventas", "edit");
@@ -167,7 +170,22 @@ export default async function FleetPage({ searchParams }: PageProps<"/flota">) {
                 const pay = s?.driverPay ?? 0;
                 return (
                   <TableRow key={v.id} className={v.active ? undefined : "text-muted-foreground"}>
-                    <TableCell className="font-medium">{v.plate}</TableCell>
+                    <TableCell className="font-medium">
+                      <Link href={`/flota/${v.id}`} className="hover:underline" title="Ver ficha y actividades">
+                        {v.plate}
+                      </Link>
+                      {vehicleActivities.get(v.id) && (
+                        <span
+                          className="ml-2 inline-flex items-center gap-1 text-xs font-normal text-muted-foreground"
+                          title={`${vehicleActivities.get(v.id)!.n} actividad(es) pendiente(s); la próxima vence el ${formatDate(vehicleActivities.get(v.id)!.next)}`}
+                        >
+                          <span
+                            className={`inline-block size-2 rounded-full ${ACTIVITY_COLOR_CLASSES[activityColor(vehicleActivities.get(v.id)!.next, today())].dot}`}
+                          />
+                          {vehicleActivities.get(v.id)!.n}
+                        </span>
+                      )}
+                    </TableCell>
                     <TableCell>
                       {v.model}
                       {v.notes && <span className="block text-xs text-muted-foreground">{v.notes}</span>}
