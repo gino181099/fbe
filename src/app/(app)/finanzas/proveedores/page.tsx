@@ -13,6 +13,8 @@ import { Table, TableBody, TableCell, TableFooter, TableHead, TableHeader, Table
 import { db } from "@/db";
 import { suppliers } from "@/db/schema";
 import { SUPPLIER_CATEGORIES } from "@/lib/constants";
+import { AuditInfo } from "@/components/audit-info";
+import { getUserNames } from "@/lib/audit";
 import { formatMoney } from "@/lib/format";
 import { can, requirePermission } from "@/lib/permissions";
 import { getSupplierBalances } from "@/lib/suppliers";
@@ -36,7 +38,7 @@ export default async function SuppliersPage({ searchParams }: PageProps<"/finanz
   if (rubro) filters.push(eq(suppliers.category, rubro));
   if (estado !== "todos") filters.push(eq(suppliers.active, estado === "activos"));
 
-  const [rows, balances, categoryRows] = await Promise.all([
+  const [rows, balances, categoryRows, names] = await Promise.all([
     db
       .select()
       .from(suppliers)
@@ -48,6 +50,7 @@ export default async function SuppliersPage({ searchParams }: PageProps<"/finanz
       .from(suppliers)
       .where(isNotNull(suppliers.category))
       .orderBy(asc(suppliers.category)),
+    getUserNames(),
   ]);
   const canEdit = can(user, "finanzas", "edit");
   const usedCategories = categoryRows.map((c) => c.category!);
@@ -161,6 +164,7 @@ export default async function SuppliersPage({ searchParams }: PageProps<"/finanz
                             }
                           >
                             <SupplierFormFields key={`${s.id}-${s.name}-${s.category}`} value={s} categories={usedCategories} />
+                            <AuditInfo row={s} names={names} />
                           </FormDialog>
                           <ConfirmButton
                             action={toggleSupplier.bind(null, s.id, !s.active)}

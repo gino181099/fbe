@@ -18,7 +18,7 @@ export default async function LoginPage() {
             <Bus className="size-5" />
           </div>
           <CardTitle className="text-xl">Frabel ERP</CardTitle>
-          <CardDescription>Ingresá la clave para continuar</CardDescription>
+          <CardDescription>Elegí tu usuario e ingresá la clave</CardDescription>
         </CardHeader>
         <CardContent>
           <CredentialsForm />

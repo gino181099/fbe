@@ -6,6 +6,7 @@ import { redirect } from "next/navigation";
 import { z } from "zod";
 import { db } from "@/db";
 import { OPPORTUNITY_STAGES, clients, leadNotes, leads } from "@/db/schema";
+import { created, updated } from "@/lib/audit";
 import { LEAD_PRIORITIES } from "@/lib/constants";
 import { today } from "@/lib/format";
 import { firstError, formToObject, zDate, zIntOpt, zMoneyOpt, zText } from "@/lib/forms";
@@ -68,18 +69,18 @@ export async function createLead(formData: FormData): Promise<ActionResult> {
   if ("error" in parsed) return { ok: false, error: parsed.error! };
   const [{ id }] = await db
     .insert(leads)
-    .values({ ...parsed.data, ownerId: parsed.data.ownerId ?? user.id })
+    .values({ ...parsed.data, ownerId: parsed.data.ownerId ?? user.id, ...created(user.id) })
     .returning({ id: leads.id });
   revalidateLead(id, parsed.data.clientId);
   redirect(`/leads/${id}`);
 }
 
 export async function updateLead(id: number, formData: FormData): Promise<ActionResult> {
-  const { error } = await checkPermission("leads");
+  const { user, error } = await checkPermission("leads");
   if (error) return error;
   const parsed = await parseLead(formData);
   if ("error" in parsed) return { ok: false, error: parsed.error! };
-  const [row] = await db.update(leads).set(parsed.data).where(eq(leads.id, id)).returning({ id: leads.id });
+  const [row] = await db.update(leads).set({ ...parsed.data, ...updated(user.id) }).where(eq(leads.id, id)).returning({ id: leads.id });
   if (!row) return { ok: false, error: "La oportunidad no existe." };
   revalidateLead(id, parsed.data.clientId);
   return { ok: true, message: "Oportunidad guardada" };
@@ -136,7 +137,7 @@ export async function changeLeadStage(id: number, formData: FormData): Promise<A
       if (existing.type === "potencial") {
         await db
           .update(clients)
-          .set({ type: move.client.type, status: "activo", leadStage: "ganado" })
+          .set({ type: move.client.type, status: "activo", leadStage: "ganado", ...updated(user.id) })
           .where(eq(clients.id, existing.id));
       }
       message = "¡Ganada! Se vinculó al contacto existente con ese nombre.";
@@ -155,6 +156,7 @@ export async function changeLeadStage(id: number, formData: FormData): Promise<A
           segment: lead.segment,
           leadPriority: lead.priority,
           leadStage: "ganado",
+          ...created(user.id),
         })
         .returning({ id: clients.id });
       message = "¡Ganada! Se creó el cliente en Contactos.";
@@ -162,17 +164,17 @@ export async function changeLeadStage(id: number, formData: FormData): Promise<A
   } else if (move.client.action === "convert" && clientId) {
     await db
       .update(clients)
-      .set({ type: move.client.type, status: "activo", leadStage: "ganado" })
+      .set({ type: move.client.type, status: "activo", leadStage: "ganado", ...updated(user.id) })
       .where(eq(clients.id, clientId));
     message = "¡Ganada! El contacto ahora es un cliente activo.";
   } else if (move.client.action === "lose" && clientId) {
-    await db.update(clients).set({ status: "inactivo", leadStage: "perdido" }).where(eq(clients.id, clientId));
+    await db.update(clients).set({ status: "inactivo", leadStage: "perdido", ...updated(user.id) }).where(eq(clients.id, clientId));
   }
 
   await db.transaction(async (tx) => {
     await tx
       .update(leads)
-      .set({ stage: move.stage, closedAt: move.closedAt, lostReason: move.lostReason, clientId })
+      .set({ stage: move.stage, closedAt: move.closedAt, lostReason: move.lostReason, clientId, ...updated(user.id) })
       .where(eq(leads.id, id));
     await tx.insert(leadNotes).values({ leadId: id, date, text: move.noteText, auto: true, userId: user.id });
   });

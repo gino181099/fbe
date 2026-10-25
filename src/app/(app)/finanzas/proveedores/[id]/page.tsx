@@ -2,6 +2,8 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ArrowLeft, Pencil, Plus } from "lucide-react";
+import { ActivitiesPanel } from "@/components/activities-panel";
+import { AuditInfo } from "@/components/audit-info";
 import { ConfirmButton } from "@/components/confirm-button";
 import { FormDialog } from "@/components/form-dialog";
 import { EmptyState, PageHeader, StatCard } from "@/components/page-header";
@@ -10,6 +12,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { FUEL_SUPPLIER_CATEGORY } from "@/lib/constants";
+import { getUserNames } from "@/lib/audit";
 import { formatDate, formatMoney, today } from "@/lib/format";
 import { can, requirePermission } from "@/lib/permissions";
 import { SUPPLIER_MOVEMENT_LABELS } from "@/lib/supplier-ledger";
@@ -29,7 +32,7 @@ export default async function SupplierPage({ params, searchParams }: PageProps<"
   const desde = isDate(sp.desde);
   const hasta = isDate(sp.hasta);
 
-  const data = await getSupplierStatement(id, desde, hasta);
+  const [data, names] = await Promise.all([getSupplierStatement(id, desde, hasta), getUserNames()]);
   if (!data) notFound();
   const { supplier: s } = data;
   const canEdit = can(user, "finanzas", "edit");
@@ -68,6 +71,7 @@ export default async function SupplierPage({ params, searchParams }: PageProps<"
         }
       />
       {s.notes && <p className="text-sm text-muted-foreground">{s.notes}</p>}
+      <AuditInfo row={s} names={names} />
 
       <form className="flex flex-wrap items-end gap-2">
         <label className="grid gap-1 text-xs text-muted-foreground">
@@ -161,6 +165,7 @@ export default async function SupplierPage({ params, searchParams }: PageProps<"
                                 value={payment}
                                 defaultDate={date}
                               />
+                              <AuditInfo row={payment} names={names} />
                             </FormDialog>
                             <ConfirmButton action={deleteSupplierPayment.bind(null, payment.id)} title="¿Eliminar pago?" />
                           </div>
@@ -179,6 +184,11 @@ export default async function SupplierPage({ params, searchParams }: PageProps<"
         {isStation ? " y gastos de categoría Combustible" : ""}. Los gastos contado se muestran pero no
         mueven el saldo.
       </p>
+
+      <section className="grid gap-3">
+        <h2 className="font-semibold">Actividades</h2>
+        <ActivitiesPanel link={{ field: "supplierId", id: s.id, label: s.name }} currentUserId={user.id} />
+      </section>
     </>
   );
 }

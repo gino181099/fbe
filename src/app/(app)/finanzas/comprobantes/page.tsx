@@ -14,6 +14,8 @@ import { DOCUMENT_TYPE_LABELS, DOCUMENT_TYPES } from "@/lib/constants";
 import { formatDocNumber } from "@/lib/doc-number";
 import { listDocuments } from "@/lib/documents";
 import { formatDate, formatMoney } from "@/lib/format";
+import { AuditInfo, auditText } from "@/components/audit-info";
+import { getUserNames } from "@/lib/audit";
 import { can, requirePermission } from "@/lib/permissions";
 import { VoidDialog } from "./void-dialog";
 
@@ -32,9 +34,10 @@ export default async function DocumentsPage({ searchParams }: PageProps<"/finanz
   const tipo = DOCUMENT_TYPES.find((t) => t === str(sp.tipo));
   const estado = STATUSES.find((s) => s === str(sp.estado)) ?? "vigentes";
 
-  const [rows, clientList] = await Promise.all([
+  const [rows, clientList, names] = await Promise.all([
     listDocuments({ type: tipo, clientId: clienteId, from: desde, to: hasta, status: estado }),
     db.select({ id: clients.id, name: clients.name }).from(clients).orderBy(asc(clients.name)),
+    getUserNames(),
   ]);
   const canEdit = can(user, "finanzas", "edit");
   // Los anulados no suman (salvo cuando se listan solo anulados).
@@ -140,11 +143,11 @@ export default async function DocumentsPage({ searchParams }: PageProps<"/finanz
                     </TableCell>
                     <TableCell>
                       {voided ? (
-                        <Badge variant="destructive" title={d.voidedReason ?? undefined}>
+                        <Badge variant="destructive" title={[d.voidedReason, auditText(d, names)].filter(Boolean).join(" — ")}>
                           Anulado
                         </Badge>
                       ) : (
-                        <Badge variant="outline">Vigente</Badge>
+                        <Badge variant="outline" title={auditText(d, names)}>Vigente</Badge>
                       )}
                     </TableCell>
                     <TableCell>
@@ -157,7 +160,9 @@ export default async function DocumentsPage({ searchParams }: PageProps<"/finanz
                           </Button>
                         )}
                         {canEdit && !voided && (
-                          <VoidDialog id={d.id} label={`${DOCUMENT_TYPE_LABELS[d.type]} ${number}`.trim()} />
+                          <VoidDialog id={d.id} label={`${DOCUMENT_TYPE_LABELS[d.type]} ${number}`.trim()}>
+                            <AuditInfo row={d} names={names} />
+                          </VoidDialog>
                         )}
                       </div>
                     </TableCell>

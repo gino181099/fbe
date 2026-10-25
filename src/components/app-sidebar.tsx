@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Bus, LayoutDashboard, LogOut, Receipt, Route, Target, Truck, Users } from "lucide-react";
+import { Bus, CalendarCheck, LayoutDashboard, LogOut, Receipt, Route, Target, Truck, Users } from "lucide-react";
 import { logout } from "@/app/(auth)/actions";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
@@ -13,6 +13,7 @@ import {
   SidebarGroupContent,
   SidebarGroupLabel,
   SidebarHeader,
+  SidebarMenuBadge,
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
@@ -32,6 +33,7 @@ type NavItem = {
 
 const NAV: NavItem[] = [
   { title: "Inicio", href: "/", icon: LayoutDashboard },
+  { title: "Agenda", href: "/agenda", icon: CalendarCheck },
   { title: "Contactos", href: "/contactos", icon: Users, module: "contactos" },
   { title: "Leads", href: "/leads", icon: Target, module: "leads" },
   { title: "Ventas", href: "/ventas", icon: Route, module: "ventas" },
@@ -56,9 +58,11 @@ const NAV: NavItem[] = [
 type Props = {
   user: { name: string | null; email: string | null; image: string | null; username: string | null };
   permissions: Record<Module, Level>;
+  /** Actividades propias vencidas o para hoy (número junto a Agenda). */
+  dueActivities: number;
 };
 
-export function AppSidebar({ user, permissions }: Props) {
+export function AppSidebar({ user, permissions, dueActivities }: Props) {
   const pathname = usePathname();
   const isActive = (href: string) => (href === "/" ? pathname === "/" : pathname.startsWith(href));
   const items = NAV.filter((i) => !i.module || permissions[i.module] !== "none");
@@ -96,6 +100,9 @@ export function AppSidebar({ user, permissions }: Props) {
                       <span>{item.title}</span>
                     </Link>
                   </SidebarMenuButton>
+                  {item.href === "/agenda" && dueActivities > 0 && (
+                    <SidebarMenuBadge className="bg-destructive/10 text-destructive">{dueActivities}</SidebarMenuBadge>
+                  )}
                   {item.children && isActive(item.href) && (
                     <SidebarMenuSub>
                       {item.children.map((child) => (

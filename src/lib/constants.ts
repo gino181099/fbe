@@ -107,6 +107,26 @@ export const LEAD_PRIORITIES = ["alta", "media", "baja"] as const;
 export type LeadPriority = (typeof LEAD_PRIORITIES)[number];
 export const LEAD_PRIORITY_LABELS: Record<LeadPriority, string> = { alta: "Alta", media: "Media", baja: "Baja" };
 
+/** Agenda (T-025): tipos de actividad. */
+export const ACTIVITY_TYPES = ["tarea", "llamada", "reunion", "seguimiento", "pago", "mantenimiento"] as const;
+export type ActivityType = (typeof ACTIVITY_TYPES)[number];
+export const ACTIVITY_TYPE_LABELS: Record<ActivityType, string> = {
+  tarea: "Tarea",
+  llamada: "Llamada",
+  reunion: "Reunión",
+  seguimiento: "Seguimiento",
+  pago: "Pago",
+  mantenimiento: "Mantenimiento",
+};
+
+/** Usuarios que entran al ERP (todos con la clave única y acceso total). */
+export const LOGIN_USERS = [
+  { username: "gino", name: "Gino" },
+  { username: "gianella", name: "Gianella" },
+  { username: "ale", name: "Ale" },
+  { username: "mingo", name: "Mingo" },
+] as const;
+
 /** Rubros sugeridos de proveedores (T-021; se puede escribir otro). */
 export const SUPPLIER_CATEGORIES = [
   "Combustible",

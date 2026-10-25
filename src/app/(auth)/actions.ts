@@ -6,8 +6,13 @@ import { signIn, signOut } from "@/auth";
 type LoginState = { error: string } | null;
 
 export async function loginWithCredentials(_prev: LoginState, formData: FormData): Promise<LoginState> {
+  if (!formData.get("username")) return { error: "Elegí tu usuario." };
   try {
-    await signIn("credentials", { password: formData.get("password"), redirectTo: "/" });
+    await signIn("credentials", {
+      username: formData.get("username"),
+      password: formData.get("password"),
+      redirectTo: "/",
+    });
     return null;
   } catch (error) {
     if (error instanceof AuthError) return { error: "Clave incorrecta." };

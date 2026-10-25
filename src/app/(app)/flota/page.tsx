@@ -12,6 +12,8 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { db } from "@/db";
 import { drivers, expenses, trips, vehicles } from "@/db/schema";
 import { sumOf } from "@/lib/balances";
+import { AuditInfo } from "@/components/audit-info";
+import { getUserNames } from "@/lib/audit";
 import { addDays, firstDayOfMonth, formatMoney } from "@/lib/format";
 import { can, requirePermission } from "@/lib/permissions";
 import {
@@ -38,7 +40,7 @@ export default async function FleetPage({ searchParams }: PageProps<"/flota">) {
   const hasta = isDate(str(sp.hasta)) ?? addDays(firstDayOfMonth(addDays(monthStart, 32)), -1);
   const tripPeriod = and(gte(trips.date, desde), lte(trips.date, hasta));
 
-  const [vehicleList, driverList, byVehicle, vehicleExpenses, byDriver] = await Promise.all([
+  const [vehicleList, driverList, byVehicle, vehicleExpenses, byDriver, names] = await Promise.all([
     db.select().from(vehicles).orderBy(asc(vehicles.plate)),
     db.select().from(drivers).orderBy(asc(drivers.name)),
     db
@@ -71,6 +73,7 @@ export default async function FleetPage({ searchParams }: PageProps<"/flota">) {
       .from(trips)
       .where(and(tripPeriod, isNotNull(trips.driverId)))
       .groupBy(trips.driverId),
+    getUserNames(),
   ]);
 
   const canEdit = can(user, "ventas", "edit");
@@ -206,6 +209,7 @@ export default async function FleetPage({ searchParams }: PageProps<"/flota">) {
                             }
                           >
                             <VehicleFields value={v} />
+                            <AuditInfo row={v} names={names} />
                           </FormDialog>
                           <ToggleButton
                             active={v.active}
@@ -273,6 +277,7 @@ export default async function FleetPage({ searchParams }: PageProps<"/flota">) {
                             }
                           >
                             <DriverFields value={d} />
+                            <AuditInfo row={d} names={names} />
                           </FormDialog>
                           <ToggleButton active={d.active} action={toggleDriver.bind(null, d.id, !d.active)} noun="chofer" />
                           <ConfirmButton action={deleteDriver.bind(null, d.id)} title="¿Eliminar chofer?" />

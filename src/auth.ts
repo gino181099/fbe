@@ -4,11 +4,9 @@ import { z } from "zod";
 import { db } from "@/db";
 import { users } from "@/db/schema";
 import { ACCESS_PASSWORD, AUTH_SECRET } from "@/lib/config";
+import { LOGIN_USERS } from "@/lib/constants";
 
-const credentialsSchema = z.object({ password: z.string().min(1) });
-
-/** Usuario compartido con el que entran todos (clave única, acceso total). */
-const SHARED_USERNAME = "frabel";
+const credentialsSchema = z.object({ username: z.string(), password: z.string().min(1) });
 
 export const { handlers, auth, signIn, signOut } = NextAuth({
   secret: AUTH_SECRET,
@@ -18,14 +16,16 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
   trustHost: true,
   providers: [
     Credentials({
-      credentials: { password: {} },
+      credentials: { username: {}, password: {} },
       async authorize(raw) {
         const parsed = credentialsSchema.safeParse(raw);
         if (!parsed.success || parsed.data.password !== ACCESS_PASSWORD) return null;
-        // Se crea la primera vez (base nueva) y se mantiene activo y con acceso total.
+        const login = LOGIN_USERS.find((u) => u.username === parsed.data.username);
+        if (!login) return null;
+        // Los usuarios los crea la migración 0013; el upsert cubre una base restaurada de antes.
         const [user] = await db
           .insert(users)
-          .values({ username: SHARED_USERNAME, name: "Frabel", status: "active", isAdmin: true })
+          .values({ username: login.username, name: login.name, status: "active", isAdmin: true })
           .onConflictDoUpdate({ target: users.username, set: { status: "active", isAdmin: true } })
           .returning();
         return { id: user.id, name: user.name, email: user.email, image: user.image };

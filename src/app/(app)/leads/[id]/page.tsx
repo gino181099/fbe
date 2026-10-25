@@ -7,6 +7,8 @@ import { ArrowLeft, Pencil } from "lucide-react";
 import { OpportunityStageBadge } from "@/components/badges";
 import { ConfirmButton } from "@/components/confirm-button";
 import { FormDialog } from "@/components/form-dialog";
+import { ActivitiesPanel } from "@/components/activities-panel";
+import { AuditInfo } from "@/components/audit-info";
 import { mergeNotes, NotesPanel } from "@/components/notes-panel";
 import { PageHeader, StatCard } from "@/components/page-header";
 import { Button } from "@/components/ui/button";
@@ -14,6 +16,7 @@ import { db } from "@/db";
 import { clientNotes, clients, leadNotes, leads, users } from "@/db/schema";
 import { LEAD_PRIORITY_LABELS, type LeadPriority } from "@/lib/constants";
 import { dayInAR, formatDate, formatMoney, today } from "@/lib/format";
+import { getUserNames } from "@/lib/audit";
 import { leadFormOptions, userName } from "@/lib/lead-options";
 import { isClosed, isOverdue } from "@/lib/leads";
 import { can, requirePermission } from "@/lib/permissions";
@@ -44,7 +47,7 @@ export default async function LeadPage({ params }: PageProps<"/leads/[id]">) {
   const id = Number((await params).id);
   if (!Number.isInteger(id)) notFound();
 
-  const [row, notes, options, contactNotes] = await Promise.all([
+  const [row, notes, options, contactNotes, names] = await Promise.all([
     getLead(id),
     db
       .select({
@@ -73,6 +76,7 @@ export default async function LeadPage({ params }: PageProps<"/leads/[id]">) {
       .innerJoin(leads, eq(leads.clientId, clientNotes.clientId))
       .leftJoin(users, eq(users.id, clientNotes.userId))
       .where(eq(leads.id, id)),
+    getUserNames(),
   ]);
   if (!row) notFound();
   const { lead } = row;
@@ -174,6 +178,7 @@ export default async function LeadPage({ params }: PageProps<"/leads/[id]">) {
                   clientOptions={clientOptions}
                   userOptions={options.userOptions}
                 />
+                <AuditInfo row={lead} names={names} />
               </FormDialog>
               <ConfirmButton
                 action={deleteLead.bind(null, id)}
@@ -215,10 +220,13 @@ export default async function LeadPage({ params }: PageProps<"/leads/[id]">) {
           {lead.notes && (
             <div className="whitespace-pre-wrap rounded-xl border p-4 text-sm text-muted-foreground">{lead.notes}</div>
           )}
+          <AuditInfo row={lead} names={names} />
         </section>
 
         <section className="grid content-start gap-3">
-          <h2 className="font-semibold">Notas</h2>
+          <h2 className="font-semibold">Actividades</h2>
+          <ActivitiesPanel link={{ field: "leadId", id, label: lead.title }} currentUserId={user.id} />
+          <h2 className="pt-4 font-semibold">Notas</h2>
           <NotesPanel notes={allNotes} addAction={canEdit ? addLeadNote.bind(null, id) : undefined} date={date} />
         </section>
       </div>

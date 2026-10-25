@@ -19,6 +19,18 @@ const arDay = new Intl.DateTimeFormat("en-CA", { timeZone: "America/Argentina/Bu
 /** Día (en Argentina) de un instante, como "YYYY-MM-DD". */
 export const dayInAR = (d: Date) => arDay.format(d);
 
+const arDateTime = new Intl.DateTimeFormat("es-AR", {
+  timeZone: "America/Argentina/Buenos_Aires",
+  day: "2-digit",
+  month: "2-digit",
+  year: "numeric",
+  hour: "2-digit",
+  minute: "2-digit",
+});
+
+/** Instante → "25/10/2026, 14:30" (hora de Argentina). */
+export const formatDateTime = (d: Date | null | undefined) => (d ? arDateTime.format(d) : "—");
+
 /** Fecha de hoy en Argentina como "YYYY-MM-DD". */
 export function today() {
   return dayInAR(new Date());

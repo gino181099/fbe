@@ -6,6 +6,7 @@ import { z } from "zod";
 import { db } from "@/db";
 import { clients, documentItems, documents, routes, trips } from "@/db/schema";
 import { CC_START, DOCUMENT_TYPE_LABELS, DOCUMENT_TYPES } from "@/lib/constants";
+import { created, updated } from "@/lib/audit";
 import { isUniqueViolation } from "@/lib/db-errors";
 import { formatDocNumber } from "@/lib/doc-number";
 import {
@@ -62,7 +63,7 @@ function revalidate() {
 
 /** Alta de comprobante: factura (ARCA), interno numerado, ND, NC, bonificación o saldo inicial. */
 export async function createDocument(input: DocumentInput): Promise<ActionResult & { id?: number }> {
-  const { error } = await checkPermission("finanzas");
+  const { user, error } = await checkPermission("finanzas");
   if (error) return error;
   const parsed = documentSchema.safeParse(input);
   if (!parsed.success) return { ok: false, error: firstError(parsed.error) };
@@ -150,7 +151,7 @@ export async function createDocument(input: DocumentInput): Promise<ActionResult
     try {
       [{ id }] = await db
         .insert(documents)
-        .values({ ...values, number })
+        .values({ ...values, number, ...created(user.id) })
         .returning({ id: documents.id });
     } catch (e) {
       if (!isUniqueViolation(e)) throw e;
@@ -178,16 +179,16 @@ const voidSchema = z.object({ reason: z.string().max(500, "El motivo no puede su
 
 /** Anula un comprobante (no se borra; el número no se reutiliza y sus recorridos quedan libres). */
 export async function voidDocument(id: number, formData: FormData): Promise<ActionResult> {
-  const { error } = await checkPermission("finanzas");
+  const { user, error } = await checkPermission("finanzas");
   if (error) return error;
   const parsed = voidSchema.safeParse(formToObject(formData));
   if (!parsed.success) return { ok: false, error: firstError(parsed.error) };
-  const updated = await db
+  const voided = await db
     .update(documents)
-    .set({ voidedAt: new Date(), voidedReason: parsed.data.reason ?? null })
+    .set({ voidedAt: new Date(), voidedReason: parsed.data.reason ?? null, ...updated(user.id) })
     .where(and(eq(documents.id, id), isNull(documents.voidedAt)))
     .returning({ id: documents.id });
-  if (updated.length === 0) return { ok: false, error: "El comprobante no existe o ya está anulado." };
+  if (voided.length === 0) return { ok: false, error: "El comprobante no existe o ya está anulado." };
   revalidate();
   return { ok: true, message: "Comprobante anulado" };
 }

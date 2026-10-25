@@ -5,6 +5,7 @@ import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { db } from "@/db";
 import { clients, DEFAULT_FUEL_SUPPLIER, trips } from "@/db/schema";
+import { created, updated } from "@/lib/audit";
 import { pgCode } from "@/lib/db-errors";
 import { tripsInActiveDocument } from "@/lib/documents";
 import { firstError, formToObject, zDate, zIntOpt, zMoneyOpt, zText } from "@/lib/forms";
@@ -99,17 +100,17 @@ function revalidate() {
 }
 
 export async function createTrip(formData: FormData): Promise<ActionResult> {
-  const { error } = await checkPermission("ventas");
+  const { user, error } = await checkPermission("ventas");
   if (error) return error;
   const built = await buildTrip(formData);
   if ("error" in built) return { ok: false, error: built.error! };
-  await db.insert(trips).values(built.values);
+  await db.insert(trips).values({ ...built.values, ...created(user.id) });
   revalidate();
   return { ok: true, message: "Recorrido cargado" };
 }
 
 export async function updateTrip(id: number, formData: FormData): Promise<ActionResult> {
-  const { error } = await checkPermission("ventas");
+  const { user, error } = await checkPermission("ventas");
   if (error) return error;
   const built = await buildTrip(formData);
   if ("error" in built) return { ok: false, error: built.error! };
@@ -129,7 +130,7 @@ export async function updateTrip(id: number, formData: FormData): Promise<Action
   ) {
     return { ok: false, error: `Está en ${lockedBy}.` };
   }
-  await db.update(trips).set(built.values).where(eq(trips.id, id));
+  await db.update(trips).set({ ...built.values, ...updated(user.id) }).where(eq(trips.id, id));
   revalidate();
   return { ok: true, message: "Recorrido actualizado" };
 }

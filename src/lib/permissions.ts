@@ -55,6 +55,15 @@ export async function requirePermission(module: Module, level: Level = "view") {
 
 export type ActionResult = { ok: true; message?: string } | { ok: false; error: string };
 
+/** Para server actions sin módulo (agenda): cualquier usuario activo. */
+export async function checkUser() {
+  const user = await getCurrentUser();
+  if (!user || user.status !== "active") {
+    return { user: null, error: { ok: false, error: "Tu sesión expiró: volvé a ingresar." } as const };
+  }
+  return { user, error: null };
+}
+
 /** Para server actions: devuelve el usuario o un error serializable. */
 export async function checkPermission(module: Module, level: Level = "edit") {
   const user = await getCurrentUser();

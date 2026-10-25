@@ -18,6 +18,7 @@ import {
   routes,
   trips,
 } from "@/db/schema";
+import { created, updated } from "@/lib/audit";
 import { LEAD_PRIORITIES, LEAD_STAGE_LABELS } from "@/lib/constants";
 import { isUniqueViolation } from "@/lib/db-errors";
 import { today } from "@/lib/format";
@@ -48,7 +49,7 @@ function nullify<T extends Record<string, unknown>>(obj: T) {
 }
 
 export async function createClient(formData: FormData): Promise<ActionResult> {
-  const { error } = await checkPermission("contactos");
+  const { user, error } = await checkPermission("contactos");
   if (error) return error;
   const parsed = clientSchema.safeParse(formToObject(formData));
   if (!parsed.success) return { ok: false, error: firstError(parsed.error) };
@@ -58,7 +59,7 @@ export async function createClient(formData: FormData): Promise<ActionResult> {
   try {
     [{ id }] = await db
       .insert(clients)
-      .values({ ...nullify(parsed.data), leadStage: stage.leadStage })
+      .values({ ...nullify(parsed.data), leadStage: stage.leadStage, ...created(user.id) })
       .returning({ id: clients.id });
   } catch (e) {
     if (isUniqueViolation(e)) return { ok: false, error: "Ya existe un contacto con ese nombre." };
@@ -87,7 +88,7 @@ export async function updateClient(id: number, formData: FormData): Promise<Acti
     await db.transaction(async (tx) => {
       await tx
         .update(clients)
-        .set({ ...nullify(parsed.data), leadStage: to })
+        .set({ ...nullify(parsed.data), leadStage: to, ...updated(user.id) })
         .where(eq(clients.id, id));
       // El cambio de etapa hecho desde el formulario también queda en el seguimiento.
       if (to && to !== from) {
@@ -192,7 +193,7 @@ export type RateVersionInput = z.infer<typeof versionSchema>;
 
 /** Guarda una nueva versión del tarifario (precios cargados a mano o desde un archivo). */
 export async function saveRateVersion(clientId: number, input: RateVersionInput): Promise<ActionResult> {
-  const { error } = await checkPermission("contactos");
+  const { user, error } = await checkPermission("contactos");
   if (error) return error;
   const parsed = versionSchema.safeParse(input);
   if (!parsed.success) return { ok: false, error: firstError(parsed.error) };
@@ -221,9 +222,9 @@ export async function saveRateVersion(clientId: number, input: RateVersionInput)
   // Un cliente con tarifario pasa a ser recurrente (un potencial elige su tipo al marcarlo como ganado).
   await db
     .update(clients)
-    .set({ type: "recurrente" })
+    .set({ type: "recurrente", ...updated(user.id) })
     .where(and(eq(clients.id, clientId), ne(clients.type, "potencial")));
-  await applyNewRates(clientId, validFrom, resolved, recalculate);
+  await applyNewRates(clientId, validFrom, resolved, recalculate, user.id);
 
   revalidatePath(`/contactos/${clientId}`);
   revalidatePath("/ventas");

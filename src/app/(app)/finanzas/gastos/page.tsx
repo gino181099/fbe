@@ -4,7 +4,9 @@ import { and, asc, desc, eq, gte, isNotNull, lte, type SQL, sql } from "drizzle-
 import { Pencil, Plus } from "lucide-react";
 import { ConfirmButton } from "@/components/confirm-button";
 import { FormDialog } from "@/components/form-dialog";
+import { AuditInfo } from "@/components/audit-info";
 import { EmptyState, PageHeader, StatCard } from "@/components/page-header";
+import { getUserNames } from "@/lib/audit";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -81,6 +83,7 @@ export default async function ExpensesPage({ searchParams }: PageProps<"/finanza
     driverList,
     vehicleList,
     supplierList,
+    names,
   ] = await Promise.all([
     db
       .select({ expense: expenses, vehiclePlate: vehicles.plate, supplierName: suppliers.name })
@@ -131,6 +134,7 @@ export default async function ExpensesPage({ searchParams }: PageProps<"/finanza
       .from(vehicles)
       .orderBy(asc(vehicles.plate)),
     db.select({ id: suppliers.id, name: suppliers.name, active: suppliers.active }).from(suppliers).orderBy(asc(suppliers.name)),
+    getUserNames(),
   ]);
   const fleet = { drivers: driverList, vehicles: vehicleList };
 
@@ -341,6 +345,7 @@ export default async function ExpensesPage({ searchParams }: PageProps<"/finanza
                               }
                             >
                               <ExpenseFields value={e} {...formProps} />
+                              <AuditInfo row={e} names={names} />
                             </FormDialog>
                             <ConfirmButton action={deleteExpense.bind(null, e.id)} title="¿Eliminar gasto?" />
                           </div>
@@ -449,6 +454,7 @@ export default async function ExpensesPage({ searchParams }: PageProps<"/finanza
                               }
                             >
                               <FuelLoadFields value={l} defaultDate={date} />
+                              <AuditInfo row={l} names={names} />
                             </FormDialog>
                             <ConfirmButton action={deleteFuelLoad.bind(null, l.id)} title="¿Eliminar carga?" />
                           </div>

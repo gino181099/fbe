@@ -13,6 +13,8 @@ import { db } from "@/db";
 import { clients } from "@/db/schema";
 import { formatReceiptNumber } from "@/lib/doc-number";
 import { formatDate, formatMoney } from "@/lib/format";
+import { AuditInfo, auditText } from "@/components/audit-info";
+import { getUserNames } from "@/lib/audit";
 import { can, requirePermission } from "@/lib/permissions";
 import { getReceipt, listReceipts } from "@/lib/receipts";
 import { VoidReceiptDialog } from "./void-dialog";
@@ -32,10 +34,11 @@ export default async function ReceiptsPage({ searchParams }: PageProps<"/finanza
   const estado = STATUSES.find((s) => s === str(sp.estado)) ?? "vigentes";
   const nuevoId = Number(str(sp.nuevo)) || undefined;
 
-  const [rows, clientList, created] = await Promise.all([
+  const [rows, clientList, created, names] = await Promise.all([
     listReceipts({ clientId: clienteId, from: desde, to: hasta, status: estado }),
     db.select({ id: clients.id, name: clients.name }).from(clients).orderBy(asc(clients.name)),
     nuevoId ? getReceipt(nuevoId) : null,
+    getUserNames(),
   ]);
   const canEdit = can(user, "finanzas", "edit");
   // Los anulados no suman (salvo cuando se listan solo anulados).
@@ -144,11 +147,11 @@ export default async function ReceiptsPage({ searchParams }: PageProps<"/finanza
                     </TableCell>
                     <TableCell>
                       {voided ? (
-                        <Badge variant="destructive" title={r.voidedReason ?? undefined}>
+                        <Badge variant="destructive" title={[r.voidedReason, auditText(r, names)].filter(Boolean).join(" — ")}>
                           Anulado
                         </Badge>
                       ) : (
-                        <Badge variant="outline">Vigente</Badge>
+                        <Badge variant="outline" title={auditText(r, names)}>Vigente</Badge>
                       )}
                     </TableCell>
                     <TableCell>
@@ -158,7 +161,11 @@ export default async function ReceiptsPage({ searchParams }: PageProps<"/finanza
                             <FileDown className="text-muted-foreground" />
                           </a>
                         </Button>
-                        {canEdit && !voided && <VoidReceiptDialog id={r.id} label={`recibo ${number}`} />}
+                        {canEdit && !voided && (
+                          <VoidReceiptDialog id={r.id} label={`recibo ${number}`}>
+                            <AuditInfo row={r} names={names} />
+                          </VoidReceiptDialog>
+                        )}
                       </div>
                     </TableCell>
                   </TableRow>

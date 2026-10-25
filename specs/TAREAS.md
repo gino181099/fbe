@@ -35,11 +35,6 @@ Prioridad: `Alta` · `Media` · `Baja`.
 - Spec: —
 - Descripción: Botón "Exportar" en Ventas, Cobros, Gastos y Cuentas corrientes que descargue un .xlsx con los filtros aplicados.
 
-### T-006 · Auditoría: quién cargó y modificó cada registro
-- Estado: Recomendada
-- Prioridad: Media
-- Spec: —
-- Descripción: Guardar `created_by` / `updated_by` en recorridos, cobros, gastos y tarifas, y mostrarlo en el detalle. Importante cuando varios usuarios editen.
 
 ### T-007 · Liquidación de choferes
 - Estado: Recomendada
@@ -68,6 +63,10 @@ Prioridad: `Alta` · `Media` · `Baja`.
 ---
 
 ## ✅ Hechas
+
+### T-025 · Usuarios, agenda de actividades y auditoría (incluye T-006)
+- Estado: Hecha (2026-10-25)
+- Descripción: 4 usuarios (Gino, Gianella, Ale, Mingo) con la clave única; `/agenda` estilo Odoo (asignar a otro, hecha + programar la siguiente, reprogramar, contador en el menú, panel en contacto/oportunidad/proveedor); "creado/modificado por" en los registros principales.
 
 ### T-023 · Leads (CRM de oportunidades), notas y velocidad
 - Estado: Hecha (2026-10-20)

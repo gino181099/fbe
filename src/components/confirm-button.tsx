@@ -21,12 +21,14 @@ export function ConfirmButton({
   title = "¿Eliminar registro?",
   description = "Esta acción no se puede deshacer.",
   confirmLabel = "Eliminar",
+  confirmVariant = "destructive",
   trigger,
 }: {
   action: () => Promise<ActionResult>;
   title?: string;
   description?: string;
   confirmLabel?: string;
+  confirmVariant?: "destructive" | "default";
   trigger?: ReactNode;
 }) {
   const [open, setOpen] = useState(false);
@@ -61,7 +63,7 @@ export function ConfirmButton({
           <Button variant="outline" onClick={() => setOpen(false)}>
             Cancelar
           </Button>
-          <Button variant="destructive" onClick={run} disabled={pending}>
+          <Button variant={confirmVariant} onClick={run} disabled={pending}>
             {pending ? "Procesando…" : confirmLabel}
           </Button>
         </DialogFooter>

@@ -16,6 +16,9 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { db } from "@/db";
 import { clientNotes, clients, drivers, leadNotes, leads, rates, routes, trips, users } from "@/db/schema";
 import { mergeNotes, NotesPanel } from "@/components/notes-panel";
+import { ActivitiesPanel } from "@/components/activities-panel";
+import { AuditInfo } from "@/components/audit-info";
+import { getUserNames } from "@/lib/audit";
 import { getBalances } from "@/lib/balances";
 import { formatDate, formatMoney, today } from "@/lib/format";
 import { can, requirePermission } from "@/lib/permissions";
@@ -52,7 +55,7 @@ export default async function ClientPage({ params, searchParams }: PageProps<"/c
   const sp = await searchParams;
 
   const date = today();
-  const [client, current, history, routeList, recentTrips, balances, notes, opportunities, oppNotes] = await Promise.all([
+  const [client, current, history, routeList, recentTrips, balances, notes, opportunities, oppNotes, names] = await Promise.all([
     getClient(id),
     ratesInForce(id, date),
     db
@@ -120,6 +123,7 @@ export default async function ClientPage({ params, searchParams }: PageProps<"/c
       .innerJoin(leads, eq(leads.id, leadNotes.leadId))
       .leftJoin(users, eq(users.id, leadNotes.userId))
       .where(eq(leads.clientId, id)),
+    getUserNames(),
   ]);
   if (!client) notFound();
 
@@ -191,6 +195,7 @@ export default async function ClientPage({ params, searchParams }: PageProps<"/c
                 }
               >
                 <ClientFields client={client} />
+                <AuditInfo row={client} names={names} />
               </FormDialog>
               <ConfirmButton
                 action={deleteClient.bind(null, id)}
@@ -225,6 +230,7 @@ export default async function ClientPage({ params, searchParams }: PageProps<"/c
           <TabsTrigger value="recorridos">Recorridos</TabsTrigger>
           <TabsTrigger value="datos">Datos</TabsTrigger>
           <TabsTrigger value="notas">Notas{allNotes.length > 0 && ` (${allNotes.length})`}</TabsTrigger>
+          <TabsTrigger value="actividades">Actividades</TabsTrigger>
           {canLeads && <TabsTrigger value="oportunidades">Oportunidades</TabsTrigger>}
         </TabsList>
 
@@ -463,6 +469,9 @@ export default async function ClientPage({ params, searchParams }: PageProps<"/c
               <dd className="whitespace-pre-wrap">{client.notes || "—"}</dd>
             </div>
           </dl>
+          <div className="mt-4">
+            <AuditInfo row={client} names={names} />
+          </div>
           {canFinance && (
             <Button variant="outline" asChild className="mt-4">
               <Link href={`/finanzas/cuentas/${id}`}>
@@ -474,6 +483,10 @@ export default async function ClientPage({ params, searchParams }: PageProps<"/c
 
         <TabsContent value="notas" className="pt-2">
           <NotesPanel notes={allNotes} addAction={canEdit ? addClientNote.bind(null, id) : undefined} date={date} />
+        </TabsContent>
+
+        <TabsContent value="actividades" className="pt-2">
+          <ActivitiesPanel link={{ field: "clientId", id, label: client.name }} currentUserId={user.id} />
         </TabsContent>
       </Tabs>
     </>

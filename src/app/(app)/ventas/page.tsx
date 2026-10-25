@@ -12,6 +12,8 @@ import { db } from "@/db";
 import { clients, drivers, routes, trips, vehicles } from "@/db/schema";
 import { sumOf } from "@/lib/balances";
 import { formatDate, formatMoney, today } from "@/lib/format";
+import { AuditInfo } from "@/components/audit-info";
+import { getUserNames } from "@/lib/audit";
 import { can, requirePermission } from "@/lib/permissions";
 import { createTrip, deleteTrip, updateTrip } from "./actions";
 import { TripFormDialog } from "./trip-form";
@@ -42,7 +44,7 @@ export default async function SalesPage({ searchParams }: PageProps<"/ventas">) 
   if (vehiculo) filters.push(eq(trips.vehicleId, vehiculo));
   const where = and(...filters);
 
-  const [rows, [totals], clientList, routeList, driverList, vehicleList] = await Promise.all([
+  const [rows, [totals], clientList, routeList, driverList, vehicleList, names] = await Promise.all([
     db
       .select({
         trip: trips,
@@ -84,6 +86,7 @@ export default async function SalesPage({ searchParams }: PageProps<"/ventas">) 
       })
       .from(vehicles)
       .orderBy(asc(vehicles.plate)),
+    getUserNames(),
   ]);
 
   const canEdit = can(user, "ventas", "edit");
@@ -231,6 +234,7 @@ export default async function SalesPage({ searchParams }: PageProps<"/ventas">) 
                           title="Editar recorrido"
                           action={updateTrip.bind(null, t.id)}
                           defaults={t}
+                          footer={<AuditInfo row={t} names={names} />}
                           trigger={
                             <Button variant="ghost" size="icon-sm" aria-label="Editar">
                               <Pencil className="text-muted-foreground" />

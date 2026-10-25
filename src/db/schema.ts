@@ -16,6 +16,7 @@ import {
 import { sql } from "drizzle-orm";
 import type { AdapterAccountType } from "next-auth/adapters";
 import {
+  ACTIVITY_TYPES,
   CLIENT_TYPES,
   COLLECTION_KINDS,
   DOCUMENT_TYPES,
@@ -28,6 +29,12 @@ import {
 
 // Montos en pesos: numeric(14,2) leído como number en JS.
 const money = (name: string) => numeric(name, { precision: 14, scale: 2, mode: "number" });
+
+// Auditoría (T-025): quién creó y quién modificó por última vez. Las acciones los completan con `audit.ts`.
+const userRef = (name: string) => text(name).references((): AnyPgColumn => users.id, { onDelete: "set null" });
+const audited = () => ({ createdBy: userRef("created_by"), updatedBy: userRef("updated_by") });
+/** Para tablas sin `updated_at`: null = nunca se modificó. */
+const updatedAtCol = () => timestamp("updated_at", { mode: "date" });
 
 /* ─────────────────────────── Auth y permisos ─────────────────────────── */
 
@@ -142,6 +149,7 @@ export const clients = pgTable("client", {
     .notNull()
     .defaultNow()
     .$onUpdate(() => new Date()),
+  ...audited(),
 });
 
 // Historial de seguimiento de un contacto. auto=true: generada por el sistema/script, no se puede borrar.
@@ -198,6 +206,7 @@ export const leads = pgTable(
       .notNull()
       .defaultNow()
       .$onUpdate(() => new Date()),
+    ...audited(),
   },
   (t) => [index("lead_stage_idx").on(t.stage), index("lead_client_idx").on(t.clientId)],
 );
@@ -241,6 +250,8 @@ export const rates = pgTable(
     price: money("price").notNull(),
     validFrom: date("valid_from", { mode: "string" }).notNull(),
     validTo: date("valid_to", { mode: "string" }),
+    createdAt: timestamp("created_at", { mode: "date" }).notNull().defaultNow(),
+    createdBy: userRef("created_by"),
   },
   (t) => [index("rate_lookup_idx").on(t.clientId, t.routeId, t.capacity)],
 );
@@ -254,6 +265,8 @@ export const drivers = pgTable("driver", {
   notes: text("notes"),
   active: boolean("active").notNull().default(true),
   createdAt: timestamp("created_at", { mode: "date" }).notNull().defaultNow(),
+  updatedAt: updatedAtCol(),
+  ...audited(),
 });
 
 // El vehículo es solo un dato asociado: no define capacidad, tarifa ni precio del recorrido.
@@ -268,6 +281,8 @@ export const vehicles = pgTable(
     notes: text("notes"),
     active: boolean("active").notNull().default(true),
     createdAt: timestamp("created_at", { mode: "date" }).notNull().defaultNow(),
+    updatedAt: updatedAtCol(),
+    ...audited(),
   },
   (t) => [uniqueIndex("vehicle_plate_idx").on(t.plate)],
 );
@@ -304,6 +319,8 @@ export const trips = pgTable(
     legacySource: text("legacy_source"),
     legacyId: integer("legacy_id"),
     createdAt: timestamp("created_at", { mode: "date" }).notNull().defaultNow(),
+    updatedAt: updatedAtCol(),
+    ...audited(),
   },
   (t) => [
     index("trip_date_idx").on(t.date),
@@ -371,6 +388,8 @@ export const documents = pgTable(
     voidedAt: timestamp("voided_at", { mode: "date" }),
     voidedReason: text("voided_reason"),
     createdAt: timestamp("created_at", { mode: "date" }).notNull().defaultNow(),
+    updatedAt: updatedAtCol(),
+    ...audited(),
   },
   (t) => [
     // Nulos distintos: saldo inicial / bonificación sin número no chocan.
@@ -413,6 +432,8 @@ export const receipts = pgTable(
     voidedAt: timestamp("voided_at", { mode: "date" }),
     voidedReason: text("voided_reason"),
     createdAt: timestamp("created_at", { mode: "date" }).notNull().defaultNow(),
+    updatedAt: updatedAtCol(),
+    ...audited(),
   },
   (t) => [uniqueIndex("receipt_number_idx").on(t.number), index("receipt_client_date_idx").on(t.clientId, t.date)],
 );
@@ -448,6 +469,8 @@ export const suppliers = pgTable(
     active: boolean("active").notNull().default(true),
     notes: text("notes"),
     createdAt: timestamp("created_at", { mode: "date" }).notNull().defaultNow(),
+    updatedAt: updatedAtCol(),
+    ...audited(),
   },
   // Único ignorando mayúsculas (la acción guarda el nombre sin espacios extremos).
   (t) => [uniqueIndex("supplier_name_idx").on(sql`lower(${t.name})`)],
@@ -466,6 +489,8 @@ export const supplierPayments = pgTable(
     method: text("method"),
     notes: text("notes"),
     createdAt: timestamp("created_at", { mode: "date" }).notNull().defaultNow(),
+    updatedAt: updatedAtCol(),
+    ...audited(),
   },
   (t) => [index("supplier_payment_supplier_date_idx").on(t.supplierId, t.date)],
 );
@@ -504,6 +529,8 @@ export const expenses = pgTable(
     legacySource: text("legacy_source"),
     legacyId: integer("legacy_id"),
     createdAt: timestamp("created_at", { mode: "date" }).notNull().defaultNow(),
+    updatedAt: updatedAtCol(),
+    ...audited(),
   },
   (t) => [
     index("expense_date_idx").on(t.date),
@@ -526,5 +553,45 @@ export const fuelLoads = pgTable(
     notes: text("notes"),
     legacyId: integer("legacy_id").unique(),
     createdAt: timestamp("created_at", { mode: "date" }).notNull().defaultNow(),
+    updatedAt: updatedAtCol(),
+    ...audited(),
   },
+);
+
+/* ───────────────────────────────── Agenda ──────────────────────────────── */
+
+export { ACTIVITY_TYPES } from "@/lib/constants";
+export const activityType = pgEnum("activity_type", ACTIVITY_TYPES);
+
+// Actividad de la agenda (como en Odoo): algo que alguien tiene que hacer para una fecha, opcionalmente
+// vinculado a un contacto, oportunidad, vehículo o proveedor. Hecha = done_at (no se borra).
+export const activities = pgTable(
+  "activity",
+  {
+    id: integer("id").primaryKey().generatedAlwaysAsIdentity(),
+    type: activityType("type").notNull().default("tarea"),
+    title: text("title").notNull(),
+    notes: text("notes"),
+    dueDate: date("due_date", { mode: "string" }).notNull(),
+    assignedTo: text("assigned_to")
+      .notNull()
+      .references(() => users.id, { onDelete: "restrict" }),
+    clientId: integer("client_id").references(() => clients.id, { onDelete: "cascade" }),
+    leadId: integer("lead_id").references(() => leads.id, { onDelete: "cascade" }),
+    vehicleId: integer("vehicle_id").references(() => vehicles.id, { onDelete: "cascade" }),
+    supplierId: integer("supplier_id").references(() => suppliers.id, { onDelete: "cascade" }),
+    doneAt: timestamp("done_at", { mode: "date" }),
+    doneBy: userRef("done_by"),
+    doneNote: text("done_note"),
+    createdAt: timestamp("created_at", { mode: "date" }).notNull().defaultNow(),
+    updatedAt: updatedAtCol(),
+    ...audited(),
+  },
+  (t) => [
+    index("activity_assigned_idx").on(t.assignedTo, t.doneAt, t.dueDate),
+    index("activity_client_idx").on(t.clientId),
+    index("activity_lead_idx").on(t.leadId),
+    index("activity_vehicle_idx").on(t.vehicleId),
+    index("activity_supplier_idx").on(t.supplierId),
+  ],
 );

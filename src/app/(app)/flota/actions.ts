@@ -5,6 +5,7 @@ import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { db } from "@/db";
 import { drivers, vehicles } from "@/db/schema";
+import { created, updated } from "@/lib/audit";
 import { normalizePlate } from "@/lib/constants";
 import { firstError, formToObject, zText } from "@/lib/forms";
 import { type ActionResult, checkPermission } from "@/lib/permissions";
@@ -34,21 +35,21 @@ const driverSchema = z.object({
 });
 
 export async function saveDriver(id: number | null, formData: FormData): Promise<ActionResult> {
-  const { error } = await checkPermission("ventas");
+  const { user, error } = await checkPermission("ventas");
   if (error) return error;
   const parsed = driverSchema.safeParse(formToObject(formData));
   if (!parsed.success) return { ok: false, error: firstError(parsed.error) };
   const values = { name: parsed.data.name, phone: parsed.data.phone ?? null, notes: parsed.data.notes ?? null };
-  if (id) await db.update(drivers).set(values).where(eq(drivers.id, id));
-  else await db.insert(drivers).values(values);
+  if (id) await db.update(drivers).set({ ...values, ...updated(user.id) }).where(eq(drivers.id, id));
+  else await db.insert(drivers).values({ ...values, ...created(user.id) });
   revalidate();
   return { ok: true, message: "Chofer guardado" };
 }
 
 export async function toggleDriver(id: number, active: boolean): Promise<ActionResult> {
-  const { error } = await checkPermission("ventas");
+  const { user, error } = await checkPermission("ventas");
   if (error) return error;
-  await db.update(drivers).set({ active }).where(eq(drivers.id, id));
+  await db.update(drivers).set({ active, ...updated(user.id) }).where(eq(drivers.id, id));
   revalidate();
   return { ok: true, message: active ? "Chofer activado" : "Chofer desactivado" };
 }
@@ -83,14 +84,14 @@ const vehicleSchema = z.object({
 });
 
 export async function saveVehicle(id: number | null, formData: FormData): Promise<ActionResult> {
-  const { error } = await checkPermission("ventas");
+  const { user, error } = await checkPermission("ventas");
   if (error) return error;
   const parsed = vehicleSchema.safeParse(formToObject(formData));
   if (!parsed.success) return { ok: false, error: firstError(parsed.error) };
   const values = { ...parsed.data, notes: parsed.data.notes ?? null };
   try {
-    if (id) await db.update(vehicles).set(values).where(eq(vehicles.id, id));
-    else await db.insert(vehicles).values(values);
+    if (id) await db.update(vehicles).set({ ...values, ...updated(user.id) }).where(eq(vehicles.id, id));
+    else await db.insert(vehicles).values({ ...values, ...created(user.id) });
   } catch (e) {
     if (pgCode(e) === "23505") return { ok: false, error: "Ya existe un vehículo con esa patente" };
     throw e;
@@ -100,9 +101,9 @@ export async function saveVehicle(id: number | null, formData: FormData): Promis
 }
 
 export async function toggleVehicle(id: number, active: boolean): Promise<ActionResult> {
-  const { error } = await checkPermission("ventas");
+  const { user, error } = await checkPermission("ventas");
   if (error) return error;
-  await db.update(vehicles).set({ active }).where(eq(vehicles.id, id));
+  await db.update(vehicles).set({ active, ...updated(user.id) }).where(eq(vehicles.id, id));
   revalidate();
   return { ok: true, message: active ? "Vehículo activado" : "Vehículo desactivado" };
 }

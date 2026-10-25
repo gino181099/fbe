@@ -15,6 +15,12 @@ Una entrada por tarea terminada, **la más nueva arriba**. Formato fijo y breve 
 
 ---
 
+## 2026-10-25 · T-025 · Usuarios, agenda y auditoría
+- Resultado: login eligiendo Gino/Gianella/Ale/Mingo + clave única (recuerda el último en la PC); `/agenda` (mías/de todos/de alguien, vencidas/hoy/7 días/después, hecha con resultado + "programar la siguiente", reprogramar, reabrir), contador en el menú, panel de actividades en contacto, oportunidad y proveedor (vehículo se elige en el form); "Creado/Modificado por" en diálogos de edición y fichas (recorridos, gastos, cargas, proveedores y pagos, flota, contactos, leads, comprobantes y recibos — en estos, al anular y en el `title` del estado).
+- Archivos: `src/db/schema.ts` (`activity`, `audited()`), `src/lib/{audit,activities,activity-bucket(+test),constants,format,permissions,rates}.ts`, `src/components/{activity-fields,activity-list,activities-panel,audit-info,app-sidebar,confirm-button}.tsx`, `src/app/(app)/agenda/**`, todas las `actions.ts` con alta/edición, `src/auth.ts`, login, `scripts/datos.ts`.
+- Datos: `0013_agenda_y_auditoria` (tabla + columnas; `frabel` → `gino`, alta de los otros 3; lo histórico `created_by` = Gino). Datos iniciales re-exportados (863 filas).
+- Verificación: tsc · lint · npm test 154/154 · build · navegador en `npm start`: login Gianella, actividad asignada a Mingo con vehículo, hecha con nota, desde contacto: agendar, contador 1, hecha + siguiente al 28/10; "Creado por Gino". Actividades PRUEBA borradas.
+
 ## 2026-10-25 · Instalación de producción en un comando
 - Resultado: datos separados del código en `C:\FrabelERP-datos`; datos iniciales por el repo (`db:exportar-inicial` / `db:inicializar`, nunca pisa una base con datos); `instalar.bat` hace todo (firewall, arranque automático, sin suspensión, muestra IP); guía reescrita con tutorial para fijar la IP.
 - Archivos: `scripts/datos.ts`, `src/lib/config.ts`, `instalar.bat`, `actualizar.bat`, `GUIA-INSTALACION.md`, `README.md`, `datos-iniciales/frabel-inicial.json.gz`.

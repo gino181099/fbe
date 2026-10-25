@@ -67,9 +67,9 @@ async function rowCount(c: Client, t: string) {
   return Number(rows[0].n);
 }
 
-/** ¿Tiene datos cargados por la gente? (las migraciones siembran vehículos/choferes/proveedores, eso no cuenta) */
+/** ¿Tiene datos cargados por la gente? (las migraciones siembran usuarios/vehículos/choferes/proveedores: no cuentan) */
 async function hasBusinessData(c: Client) {
-  for (const t of ["client", "trip", "expense", "user"]) if ((await rowCount(c, t)) > 0) return true;
+  for (const t of ["client", "trip", "expense"]) if ((await rowCount(c, t)) > 0) return true;
   return false;
 }
 

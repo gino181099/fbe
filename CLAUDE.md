@@ -3,7 +3,7 @@
 # Frabel ERP
 
 ERP de Frabel (transporte de pasajeros, Mendoza). UI y textos en **español rioplatense**, montos en ARS.
-Módulos: Contactos (clientes + tarifarios versionados), Ventas (recorridos), Finanzas (cuentas corrientes, cobros, gastos, combustible, PDF de estado de cuenta), Usuarios (permisos por módulo).
+Módulos: Agenda (actividades por usuario), Contactos (clientes + tarifarios versionados), Leads, Ventas (recorridos), Flota, Finanzas (cuentas corrientes, recibos, comprobantes, gastos, combustible, proveedores, PDFs). 4 usuarios con clave única; auditoría creado/modificado por.
 
 ## Flujo de trabajo
 
@@ -39,12 +39,14 @@ src/app/(app)/<módulo>/   page.tsx (server) + actions.ts ("use server") + formu
 src/app/api/estado-cuenta/[clientId]/route.tsx   PDF
 src/proxy.ts              (ex middleware) solo redirige sin sesión a /login
 src/lib/config.ts         clave única, AUTH_SECRET, puerto/carpetas/URL de la base
+src/lib/audit.ts          created()/updated() para las acciones, getUsers/getUserNames   · components/audit-info.tsx
+src/lib/activities.ts     consultas de la agenda   · components/activity-{fields,list}.tsx, activities-panel.tsx
 scripts/                  db.ts (Postgres local) · local.ts (arranque) · datos.ts (backup/restore) · migrate-legacy.ts      drizzle/  migraciones SQL
 ```
 
 ## Convenciones (seguirlas siempre)
 
-- **Server actions**: primera línea `const { error } = await checkPermission("<módulo>")`; validar con zod vía `formToObject`; devolver `ActionResult` (`{ok:true,message}` | `{ok:false,error}`); `revalidatePath` de las rutas afectadas.
+- **Server actions**: primera línea `const { user, error } = await checkPermission("<módulo>")` (agenda: `checkUser()`); altas con `...created(user.id)` y ediciones con `...updated(user.id)`; validar con zod vía `formToObject`; devolver `ActionResult` (`{ok:true,message}` | `{ok:false,error}`); `revalidatePath` de las rutas afectadas.
 - **Páginas**: `await requirePermission("<módulo>")`; ocultar controles de edición con `can(user, módulo, "edit")`.
 - Filtros por `searchParams` (form GET); tablas server-rendered; formularios en `FormDialog`; borrar con `ConfirmButton`.
 - Fechas `date` en modo string `YYYY-MM-DD` (nunca `Date` para días). Montos `numeric(14,2)` modo number; parsear siempre con `parseAmount` (entiende "50.000" y "1.500,50").

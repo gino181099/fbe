@@ -51,14 +51,20 @@ export type { NewRate };
  * (o se reemplaza si empezaba ese mismo día) y se crea la nueva (ver `planRateChanges`).
  * Con `recalculate`, los recorridos ya cargados desde esa fecha toman el precio nuevo.
  */
-export async function applyNewRates(clientId: number, validFrom: string, items: NewRate[], recalculate: boolean) {
+export async function applyNewRates(
+  clientId: number,
+  validFrom: string,
+  items: NewRate[],
+  recalculate: boolean,
+  userId: string,
+) {
   const current = await ratesInForce(clientId, validFrom);
   const plan = planRateChanges(current, validFrom, items);
   if (!plan.updatePrice.length && !plan.close.length && !plan.insert.length && !recalculate) return;
   await db.transaction(async (tx) => {
     for (const u of plan.updatePrice) await tx.update(rates).set({ price: u.price }).where(eq(rates.id, u.id));
     for (const c of plan.close) await tx.update(rates).set({ validTo: c.validTo }).where(eq(rates.id, c.id));
-    if (plan.insert.length) await tx.insert(rates).values(plan.insert.map((r) => ({ clientId, ...r })));
+    if (plan.insert.length) await tx.insert(rates).values(plan.insert.map((r) => ({ clientId, ...r, createdBy: userId })));
     if (recalculate) await recalculateTripPrices(clientId, validFrom, tx);
   });
 }

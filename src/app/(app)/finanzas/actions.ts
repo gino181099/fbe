@@ -5,6 +5,7 @@ import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { db } from "@/db";
 import { EXPENSE_CATEGORIES, EXPENSE_SCOPES, expenses, fuelLoads, supplierPayments, suppliers, VOUCHER_TYPES } from "@/db/schema";
+import { created, updated } from "@/lib/audit";
 import { isInUse, isUniqueViolation } from "@/lib/db-errors";
 import { resolveExpense } from "@/lib/expense-rules";
 import { firstError, formToObject, zDate, zIntOpt, zMoney, zMoneyOpt, zText } from "@/lib/forms";
@@ -39,15 +40,15 @@ const expenseSchema = z.object({
 });
 
 export async function saveExpense(id: number | null, formData: FormData): Promise<ActionResult> {
-  const { error } = await checkPermission("finanzas");
+  const { user, error } = await checkPermission("finanzas");
   if (error) return error;
   const parsed = expenseSchema.safeParse(formToObject(formData));
   if (!parsed.success) return { ok: false, error: firstError(parsed.error) };
   const r = resolveExpense(parsed.data);
   if (!r.ok) return r;
   const { values } = r;
-  if (id) await db.update(expenses).set(values).where(eq(expenses.id, id));
-  else await db.insert(expenses).values(values);
+  if (id) await db.update(expenses).set({ ...values, ...updated(user.id) }).where(eq(expenses.id, id));
+  else await db.insert(expenses).values({ ...values, ...created(user.id) });
   revalidate();
   return { ok: true, message: id ? "Gasto actualizado" : "Gasto registrado" };
 }
@@ -71,7 +72,7 @@ const fuelSchema = z.object({
 });
 
 export async function saveFuelLoad(id: number | null, formData: FormData): Promise<ActionResult> {
-  const { error } = await checkPermission("finanzas");
+  const { user, error } = await checkPermission("finanzas");
   if (error) return error;
   const parsed = fuelSchema.safeParse(formToObject(formData));
   if (!parsed.success) return { ok: false, error: firstError(parsed.error) };
@@ -81,8 +82,8 @@ export async function saveFuelLoad(id: number | null, formData: FormData): Promi
     supplier: parsed.data.supplier ?? null,
     notes: parsed.data.notes ?? null,
   };
-  if (id) await db.update(fuelLoads).set(values).where(eq(fuelLoads.id, id));
-  else await db.insert(fuelLoads).values(values);
+  if (id) await db.update(fuelLoads).set({ ...values, ...updated(user.id) }).where(eq(fuelLoads.id, id));
+  else await db.insert(fuelLoads).values({ ...values, ...created(user.id) });
   revalidate();
   return { ok: true, message: id ? "Carga actualizada" : "Carga registrada" };
 }
@@ -106,7 +107,7 @@ const supplierSchema = z.object({
 });
 
 export async function saveSupplier(id: number | null, formData: FormData): Promise<ActionResult> {
-  const { error } = await checkPermission("finanzas");
+  const { user, error } = await checkPermission("finanzas");
   if (error) return error;
   const parsed = supplierSchema.safeParse(formToObject(formData));
   if (!parsed.success) return { ok: false, error: firstError(parsed.error) };
@@ -119,8 +120,8 @@ export async function saveSupplier(id: number | null, formData: FormData): Promi
     notes: parsed.data.notes ?? null,
   };
   try {
-    if (id) await db.update(suppliers).set(values).where(eq(suppliers.id, id));
-    else await db.insert(suppliers).values(values);
+    if (id) await db.update(suppliers).set({ ...values, ...updated(user.id) }).where(eq(suppliers.id, id));
+    else await db.insert(suppliers).values({ ...values, ...created(user.id) });
   } catch (e) {
     if (isUniqueViolation(e)) return { ok: false, error: "Ya existe un proveedor con ese nombre" };
     throw e;
@@ -130,9 +131,9 @@ export async function saveSupplier(id: number | null, formData: FormData): Promi
 }
 
 export async function toggleSupplier(id: number, active: boolean): Promise<ActionResult> {
-  const { error } = await checkPermission("finanzas");
+  const { user, error } = await checkPermission("finanzas");
   if (error) return error;
-  await db.update(suppliers).set({ active }).where(eq(suppliers.id, id));
+  await db.update(suppliers).set({ active, ...updated(user.id) }).where(eq(suppliers.id, id));
   revalidate();
   return { ok: true, message: active ? "Proveedor activado" : "Proveedor desactivado" };
 }
@@ -158,7 +159,7 @@ const supplierPaymentSchema = z.object({
 });
 
 export async function saveSupplierPayment(supplierId: number, id: number | null, formData: FormData): Promise<ActionResult> {
-  const { error } = await checkPermission("finanzas");
+  const { user, error } = await checkPermission("finanzas");
   if (error) return error;
   const parsed = supplierPaymentSchema.safeParse(formToObject(formData));
   if (!parsed.success) return { ok: false, error: firstError(parsed.error) };
@@ -166,9 +167,9 @@ export async function saveSupplierPayment(supplierId: number, id: number | null,
   if (id)
     await db
       .update(supplierPayments)
-      .set(values)
+      .set({ ...values, ...updated(user.id) })
       .where(and(eq(supplierPayments.id, id), eq(supplierPayments.supplierId, supplierId)));
-  else await db.insert(supplierPayments).values({ ...values, supplierId });
+  else await db.insert(supplierPayments).values({ ...values, supplierId, ...created(user.id) });
   revalidate();
   return { ok: true, message: id ? "Pago actualizado" : "Pago registrado" };
 }

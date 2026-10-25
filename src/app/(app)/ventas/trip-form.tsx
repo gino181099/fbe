@@ -45,12 +45,15 @@ type Props = {
   drivers: DriverOption[];
   vehicles: VehicleOption[];
   defaults: TripDefaults;
+  /** Debajo de los campos (ej. quién lo cargó). */
+  footer?: ReactNode;
 };
 
 export function TripFormDialog(props: Props) {
   return (
     <FormDialog title={props.title} trigger={props.trigger} action={props.action} className="sm:max-w-2xl">
       <TripFields {...props} />
+      {props.footer}
     </FormDialog>
   );
 }
