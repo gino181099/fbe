@@ -15,6 +15,13 @@ Una entrada por tarea terminada, **la más nueva arriba**. Formato fijo y breve 
 
 ---
 
+## 2026-10-25 · T-031 · Descargar copia de la base
+- Resultado: ícono de base de datos al pie del menú, visible solo para los usuarios de `DB_DOWNLOAD_USERS` (`gino`); `/api/copia-base` devuelve `frabel-AAAA-MM-DD-HHMM.json.gz` (mismo formato que los backups) y responde 403 a otros usuarios. La lectura de la base se movió a `src/lib/db-dump.ts`, compartido con `scripts/datos.ts`.
+- Archivos: `src/app/api/copia-base/route.ts`, `src/lib/{db-dump,constants}.ts`, `src/components/app-sidebar.tsx`, `scripts/datos.ts`.
+- Datos: —
+- Verificación: tsc · lint · test · build · curl en `npm start` (gino 200 con 863 filas; gianella 403; sin sesión → login) · `db:backup` sigue andando · restauración de la copia en un Postgres aparte (`FRABEL_DATA_DIR` temporal, puerto 5434): 24 tablas OK.
+- Pendiente: —
+
 ## 2026-10-25 · T-030 · Diseño moderno (estilo Kanakku) y modo oscuro
 - Resultado: solo estilo, sin cambiar funciones ni estructura. Paleta violeta #7539FF en `globals.css` (claro y oscuro), letra Instrument Sans, fondo gris #EEF0F4 con tarjetas blancas (`surface`), encabezado de tabla gris, estados en pastillas suaves, campos blancos. Menú agrupado (Principal/Comercial/Operación/Administración), comprimible a íconos (botón o Ctrl+B, se recuerda en cookie), con logo color en claro y blanco y negro invertido en oscuro. Botón luna/sol (`next-themes`, se recuerda por navegador).
 - Archivos: `src/app/globals.css`, `src/app/layout.tsx`, `src/app/(app)/layout.tsx`, `src/components/{app-sidebar,page-header,theme-provider,theme-toggle,monthly-chart}.tsx`, `src/components/ui/{table,badge,card,input,native-select,textarea}.tsx`, contenedores de las páginas (`rounded-xl border` → `surface`), login, `public/brand/frabel-logo-bw-web.png`.

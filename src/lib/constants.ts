@@ -127,6 +127,9 @@ export const LOGIN_USERS = [
   { username: "mingo", name: "Mingo" },
 ] as const;
 
+/** Usuarios que pueden descargar la copia completa de la base (botón del menú, `/api/copia-base`). */
+export const DB_DOWNLOAD_USERS: readonly string[] = ["gino"];
+
 /** Rubros sugeridos de proveedores (T-021; se puede escribir otro). */
 export const SUPPLIER_CATEGORIES = [
   "Combustible",

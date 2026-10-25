@@ -6,7 +6,7 @@ Backlog del ERP. Agregá tareas en "Pendientes" (título + descripción) y pedí
 Estados: `Nueva` → `Especificada` → `Aprobada` → `En curso` → `Hecha` · también `Bloqueada` (con motivo).
 Prioridad: `Alta` · `Media` · `Baja`.
 
-**Próximo ID: T-031**
+**Próximo ID: T-032**
 
 ---
 
@@ -63,6 +63,10 @@ Prioridad: `Alta` · `Media` · `Baja`.
 ---
 
 ## ✅ Hechas
+
+### T-031 · Descargar copia de la base
+- Estado: Hecha (2026-10-25)
+- Descripción: botón en el menú (solo `gino`) que baja la base completa en el formato de los backups, para guardarla en otra PC y cargarla con `db:restore`.
 
 ### T-030 · Diseño moderno (estilo Kanakku) y modo oscuro
 - Estado: Hecha (2026-10-25)

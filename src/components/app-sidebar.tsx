@@ -3,7 +3,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { CalendarCheck, LayoutDashboard, LogOut, type LucideIcon, Receipt, Route, Target, Truck, Users } from "lucide-react";
+import { CalendarCheck, DatabaseBackup, LayoutDashboard, LogOut, type LucideIcon, Receipt, Route, Target, Truck, Users } from "lucide-react";
 import { logout } from "@/app/(auth)/actions";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -25,6 +25,7 @@ import {
   SidebarTrigger,
 } from "@/components/ui/sidebar";
 import type { Level, Module } from "@/db/schema";
+import { DB_DOWNLOAD_USERS } from "@/lib/constants";
 
 type NavItem = {
   title: string;
@@ -150,6 +151,18 @@ export function AppSidebar({ user, permissions, dueActivities }: Props) {
             <span className="truncate font-medium">{displayName}</span>
             {user.email && <span className="truncate text-xs text-muted-foreground">{user.email}</span>}
           </div>
+          {DB_DOWNLOAD_USERS.includes(user.username ?? "") && (
+            // Copia completa de la base (para guardarla en otra PC); <a> y no <Link>: es una descarga.
+            <a
+              href="/api/copia-base"
+              download
+              className="rounded-md p-1.5 text-muted-foreground hover:bg-sidebar-accent hover:text-foreground"
+              title="Descargar copia de la base"
+              aria-label="Descargar copia de la base"
+            >
+              <DatabaseBackup className="size-4" />
+            </a>
+          )}
           <ThemeToggle />
           <form action={logout}>
             <button

@@ -12,13 +12,10 @@ import path from "node:path";
 import zlib from "node:zlib";
 import { Client } from "pg";
 import { BACKUP_DIR, DATABASE_URL } from "../src/lib/config";
-
-type TableDump = { columns: string[]; rows: (string | null)[][] };
-type Dump = { version: 1; createdAt: string; migration: string | null; tables: Record<string, TableDump> };
+import { type Dump, dumpFileName, migrations, q, rawTypes, readAll, tableNames } from "../src/lib/db-dump";
 
 const KEEP_BACKUPS = 60;
 const INITIAL_FILE = path.join(process.cwd(), "datos-iniciales", "frabel-inicial.json.gz");
-const rawTypes = { getTypeParser: () => (v: string) => v };
 
 function connect(url: string) {
   // Neon exige SSL; se quita `sslmode` de la URL para que pg no lo reinterprete (y no avise).
@@ -27,39 +24,6 @@ function connect(url: string) {
   u.searchParams.delete("sslmode");
   u.searchParams.delete("channel_binding");
   return new Client({ connectionString: u.toString(), ssl: remote ? true : undefined, types: rawTypes });
-}
-
-const q = (name: string) => `"${name.replace(/"/g, '""')}"`;
-
-async function migrations(c: Client) {
-  const { rows } = await c.query(`select hash from drizzle.__drizzle_migrations order by created_at`);
-  return rows.map((r) => r.hash as string);
-}
-
-async function lastMigration(c: Client) {
-  return (await migrations(c)).at(-1) ?? null;
-}
-
-async function tableNames(c: Client) {
-  const { rows } = await c.query(
-    `select table_name from information_schema.tables where table_schema = 'public' and table_type = 'BASE TABLE' order by table_name`,
-  );
-  return rows.map((r) => r.table_name as string);
-}
-
-async function readAll(c: Client): Promise<Dump> {
-  const tables: Record<string, TableDump> = {};
-  for (const t of await tableNames(c)) {
-    const cols = await c.query(
-      `select column_name from information_schema.columns
-       where table_schema = 'public' and table_name = $1 and is_generated = 'NEVER' order by ordinal_position`,
-      [t],
-    );
-    const columns = cols.rows.map((r) => r.column_name as string);
-    const res = await c.query({ text: `select ${columns.map(q).join(", ")} from ${q(t)}`, rowMode: "array" });
-    tables[t] = { columns, rows: res.rows };
-  }
-  return { version: 1, createdAt: new Date().toISOString(), migration: await lastMigration(c), tables };
 }
 
 async function rowCount(c: Client, t: string) {
@@ -150,8 +114,7 @@ function writeDumpFile(dump: Dump, file: string, label: string) {
 const readDumpFile = (file: string) => JSON.parse(zlib.gunzipSync(fs.readFileSync(file)).toString("utf8")) as Dump;
 
 export async function backup() {
-  const stamp = new Date().toLocaleString("sv-SE", { timeZone: "America/Argentina/Buenos_Aires" }).slice(0, 16);
-  const file = path.join(BACKUP_DIR, `frabel-${stamp.replace(" ", "-").replace(":", "")}.json.gz`);
+  const file = path.join(BACKUP_DIR, dumpFileName());
   writeDumpFile(await readLocal(), file, "Backup");
   // Se conservan los últimos KEEP_BACKUPS.
   const old = fs.readdirSync(BACKUP_DIR).filter((f) => /^frabel-.*\.json\.gz$/.test(f)).sort().slice(0, -KEEP_BACKUPS);
