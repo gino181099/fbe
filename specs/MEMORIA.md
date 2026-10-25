@@ -53,6 +53,7 @@ Conocimiento estable que no se deduce fácil del código. Leer antes de explorar
 
 ## Trampas
 
+- **Hash de migraciones distinto por PC**: Drizzle guarda el sha256 del .sql y git (`autocrlf`) puede bajarlo con CRLF o LF: nunca comparar migraciones entre PCs por hash, usar `created_at` (fecha del journal). `db:migrate` ya ordena por fecha; `db:restore` usa `dumpMigrationAt`. No agregar `eol=lf` a `drizzle/*.sql` en `.gitattributes`: dejaría la carpeta "modificada" en la oficina y trabaría el `git pull` de `actualizar.bat`.
 - `ALTER TYPE … ADD VALUE` y un UPDATE que use el valor nuevo van en migraciones distintas **y** en `db:migrate` separados (drizzle-kit aplica todas las pendientes en una transacción). Alternativa en una sola migración (T-022): columna a `text` → `UPDATE` → `DROP/CREATE TYPE` → `USING col::tipo` (drizzle-kit lo genera al quitar valores; insertar el UPDATE en medio).
 - FK con `onDelete: "restrict"` falla con código `23001` (no `23503`, que es de NO ACTION): chequear ambos al traducir errores de borrado.
 - `PageProps<"/ruta">` de una página nueva no tipa hasta correr `npm run build` o `dev` (genera los tipos de rutas).

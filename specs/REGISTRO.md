@@ -15,6 +15,13 @@ Una entrada por tarea terminada, **la más nueva arriba**. Formato fijo y breve 
 
 ---
 
+## 2026-10-25 · T-032 · Arreglo: "el volcado es de una versión más nueva" entre PCs
+- Resultado: `db:restore`/`db:inicializar` rechazaban volcados de la misma versión hechos en otra PC: el hash de Drizzle es el sha256 del .sql y git (`core.autocrlf=true`) los baja con CRLF en una PC clonada (esta los tiene LF). Ahora se compara por fecha de migración (`created_at`); los volcados guardan `migrationAt` y los viejos se fechan buscando su hash en `drizzle/` con LF y CRLF (`dumpMigrationAt`).
+- Archivos: `src/lib/db-dump.ts` (+ test), `scripts/datos.ts`.
+- Datos: —
+- Verificación: tsc · lint · test (167) · Postgres aparte simulando la oficina con hashes CRLF: datos-iniciales LF carga, volcado viejo CRLF carga en LF, volcado "más nuevo" sigue rechazado, volcado nuevo con fecha carga.
+- Pendiente: —
+
 ## 2026-10-25 · T-031 · Descargar copia de la base
 - Resultado: ícono de base de datos al pie del menú, visible solo para los usuarios de `DB_DOWNLOAD_USERS` (`gino`); `/api/copia-base` devuelve `frabel-AAAA-MM-DD-HHMM.json.gz` (mismo formato que los backups) y responde 403 a otros usuarios. La lectura de la base se movió a `src/lib/db-dump.ts`, compartido con `scripts/datos.ts`.
 - Archivos: `src/app/api/copia-base/route.ts`, `src/lib/{db-dump,constants}.ts`, `src/components/app-sidebar.tsx`, `scripts/datos.ts`.

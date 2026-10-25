@@ -12,7 +12,7 @@ import path from "node:path";
 import zlib from "node:zlib";
 import { Client } from "pg";
 import { BACKUP_DIR, DATABASE_URL } from "../src/lib/config";
-import { type Dump, dumpFileName, migrations, q, rawTypes, readAll, tableNames } from "../src/lib/db-dump";
+import { type Dump, dumpFileName, dumpMigrationAt, migrations, q, rawTypes, readAll, tableNames } from "../src/lib/db-dump";
 
 const KEEP_BACKUPS = 60;
 const INITIAL_FILE = path.join(process.cwd(), "datos-iniciales", "frabel-inicial.json.gz");
@@ -24,6 +24,15 @@ function connect(url: string) {
   u.searchParams.delete("sslmode");
   u.searchParams.delete("channel_binding");
   return new Client({ connectionString: u.toString(), ssl: remote ? true : undefined, types: rawTypes });
+}
+
+/** Migraciones del repo (cada .sql con su fecha del journal), para fechar volcados que solo traen el hash. */
+function repoMigrationFiles() {
+  const dir = path.join(process.cwd(), "drizzle");
+  const journal = JSON.parse(fs.readFileSync(path.join(dir, "meta", "_journal.json"), "utf8")) as {
+    entries: { tag: string; when: number }[];
+  };
+  return journal.entries.map((e) => ({ sql: fs.readFileSync(path.join(dir, `${e.tag}.sql`), "utf8"), when: e.when }));
 }
 
 async function rowCount(c: Client, t: string) {
@@ -45,11 +54,13 @@ async function writeAll(dump: Dump) {
   const c = connect(DATABASE_URL);
   await c.connect();
   try {
-    const local = await migrations(c);
-    if (dump.migration && !local.includes(dump.migration)) {
+    // Se compara por fecha de migración, no por hash: el hash depende de los finales de línea del .sql en cada PC.
+    const localAt = (await migrations(c)).at(-1)?.at ?? null;
+    const dumpAt = dumpMigrationAt(dump, repoMigrationFiles());
+    if (dumpAt === undefined || (dumpAt !== null && (localAt === null || dumpAt > localAt))) {
       throw new Error("El volcado es de una versión más nueva del ERP que esta. Actualizar (git pull + npm run db:migrate) antes.");
     }
-    if (dump.migration !== local.at(-1)) console.log("Aviso: el volcado es de una versión anterior; se carga igual.");
+    if (dumpAt !== localAt) console.log("Aviso: el volcado es de una versión anterior; se carga igual.");
     const localTables = await tableNames(c);
     if (await hasBusinessData(c)) await backup();
     await c.query("begin");

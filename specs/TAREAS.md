@@ -6,7 +6,7 @@ Backlog del ERP. Agregá tareas en "Pendientes" (título + descripción) y pedí
 Estados: `Nueva` → `Especificada` → `Aprobada` → `En curso` → `Hecha` · también `Bloqueada` (con motivo).
 Prioridad: `Alta` · `Media` · `Baja`.
 
-**Próximo ID: T-032**
+**Próximo ID: T-033**
 
 ---
 
@@ -63,6 +63,10 @@ Prioridad: `Alta` · `Media` · `Baja`.
 ---
 
 ## ✅ Hechas
+
+### T-032 · Arreglo: "el volcado es de una versión más nueva" entre PCs
+- Estado: Hecha (2026-10-25)
+- Descripción: restore/inicializar comparaban la migración por hash, que cambia con los finales de línea del .sql (autocrlf); ahora comparan por fecha.
 
 ### T-031 · Descargar copia de la base
 - Estado: Hecha (2026-10-25)
