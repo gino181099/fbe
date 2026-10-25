@@ -20,6 +20,7 @@ Una entrada por tarea terminada, **la más nueva arriba**. Formato fijo y breve 
 - Archivos: `src/lib/{calendar(+test),activity-bucket,activities}.ts`, `src/components/{activity-calendar,calendar-dnd,activity-list}.tsx`, `src/app/(app)/agenda/page.tsx`, `src/app/(app)/flota/{page,[id]/page}.tsx`.
 - Datos: — (sin migración).
 - Verificación: tsc · lint · npm test 161/161 · build · navegador en `npm start`: colores correctos con 6 actividades PRUEBA, arrastre del 22 al 28 (pasó de rojo a verde), detalle al clic, punto verde/rojo en Flota, ficha AH115DL. PRUEBA borradas.
+- Publicación: subido a Bitbucket (`origin/main`) el 2026-10-25.
 
 ## 2026-10-25 · T-025 · Usuarios, agenda y auditoría
 - Resultado: login eligiendo Gino/Gianella/Ale/Mingo + clave única (recuerda el último en la PC); `/agenda` (mías/de todos/de alguien, vencidas/hoy/7 días/después, hecha con resultado + "programar la siguiente", reprogramar, reabrir), contador en el menú, panel de actividades en contacto, oportunidad y proveedor (vehículo se elige en el form); "Creado/Modificado por" en diálogos de edición y fichas (recorridos, gastos, cargas, proveedores y pagos, flota, contactos, leads, comprobantes y recibos — en estos, al anular y en el `title` del estado).
