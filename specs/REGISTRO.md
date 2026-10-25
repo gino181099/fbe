@@ -21,6 +21,7 @@ Una entrada por tarea terminada, **la más nueva arriba**. Formato fijo y breve 
 - Datos: —
 - Verificación: tsc · lint · test (167) · Postgres aparte simulando la oficina con hashes CRLF: datos-iniciales LF carga, volcado viejo CRLF carga en LF, volcado "más nuevo" sigue rechazado, volcado nuevo con fecha carga.
 - Pendiente: —
+- Publicación: subido a Bitbucket (origin/main) el 2026-10-25.
 
 ## 2026-10-25 · T-031 · Descargar copia de la base
 - Resultado: ícono de base de datos al pie del menú, visible solo para los usuarios de `DB_DOWNLOAD_USERS` (`gino`); `/api/copia-base` devuelve `frabel-AAAA-MM-DD-HHMM.json.gz` (mismo formato que los backups) y responde 403 a otros usuarios. La lectura de la base se movió a `src/lib/db-dump.ts`, compartido con `scripts/datos.ts`.
