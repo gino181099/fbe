@@ -21,6 +21,7 @@ Una entrada por tarea terminada, **la más nueva arriba**. Formato fijo y breve 
 - Datos: —
 - Verificación: tsc · lint · test · build · navegador en `npm start` (claro y oscuro: Inicio, Agenda, Contactos, Leads, Ventas + diálogo, Gastos; menú comprimido; 390 px sin desborde; consola limpia).
 - Pendiente: —
+- Publicación: subido a Bitbucket (origin/main) el 2026-10-25.
 
 ## 2026-10-25 · T-029 · Ayuda (i) en cada módulo
 - Resultado: botón (i) al lado del título de las 19 páginas (salvo Usuarios, oculto); abre un panel lateral con "Para qué sirve", "Qué significa cada cosa" y "A tener en cuenta". 12 temas; las fichas y los "nuevo" usan el de su módulo.
