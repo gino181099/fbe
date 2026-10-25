@@ -146,7 +146,7 @@ export function DocumentForm({
   }
 
   return (
-    <div className="grid gap-6 rounded-xl border p-4 sm:p-6">
+    <div className="grid gap-6 surface p-4 sm:p-6">
       <h2 className="text-lg font-semibold">{DOCUMENT_TYPE_LABELS[type]}</h2>
 
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">

@@ -14,7 +14,7 @@ export default async function PendingPage() {
   if (user.status === "active") redirect("/");
   const disabled = user.status === "disabled";
   return (
-    <main className="flex min-h-svh items-center justify-center bg-muted/40 p-4">
+    <main className="flex min-h-svh items-center justify-center bg-background p-4">
       <Card className="w-full max-w-md text-center">
         <CardHeader>
           <Clock className="mx-auto mb-2 size-8 text-muted-foreground" />

@@ -48,73 +48,85 @@
   --radius-4xl: calc(var(--radius) * 2.6);
 }
 
+/* Paleta T-030 (estilo Kanakku): fondo gris claro, tarjetas blancas, violeta como color principal. */
 :root {
-  --background: oklch(1 0 0);
-  --foreground: oklch(0.145 0 0);
-  --card: oklch(1 0 0);
-  --card-foreground: oklch(0.145 0 0);
-  --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.145 0 0);
-  --primary: oklch(0.205 0 0);
-  --primary-foreground: oklch(0.985 0 0);
-  --secondary: oklch(0.97 0 0);
-  --secondary-foreground: oklch(0.205 0 0);
-  --muted: oklch(0.97 0 0);
-  --muted-foreground: oklch(0.556 0 0);
-  --accent: oklch(0.97 0 0);
-  --accent-foreground: oklch(0.205 0 0);
-  --destructive: oklch(0.577 0.245 27.325);
-  --border: oklch(0.922 0 0);
-  --input: oklch(0.922 0 0);
-  --ring: oklch(0.708 0 0);
-  --chart-1: oklch(0.87 0 0);
-  --chart-2: oklch(0.556 0 0);
-  --chart-3: oklch(0.439 0 0);
-  --chart-4: oklch(0.371 0 0);
-  --chart-5: oklch(0.269 0 0);
+  --background: #eef0f4;
+  --foreground: #1c2430;
+  --card: #ffffff;
+  --card-foreground: #1c2430;
+  --popover: #ffffff;
+  --popover-foreground: #1c2430;
+  --primary: #7539ff;
+  --primary-foreground: #ffffff;
+  --secondary: #f1f2f5;
+  --secondary-foreground: #2b3442;
+  --muted: #f4f5f7;
+  --muted-foreground: #6b7280;
+  --accent: #f3eeff;
+  --accent-foreground: #5b2bd6;
+  --destructive: #e5383b;
+  --border: #e2e4e6;
+  --input: #dcdfe3;
+  --ring: #7539ff;
+  --chart-1: #7539ff;
+  --chart-2: #9c6dff;
+  --chart-3: #c2a6ff;
+  --chart-4: #5b2bd6;
+  --chart-5: #3b1a99;
   --radius: 0.625rem;
-  --sidebar: oklch(0.985 0 0);
-  --sidebar-foreground: oklch(0.145 0 0);
-  --sidebar-primary: oklch(0.205 0 0);
-  --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.97 0 0);
-  --sidebar-accent-foreground: oklch(0.205 0 0);
-  --sidebar-border: oklch(0.922 0 0);
-  --sidebar-ring: oklch(0.708 0 0);
+  --surface-shadow: 0 4px 3px 0 rgb(126 126 126 / 0.08);
+  --sidebar: #ffffff;
+  --sidebar-foreground: #3d4654;
+  --sidebar-primary: #7539ff;
+  --sidebar-primary-foreground: #ffffff;
+  --sidebar-accent: #f3eeff;
+  --sidebar-accent-foreground: #5b2bd6;
+  --sidebar-border: #e2e4e6;
+  --sidebar-ring: #7539ff;
 }
 
 .dark {
-  --background: oklch(0.145 0 0);
-  --foreground: oklch(0.985 0 0);
-  --card: oklch(0.205 0 0);
-  --card-foreground: oklch(0.985 0 0);
-  --popover: oklch(0.205 0 0);
-  --popover-foreground: oklch(0.985 0 0);
-  --primary: oklch(0.922 0 0);
-  --primary-foreground: oklch(0.205 0 0);
-  --secondary: oklch(0.269 0 0);
-  --secondary-foreground: oklch(0.985 0 0);
-  --muted: oklch(0.269 0 0);
-  --muted-foreground: oklch(0.708 0 0);
-  --accent: oklch(0.269 0 0);
-  --accent-foreground: oklch(0.985 0 0);
-  --destructive: oklch(0.704 0.191 22.216);
-  --border: oklch(1 0 0 / 10%);
-  --input: oklch(1 0 0 / 15%);
-  --ring: oklch(0.556 0 0);
-  --chart-1: oklch(0.87 0 0);
-  --chart-2: oklch(0.556 0 0);
-  --chart-3: oklch(0.439 0 0);
-  --chart-4: oklch(0.371 0 0);
-  --chart-5: oklch(0.269 0 0);
-  --sidebar: oklch(0.205 0 0);
-  --sidebar-foreground: oklch(0.985 0 0);
-  --sidebar-primary: oklch(0.488 0.243 264.376);
-  --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.269 0 0);
-  --sidebar-accent-foreground: oklch(0.985 0 0);
-  --sidebar-border: oklch(1 0 0 / 10%);
-  --sidebar-ring: oklch(0.556 0 0);
+  --background: #0d0f14;
+  --foreground: #e6e8ec;
+  --card: #171a23;
+  --card-foreground: #e6e8ec;
+  --popover: #1b1f2a;
+  --popover-foreground: #e6e8ec;
+  --primary: #8b5cff;
+  --primary-foreground: #ffffff;
+  --secondary: #232836;
+  --secondary-foreground: #e6e8ec;
+  --muted: #1e2230;
+  --muted-foreground: #9aa1ad;
+  --accent: #2a2344;
+  --accent-foreground: #d6c6ff;
+  --destructive: #f26b6d;
+  --border: #2a2f3d;
+  --input: #343b4b;
+  --ring: #8b5cff;
+  --chart-1: #8b5cff;
+  --chart-2: #a985ff;
+  --chart-3: #c9b3ff;
+  --chart-4: #6d3df0;
+  --chart-5: #4a26b8;
+  --surface-shadow: none;
+  --sidebar: #171a23;
+  --sidebar-foreground: #cfd3da;
+  --sidebar-primary: #8b5cff;
+  --sidebar-primary-foreground: #ffffff;
+  --sidebar-accent: #2a2344;
+  --sidebar-accent-foreground: #d6c6ff;
+  --sidebar-border: #232836;
+  --sidebar-ring: #8b5cff;
+}
+
+/* Contenedor estándar de tablas y paneles: tarjeta blanca con borde suave y sombra leve. */
+@utility surface {
+  border-radius: var(--radius-xl);
+  border: 1px solid var(--color-border);
+  background-color: var(--color-card);
+  box-shadow: var(--surface-shadow);
+  overflow: hidden;
 }
 
 @layer base {

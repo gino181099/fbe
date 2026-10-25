@@ -94,7 +94,7 @@ export default async function ContactsPage({ searchParams }: PageProps<"/contact
       {rows.length === 0 ? (
         <EmptyState>No hay contactos que coincidan.</EmptyState>
       ) : (
-        <div className="rounded-xl border">
+        <div className="surface">
           <Table>
             <TableHeader>
               <TableRow>

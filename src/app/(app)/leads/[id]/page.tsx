@@ -207,7 +207,7 @@ export default async function LeadPage({ params }: PageProps<"/leads/[id]">) {
       <div className="grid gap-6 lg:grid-cols-[1fr_1.4fr]">
         <section className="grid content-start gap-3">
           <h2 className="font-semibold">Datos</h2>
-          <dl className="grid gap-2 rounded-xl border p-4 text-sm">
+          <dl className="grid gap-2 surface p-4 text-sm">
             {info
               .filter(([, v]) => v)
               .map(([k, v]) => (
@@ -218,7 +218,7 @@ export default async function LeadPage({ params }: PageProps<"/leads/[id]">) {
               ))}
           </dl>
           {lead.notes && (
-            <div className="whitespace-pre-wrap rounded-xl border p-4 text-sm text-muted-foreground">{lead.notes}</div>
+            <div className="whitespace-pre-wrap surface p-4 text-sm text-muted-foreground">{lead.notes}</div>
           )}
           <AuditInfo row={lead} names={names} />
         </section>

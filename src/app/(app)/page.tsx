@@ -224,10 +224,10 @@ export default async function DashboardPage({ searchParams }: PageProps<"/">) {
             <EmptyState>Sin movimientos en el período elegido.</EmptyState>
           ) : (
             <>
-              <div className="rounded-xl border p-4">
+              <div className="surface p-4">
                 <MonthlyChart rows={monthlyRows} />
               </div>
-              <div className="rounded-xl border">
+              <div className="surface">
                 <Table>
                   <TableHeader>
                     <TableRow>
@@ -282,7 +282,7 @@ export default async function DashboardPage({ searchParams }: PageProps<"/">) {
           {topRoutes.length === 0 ? (
             <EmptyState>Sin recorridos en el período elegido.</EmptyState>
           ) : (
-            <div className="rounded-xl border">
+            <div className="surface">
               <Table>
                 <TableHeader>
                   <TableRow>
@@ -318,7 +318,7 @@ export default async function DashboardPage({ searchParams }: PageProps<"/">) {
             {recent.length === 0 ? (
               <EmptyState>Sin recorridos.</EmptyState>
             ) : (
-              <div className="rounded-xl border">
+              <div className="surface">
                 <Table>
                   <TableHeader>
                     <TableRow>
@@ -354,7 +354,7 @@ export default async function DashboardPage({ searchParams }: PageProps<"/">) {
             {debtors.length === 0 ? (
               <EmptyState>No hay saldos pendientes.</EmptyState>
             ) : (
-              <div className="rounded-xl border">
+              <div className="surface">
                 <Table>
                   <TableBody>
                     {debtors.map((d) => (

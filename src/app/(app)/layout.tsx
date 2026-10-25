@@ -1,3 +1,4 @@
+import { cookies } from "next/headers";
 import { AppSidebar } from "@/components/app-sidebar";
 import { Separator } from "@/components/ui/separator";
 import { SidebarInset, SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
@@ -6,9 +7,11 @@ import { requireUser } from "@/lib/permissions";
 
 export default async function AppLayout({ children }: LayoutProps<"/">) {
   const user = await requireUser();
-  const dueActivities = await countDueActivities(user.id);
+  const [dueActivities, cookieStore] = await Promise.all([countDueActivities(user.id), cookies()]);
+  // Menú comprimido o expandido según lo último que eligió el usuario (cookie del componente Sidebar).
+  const sidebarOpen = cookieStore.get("sidebar_state")?.value !== "false";
   return (
-    <SidebarProvider>
+    <SidebarProvider defaultOpen={sidebarOpen}>
       <AppSidebar
         user={{ name: user.name, email: user.email, image: user.image, username: user.username }}
         permissions={user.permissions}

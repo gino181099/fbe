@@ -195,7 +195,7 @@ export default async function LeadsPage({ searchParams }: PageProps<"/leads">) {
       ) : rows.length === 0 ? (
         <EmptyState>No hay oportunidades que coincidan.</EmptyState>
       ) : (
-        <div className="rounded-xl border">
+        <div className="surface">
           <Table>
             <TableHeader>
               <TableRow>

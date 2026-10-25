@@ -61,7 +61,7 @@ export function NotesPanel({
       {notes.length === 0 ? (
         <EmptyState>Todavía no hay notas.</EmptyState>
       ) : (
-        <div className="rounded-xl border">
+        <div className="surface">
           <Table>
             <TableHeader>
               <TableRow>

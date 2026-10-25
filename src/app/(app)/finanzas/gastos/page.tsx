@@ -280,7 +280,7 @@ export default async function ExpensesPage({ searchParams }: PageProps<"/finanza
           {expenseRows.length === 0 ? (
             <EmptyState>No hay gastos con esos filtros.</EmptyState>
           ) : (
-            <div className="rounded-xl border">
+            <div className="surface">
               <Table>
                 <TableHeader>
                   <TableRow>
@@ -369,7 +369,7 @@ export default async function ExpensesPage({ searchParams }: PageProps<"/finanza
         </TabsContent>
 
         <TabsContent value="combustible" className="grid gap-4 pt-2">
-          <div className="rounded-xl border">
+          <div className="surface">
             <Table>
               <TableHeader>
                 <TableRow>
@@ -421,7 +421,7 @@ export default async function ExpensesPage({ searchParams }: PageProps<"/finanza
           {loads.length === 0 ? (
             <EmptyState>No hay cargas extras en el período.</EmptyState>
           ) : (
-            <div className="rounded-xl border">
+            <div className="surface">
               <Table>
                 <TableHeader>
                   <TableRow>

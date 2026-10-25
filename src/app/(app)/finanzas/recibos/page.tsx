@@ -114,7 +114,7 @@ export default async function ReceiptsPage({ searchParams }: PageProps<"/finanza
       {rows.length === 0 ? (
         <EmptyState>No hay recibos con esos filtros.</EmptyState>
       ) : (
-        <div className="rounded-xl border">
+        <div className="surface">
           <Table>
             <TableHeader>
               <TableRow>

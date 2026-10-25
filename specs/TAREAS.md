@@ -6,7 +6,7 @@ Backlog del ERP. Agregá tareas en "Pendientes" (título + descripción) y pedí
 Estados: `Nueva` → `Especificada` → `Aprobada` → `En curso` → `Hecha` · también `Bloqueada` (con motivo).
 Prioridad: `Alta` · `Media` · `Baja`.
 
-**Próximo ID: T-030**
+**Próximo ID: T-031**
 
 ---
 
@@ -63,6 +63,10 @@ Prioridad: `Alta` · `Media` · `Baja`.
 ---
 
 ## ✅ Hechas
+
+### T-030 · Diseño moderno (estilo Kanakku) y modo oscuro
+- Estado: Hecha (2026-10-25)
+- Descripción: paleta violeta, letra Instrument Sans, tarjetas blancas sobre fondo gris, tablas y estados nuevos, menú agrupado y comprimible, modo claro/oscuro.
 
 ### T-029 · Ayuda (i) en cada módulo
 - Estado: Hecha (2026-10-25)

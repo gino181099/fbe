@@ -8,7 +8,7 @@ export const metadata: Metadata = { title: "Sin acceso" };
 
 export default function NoAccessPage() {
   return (
-    <main className="flex min-h-svh items-center justify-center bg-muted/40 p-4">
+    <main className="flex min-h-svh items-center justify-center bg-background p-4">
       <Card className="w-full max-w-md text-center">
         <CardHeader>
           <ShieldX className="mx-auto mb-2 size-8 text-muted-foreground" />

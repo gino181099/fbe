@@ -13,7 +13,7 @@ export default function Loading() {
         <Skeleton className="h-9 w-36" />
         <Skeleton className="h-9 w-24" />
       </div>
-      <div className="grid gap-2 rounded-xl border p-4">
+      <div className="grid gap-2 surface p-4">
         {Array.from({ length: 8 }, (_, i) => (
           <Skeleton key={i} className="h-6 w-full" />
         ))}

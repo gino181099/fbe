@@ -116,7 +116,7 @@ export default async function VehiclePage({ params }: PageProps<"/flota/[id]">) 
           {recentExpenses.length === 0 ? (
             <EmptyState>No hay gastos cargados para este vehículo.</EmptyState>
           ) : (
-            <div className="rounded-xl border">
+            <div className="surface">
               <Table>
                 <TableHeader>
                   <TableRow>

@@ -38,7 +38,7 @@ export default async function UsersPage() {
         description="Quien ingresa con Google queda pendiente hasta que lo actives y le asignes permisos por módulo."
         actions={pendingCount > 0 && <Badge variant="destructive">{pendingCount} pendientes de aprobación</Badge>}
       />
-      <div className="overflow-x-auto rounded-xl border">
+      <div className="overflow-x-auto rounded-xl border bg-card shadow-[var(--surface-shadow)]">
         <Table>
           <TableHeader>
             <TableRow>

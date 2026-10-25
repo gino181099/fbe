@@ -235,7 +235,7 @@ export default async function ClientPage({ params, searchParams }: PageProps<"/c
 
         {canLeads && (
           <TabsContent value="oportunidades" className="pt-2">
-            <div className="rounded-xl border">
+            <div className="surface">
               <Table>
                 <TableHeader>
                   <TableRow>
@@ -284,7 +284,7 @@ export default async function ClientPage({ params, searchParams }: PageProps<"/c
             )}
           </div>
           {current.length > 0 && (
-            <div className="rounded-xl border">
+            <div className="surface">
               <Table>
                 <TableHeader>
                   <TableRow>
@@ -317,7 +317,7 @@ export default async function ClientPage({ params, searchParams }: PageProps<"/c
           {history.length === 0 ? (
             <EmptyState>Sin tarifas cargadas.</EmptyState>
           ) : (
-            <div className="rounded-xl border">
+            <div className="surface">
               <Table>
                 <TableHeader>
                   <TableRow>
@@ -371,7 +371,7 @@ export default async function ClientPage({ params, searchParams }: PageProps<"/c
           {recentTrips.length === 0 ? (
             <EmptyState>Sin recorridos registrados.</EmptyState>
           ) : (
-            <div className="rounded-xl border">
+            <div className="surface">
               <Table>
                 <TableHeader>
                   <TableRow>
@@ -406,7 +406,7 @@ export default async function ClientPage({ params, searchParams }: PageProps<"/c
         </TabsContent>
 
         <TabsContent value="datos" className="pt-2">
-          <dl className="grid gap-4 rounded-xl border p-4 text-sm sm:grid-cols-2">
+          <dl className="grid gap-4 surface p-4 text-sm sm:grid-cols-2">
             {(
               [
                 ["Persona de contacto", client.contactPerson],

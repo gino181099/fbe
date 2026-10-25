@@ -55,7 +55,7 @@ export default async function AccountsPage({ searchParams }: PageProps<"/finanza
         <StatCard label="Total ajustes" value={formatMoney(totals.adjusted)} />
         <StatCard label="Saldo a cobrar" value={formatMoney(totals.balance)} />
       </div>
-      <div className="rounded-xl border">
+      <div className="surface">
         <Table>
           <TableHeader>
             <TableRow>

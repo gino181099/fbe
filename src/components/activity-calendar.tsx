@@ -66,7 +66,7 @@ export function ActivityCalendar({
         </div>
       </div>
 
-      <div className="overflow-x-auto rounded-xl border">
+      <div className="overflow-x-auto rounded-xl border bg-card shadow-[var(--surface-shadow)]">
         <div className="grid min-w-[56rem] grid-cols-7">
           {WEEKDAY_LABELS.map((d) => (
             <div key={d} className="border-b bg-muted/40 px-2 py-1.5 text-xs font-medium text-muted-foreground">

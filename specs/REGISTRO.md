@@ -15,6 +15,13 @@ Una entrada por tarea terminada, **la más nueva arriba**. Formato fijo y breve 
 
 ---
 
+## 2026-10-25 · T-030 · Diseño moderno (estilo Kanakku) y modo oscuro
+- Resultado: solo estilo, sin cambiar funciones ni estructura. Paleta violeta #7539FF en `globals.css` (claro y oscuro), letra Instrument Sans, fondo gris #EEF0F4 con tarjetas blancas (`surface`), encabezado de tabla gris, estados en pastillas suaves, campos blancos. Menú agrupado (Principal/Comercial/Operación/Administración), comprimible a íconos (botón o Ctrl+B, se recuerda en cookie), con logo color en claro y blanco y negro invertido en oscuro. Botón luna/sol (`next-themes`, se recuerda por navegador).
+- Archivos: `src/app/globals.css`, `src/app/layout.tsx`, `src/app/(app)/layout.tsx`, `src/components/{app-sidebar,page-header,theme-provider,theme-toggle,monthly-chart}.tsx`, `src/components/ui/{table,badge,card,input,native-select,textarea}.tsx`, contenedores de las páginas (`rounded-xl border` → `surface`), login, `public/brand/frabel-logo-bw-web.png`.
+- Datos: —
+- Verificación: tsc · lint · test · build · navegador en `npm start` (claro y oscuro: Inicio, Agenda, Contactos, Leads, Ventas + diálogo, Gastos; menú comprimido; 390 px sin desborde; consola limpia).
+- Pendiente: —
+
 ## 2026-10-25 · T-029 · Ayuda (i) en cada módulo
 - Resultado: botón (i) al lado del título de las 19 páginas (salvo Usuarios, oculto); abre un panel lateral con "Para qué sirve", "Qué significa cada cosa" y "A tener en cuenta". 12 temas; las fichas y los "nuevo" usan el de su módulo.
 - Archivos: `src/lib/help.ts` (textos), `src/components/{page-help,page-header}.tsx` (prop `help`), páginas de `src/app/(app)/`.

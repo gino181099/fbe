@@ -122,7 +122,7 @@ export default async function StatementPage({ params, searchParams }: PageProps<
         />
       </div>
 
-      <div className="rounded-xl border">
+      <div className="surface">
         <Table>
           <TableHeader>
             <TableRow>
@@ -166,7 +166,7 @@ export default async function StatementPage({ params, searchParams }: PageProps<
         {uninvoiced.length === 0 ? (
           <EmptyState>Todos los recorridos desde el {formatDate(CC_START)} tienen factura o comprobante interno.</EmptyState>
         ) : (
-          <div className="rounded-xl border">
+          <div className="surface">
             <Table>
               <TableHeader>
                 <TableRow>
@@ -200,7 +200,7 @@ export default async function StatementPage({ params, searchParams }: PageProps<
         {pending.length === 0 ? (
           <EmptyState>No hay cargos pendientes de cobro.</EmptyState>
         ) : (
-          <div className="rounded-xl border">
+          <div className="surface">
             <Table>
               <TableHeader>
                 <TableRow>

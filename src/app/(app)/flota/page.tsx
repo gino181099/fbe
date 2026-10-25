@@ -138,7 +138,7 @@ export default async function FleetPage({ searchParams }: PageProps<"/flota">) {
       {vehicleList.length === 0 ? (
         <EmptyState>No hay vehículos cargados.</EmptyState>
       ) : (
-        <div className="rounded-xl border">
+        <div className="surface">
           <Table>
             <TableHeader>
               <TableRow>
@@ -255,7 +255,7 @@ export default async function FleetPage({ searchParams }: PageProps<"/flota">) {
       {driverList.length === 0 ? (
         <EmptyState>No hay choferes cargados.</EmptyState>
       ) : (
-        <div className="rounded-xl border">
+        <div className="surface">
           <Table>
             <TableHeader>
               <TableRow>

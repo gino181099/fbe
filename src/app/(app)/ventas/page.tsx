@@ -189,7 +189,7 @@ export default async function SalesPage({ searchParams }: PageProps<"/ventas">) 
       {rows.length === 0 ? (
         <EmptyState>No hay recorridos con esos filtros.</EmptyState>
       ) : (
-        <div className="rounded-xl border">
+        <div className="surface">
           <Table>
             <TableHeader>
               <TableRow>

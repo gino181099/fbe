@@ -108,7 +108,7 @@ export default async function DocumentsPage({ searchParams }: PageProps<"/finanz
       {rows.length === 0 ? (
         <EmptyState>No hay comprobantes con esos filtros.</EmptyState>
       ) : (
-        <div className="rounded-xl border">
+        <div className="surface">
           <Table>
             <TableHeader>
               <TableRow>

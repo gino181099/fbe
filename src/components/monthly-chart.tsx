@@ -5,10 +5,10 @@ import { cn } from "@/lib/utils";
 type SeriesKey = "billed" | "collected" | "expenses" | "margin";
 
 const SERIES: { key: SeriesKey; label: string; color: string }[] = [
-  { key: "billed", label: "Facturado", color: "bg-sky-600" },
+  { key: "billed", label: "Facturado", color: "bg-primary" },
   { key: "collected", label: "Cobrado", color: "bg-emerald-600" },
   { key: "expenses", label: "Gastos", color: "bg-amber-500" },
-  { key: "margin", label: "Margen", color: "bg-violet-600" },
+  { key: "margin", label: "Margen", color: "bg-sky-500" },
 ];
 
 const HEIGHT = 200; // px del área de barras

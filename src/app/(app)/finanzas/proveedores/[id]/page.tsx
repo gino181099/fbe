@@ -105,7 +105,7 @@ export default async function SupplierPage({ params, searchParams }: PageProps<"
       {data.lines.length === 0 && !desde ? (
         <EmptyState>Este proveedor no tiene movimientos.</EmptyState>
       ) : (
-        <div className="rounded-xl border">
+        <div className="surface">
           <Table>
             <TableHeader>
               <TableRow>

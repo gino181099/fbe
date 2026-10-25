@@ -96,7 +96,7 @@ export default async function CollectionsPage({ searchParams }: PageProps<"/fina
       {rows.length === 0 ? (
         <EmptyState>Todavía no hay cobros registrados.</EmptyState>
       ) : (
-        <div className="rounded-xl border">
+        <div className="surface">
           <Table>
             <TableHeader>
               <TableRow>

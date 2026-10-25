@@ -39,7 +39,7 @@ export type ActivityListContext = {
 export function ActivityList({ rows, ctx, empty }: { rows: ActivityRow[]; ctx: ActivityListContext; empty?: string }) {
   if (rows.length === 0) return <EmptyState>{empty ?? "No hay actividades."}</EmptyState>;
   return (
-    <div className="divide-y rounded-xl border">
+    <div className="divide-y surface">
       {rows.map((r) => (
         <ActivityItem key={r.activity.id} row={r} ctx={ctx} />
       ))}

@@ -114,7 +114,7 @@ export default async function SuppliersPage({ searchParams }: PageProps<"/finanz
       {rows.length === 0 ? (
         <EmptyState>No hay proveedores con esos filtros.</EmptyState>
       ) : (
-        <div className="rounded-xl border">
+        <div className="surface">
           <Table>
             <TableHeader>
               <TableRow>

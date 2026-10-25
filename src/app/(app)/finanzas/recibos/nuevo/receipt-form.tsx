@@ -100,7 +100,7 @@ export function ReceiptForm({
   }
 
   return (
-    <div className="grid gap-6 rounded-xl border p-4 sm:p-6">
+    <div className="grid gap-6 surface p-4 sm:p-6">
       <div className="flex flex-wrap items-baseline justify-between gap-2">
         <h2 className="text-lg font-semibold">Recibo para {clientName}</h2>
         <span className="text-sm text-muted-foreground">{balanceLabel}</span>
