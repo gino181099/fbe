@@ -13,14 +13,16 @@ Módulos: Contactos (clientes + tarifarios versionados), Ventas (recorridos), Fi
 
 ## Stack y comandos
 
-Next.js 16 App Router + Server Actions · Neon Postgres + Drizzle · Auth.js v5 (Google + credenciales, JWT) · Tailwind 4 + shadcn/ui (radix) · react-pdf.
+Next.js 16 App Router + Server Actions · **Postgres 18 local** (binarios por npm) + Drizzle `node-postgres` · Auth.js v5 (clave única, JWT) · Tailwind 4 + shadcn/ui (radix) · react-pdf.
+Corre 100% local: una PC de la oficina es el servidor (`instalar.bat` / `iniciar-erp.bat` / `actualizar.bat`, git pull desde Bitbucket).
 
 ```
-npm run dev | build | lint          npx tsc --noEmit        npm test | npm run test:watch
+npm run dev | build | start | lint  npx tsc --noEmit        npm test | npm run test:watch
+npm run db:start | db:stop | db:status | db:setup         npm run db:backup | db:restore -- <archivo>
 npm run db:generate -- --name x     npm run db:migrate      npm run db:studio
-npm run db:seed-admin               npm run db:import-legacy -- <archivo sqlite>
+npm run db:import-legacy -- <archivo sqlite>
 ```
-Variables en `.env.local` (ver `.env.example`). Tests con Vitest (`src/**/*.test.ts`) solo sobre lógica pura (sin `@/db` ni `server-only`); no usan la base.
+`dev`/`start` levantan Postgres solos. Config fija en `src/lib/config.ts` (sin `.env` obligatorio). Tests con Vitest (`src/**/*.test.ts`) solo sobre lógica pura (sin `@/db` ni `server-only`); no usan la base.
 
 ## Mapa del código
 
@@ -36,7 +38,8 @@ src/app/(auth)/           login, pendiente, sin-acceso + actions (login/logout)
 src/app/(app)/<módulo>/   page.tsx (server) + actions.ts ("use server") + formularios cliente
 src/app/api/estado-cuenta/[clientId]/route.tsx   PDF
 src/proxy.ts              (ex middleware) solo redirige sin sesión a /login
-scripts/                  seed-admin.ts, migrate-legacy.ts      drizzle/  migraciones SQL
+src/lib/config.ts         clave única, AUTH_SECRET, puerto/carpetas/URL de la base
+scripts/                  db.ts (Postgres local) · local.ts (arranque) · datos.ts (backup/restore) · migrate-legacy.ts      drizzle/  migraciones SQL
 ```
 
 ## Convenciones (seguirlas siempre)
@@ -52,10 +55,10 @@ scripts/                  seed-admin.ts, migrate-legacy.ts      drizzle/  migrac
 
 - Next 16: `middleware` ahora es `src/proxy.ts`; `params`/`searchParams` son Promises; ante dudas leer `node_modules/next/dist/docs/` (solo el archivo puntual).
 - React 19 resetea formularios tras una acción: para que muestren valores nuevos usar `key` derivada de los datos.
-- `neon-http` no tiene transacciones interactivas: usar `db.batch([...])`.
+- Varias escrituras juntas: `db.transaction(async (tx) => { ... })` (no hay `db.batch`, eso era de Neon).
 - `tsx` no puede cargar `@react-pdf/renderer` (ESM); probar el PDF desde la app.
 - En Windows, heredocs con comillas/backticks fallan en Bash: editar archivos con Edit/Write.
-- Nunca subir `frabel-database*` ni `.env*` (ya están en `.gitignore`). La base de Neon es **producción**: datos de prueba se crean y se borran.
+- Nunca subir `frabel-database*` ni `.env*` (ya están en `.gitignore`). La base local de esta PC tiene datos reales copiados (la de producción es la de la PC de la oficina): datos de prueba se crean y se borran. Los datos de Postgres viven fuera de OneDrive (`%USERPROFILE%\frabel-erp-datos`).
 
 ## Uso eficiente de tokens
 

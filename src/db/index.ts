@@ -1,10 +1,12 @@
-import { neon } from "@neondatabase/serverless";
-import { drizzle } from "drizzle-orm/neon-http";
+import { drizzle } from "drizzle-orm/node-postgres";
+import { Pool } from "pg";
+import { DATABASE_URL } from "../lib/config";
 import * as schema from "./schema";
 
-if (!process.env.DATABASE_URL) {
-  throw new Error("Falta la variable de entorno DATABASE_URL");
-}
+// Un solo pool por proceso (el hot reload de `next dev` reevalúa este módulo).
+const globalForDb = globalThis as unknown as { pgPool?: Pool };
+const pool = globalForDb.pgPool ?? new Pool({ connectionString: DATABASE_URL, max: 10, allowExitOnIdle: true });
+globalForDb.pgPool = pool;
 
-export const db = drizzle(neon(process.env.DATABASE_URL), { schema });
-export { schema };
+export const db = drizzle(pool, { schema });
+export { schema, pool };

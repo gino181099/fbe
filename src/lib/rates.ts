@@ -54,23 +54,23 @@ export type { NewRate };
 export async function applyNewRates(clientId: number, validFrom: string, items: NewRate[], recalculate: boolean) {
   const current = await ratesInForce(clientId, validFrom);
   const plan = planRateChanges(current, validFrom, items);
-  const queries: unknown[] = [
-    ...plan.updatePrice.map((u) => db.update(rates).set({ price: u.price }).where(eq(rates.id, u.id))),
-    ...plan.close.map((c) => db.update(rates).set({ validTo: c.validTo }).where(eq(rates.id, c.id))),
-    ...plan.insert.map((r) => db.insert(rates).values({ clientId, ...r })),
-  ];
-  if (recalculate) queries.push(recalculateTripPrices(clientId, validFrom));
-  if (queries.length === 0) return;
-  // db.batch corre todo en una transacción.
-  await db.batch(queries as unknown as Parameters<typeof db.batch>[0]);
+  if (!plan.updatePrice.length && !plan.close.length && !plan.insert.length && !recalculate) return;
+  await db.transaction(async (tx) => {
+    for (const u of plan.updatePrice) await tx.update(rates).set({ price: u.price }).where(eq(rates.id, u.id));
+    for (const c of plan.close) await tx.update(rates).set({ validTo: c.validTo }).where(eq(rates.id, c.id));
+    if (plan.insert.length) await tx.insert(rates).values(plan.insert.map((r) => ({ clientId, ...r })));
+    if (recalculate) await recalculateTripPrices(clientId, validFrom, tx);
+  });
 }
+
+type Executor = Pick<typeof db, "execute">;
 
 /**
  * Reasigna tarifa y precio a los recorridos del cliente desde una fecha. No toca los que están en un
  * comprobante factura/interno o recibo vigente (su precio quedó documentado).
  */
-export function recalculateTripPrices(clientId: number, from: string) {
-  return db.execute(sql`
+export function recalculateTripPrices(clientId: number, from: string, exec: Executor = db) {
+  return exec.execute(sql`
     UPDATE ${trips} t SET rate_id = r.id, price = r.price
     FROM ${rates} r
     WHERE t.client_id = ${clientId} AND t.date >= ${from}

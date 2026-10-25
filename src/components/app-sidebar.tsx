@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Bus, LayoutDashboard, LogOut, Receipt, Route, ShieldCheck, Target, Truck, Users } from "lucide-react";
+import { Bus, LayoutDashboard, LogOut, Receipt, Route, Target, Truck, Users } from "lucide-react";
 import { logout } from "@/app/(auth)/actions";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
@@ -50,7 +50,7 @@ const NAV: NavItem[] = [
       { title: "Proveedores", href: "/finanzas/proveedores" },
     ],
   },
-  { title: "Usuarios", href: "/usuarios", icon: ShieldCheck, module: "usuarios" },
+  // Usuarios no se muestra: con la clave única todos entran con el mismo usuario (la pantalla sigue en /usuarios).
 ];
 
 type Props = {

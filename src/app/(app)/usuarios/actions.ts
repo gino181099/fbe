@@ -34,17 +34,17 @@ export async function updateUserAccess(userId: string, formData: FormData): Prom
   if (!parsed.success) return { ok: false, error: "Datos inválidos" };
   const data = parsed.data;
 
-  await db.batch([
-    db.update(users).set({ status: data.status }).where(eq(users.id, userId)),
-    db
+  await db.transaction(async (tx) => {
+    await tx.update(users).set({ status: data.status }).where(eq(users.id, userId));
+    await tx
       .insert(permissions)
       .values(MODULES.map((module) => ({ userId, module, level: data[module] })))
       .onConflictDoUpdate({
         target: [permissions.userId, permissions.module],
         // En un upsert múltiple cada fila toma su propio valor nuevo.
         set: { level: sql`excluded.level` },
-      }),
-  ]);
+      });
+  });
   revalidatePath("/usuarios");
   return { ok: true, message: "Permisos guardados" };
 }

@@ -169,13 +169,13 @@ export async function changeLeadStage(id: number, formData: FormData): Promise<A
     await db.update(clients).set({ status: "inactivo", leadStage: "perdido" }).where(eq(clients.id, clientId));
   }
 
-  await db.batch([
-    db
+  await db.transaction(async (tx) => {
+    await tx
       .update(leads)
       .set({ stage: move.stage, closedAt: move.closedAt, lostReason: move.lostReason, clientId })
-      .where(eq(leads.id, id)),
-    db.insert(leadNotes).values({ leadId: id, date, text: move.noteText, auto: true, userId: user.id }),
-  ]);
+      .where(eq(leads.id, id));
+    await tx.insert(leadNotes).values({ leadId: id, date, text: move.noteText, auto: true, userId: user.id });
+  });
   revalidateLead(id, clientId);
   if (move.client.action !== "none") revalidatePath("/ventas");
   if (move.client.action === "create" || move.client.action === "convert") {

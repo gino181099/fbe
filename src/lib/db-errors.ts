@@ -1,4 +1,4 @@
-// Traducción de errores de Postgres (neon-http envuelve el error original en `cause`).
+// Traducción de errores de Postgres (Drizzle envuelve el error original de `pg` en `cause`).
 
 export function pgCode(e: unknown) {
   const err = e as { code?: string; cause?: { code?: string } };

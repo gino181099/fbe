@@ -15,6 +15,13 @@ Una entrada por tarea terminada, **la más nueva arriba**. Formato fijo y breve 
 
 ---
 
+## 2026-10-25 · T-024 · ERP local (Postgres por npm) y clave única
+- Resultado: base Postgres 18 local instalada con npm (`@embedded-postgres/windows-x64`), datos de Neon copiados; login con clave única `belinda2156`; arranque/instalación/actualización por `.bat`; backups automáticos.
+- Archivos: `src/lib/config.ts`, `src/db/index.ts`, `src/auth.ts`, `src/app/(auth)/**`, `scripts/{db,local,datos}.ts`, `*.bat`, `drizzle.config.ts`, `package.json`, `README.md`; `db.batch` → `db.transaction` en `rates.ts`, `contactos`, `leads`, `usuarios`, `saldar-historico`. Borrados `seed-admin.ts`, `vercel.json`.
+- Datos: copia Neon → local, 860 filas, conteos iguales en las 23 tablas.
+- Verificación: tsc · lint · npm test 149/149 · build · `npm start`: backup al arrancar, clave errónea rechazada, login OK con los datos copiados.
+- Pendiente: crear el repo de Bitbucket y hacer push; instalar en la PC de la oficina (`instalar.bat` + `db:restore` del último backup); regla de firewall; no probé escrituras en transacción desde la UI.
+
 ## 2026-10-20 · T-023 · Leads (CRM de oportunidades), notas y velocidad
 - Resultado: `/leads` (Kanban con arrastre + "Mover a…", lista con filtros, ficha con notas); ganar crea/activa el cliente, perder pide motivo; Contactos sin potenciales y con pestaña Oportunidades; `NotesPanel` común con notas cruzadas contacto↔oportunidad; `loading.tsx`, usuario+permisos en una consulta, saldo de un solo cliente en la ficha.
 - Archivos: `src/app/(app)/leads/**`, `src/lib/{leads(+test),lead-options,balances,permissions,format,constants}.ts`, `src/components/{notes-panel,badges,app-sidebar}.tsx`, `contactos/**`, `usuarios/*`, `(app)/loading.tsx`, `schema.ts`, `vercel.json`.

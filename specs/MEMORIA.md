@@ -18,7 +18,7 @@ Conocimiento estable que no se deduce fácil del código. Leer antes de explorar
 - Notas: `client_note` y `lead_note` (`auto=true` no se borran; las manuales solo su autor). Componente común `NotesPanel` (`src/components/notes-panel.tsx`); la ficha del contacto muestra también las notas de sus oportunidades y viceversa (`mergeNotes` deduplica las copiadas al migrar).
 - Gastos en reportes (T-016): costos directos (chofer + gasoil + adicionales de `trip`) + gastos generales (`expense` **sin** combustible + `fuel_load`); los gastos de combustible son pagos a estación del gasoil ya contado. En 2026 todos los costos están en `trip` (en `expense` y `fuel_load` no hay filas). Gastos (T-022): categorías vehiculo/personal/generales/combustible; `scope='vehiculo'` ⇔ `vehicle_id` (CHECK); reglas en `src/lib/expense-rules.ts`; Flota suma solo `scope='vehiculo'` sin combustible.
 - Empresa (para PDFs): **TRANSPORTE FRA-BEL VIAJES S.R.L.** · Tel/WhatsApp +54 9 261 5124976 / 261 5124977 · frabelviajes@gmail.com · contacto Alejandra Delsouc. Logos en `public/brand/` (`frabel-logo.png` color con transparencia, `frabel-logo-bw.png` para impresión, `frabel-logo-original.jpg`). **Responsable Inscripto** · CUIT 30-71609318-9 · El Norteño 2156, Barrio Ferroviario, Maipú, Mendoza.
-- Permisos: módulos `contactos|leads|ventas|finanzas|usuarios` × `none|view|edit`. Admin (`is_admin`) tiene todo y no se puede editar; nadie edita sus propios permisos. Usuarios nuevos de Google entran `pending`.
+- Permisos: módulos `contactos|leads|ventas|finanzas|usuarios` × `none|view|edit`. Admin (`is_admin`) tiene todo y no se puede editar; nadie edita sus propios permisos. (Desde T-024 todos entran con la clave única como el admin `frabel`; los permisos por usuario quedan sin uso.)
 
 ## Datos importados (base SQLite vieja)
 
@@ -30,7 +30,11 @@ Conocimiento estable que no se deduce fácil del código. Leer antes de explorar
 
 ## Decisiones técnicas
 
-- Neon Postgres + Drizzle (driver `neon-http`); Auth.js v5 con JWT (requisito del provider Credentials); **no** se usa Neon Auth.
+- **Todo local desde 2026-10-25 (T-024)**: Postgres 18 con binarios de npm (`@embedded-postgres/windows-x64`, manejado por `scripts/db.ts` con `pg_ctl`, puerto 5433, solo localhost) + Drizzle `node-postgres`. Datos en `%USERPROFILE%\frabel-erp-datos\` (fuera de OneDrive). Neon quedó solo como respaldo viejo. La base de producción es la de la PC de la oficina.
+- Config fija en `src/lib/config.ts` (pedido del usuario: nada en `.env`): clave única `belinda2156`, `AUTH_SECRET`, URL de la base. Login = un solo campo; entra como el usuario compartido `frabel` (admin). Usuarios oculto del sidebar; sin Google ni adapter.
+- Escrituras múltiples con `db.transaction(async (tx) => …)` (ya no `db.batch`). Sin `pg_dump`: backup/restore/copia en `scripts/datos.ts` (JSON.gz, valores como texto, `session_replication_role=replica`, reajusta secuencias). Backup automático en cada `npm start`.
+- Despliegue: `instalar.bat` / `iniciar-erp.bat` / `actualizar.bat` (git pull desde Bitbucket); `next start -H 0.0.0.0` para la red.
+- Auth.js v5 con JWT (requisito del provider Credentials).
 - Tablas server-rendered con filtros en la URL en vez de TanStack Table; formularios nativos + server actions en vez de react-hook-form.
 - `xlsx` se instala desde el CDN oficial de SheetJS (la versión de npm tiene vulnerabilidades).
 - Tests con Vitest sobre lógica pura extraída (`rates-plan.ts`, `statement.ts`); los archivos con `server-only`/`@/db` no se testean directo. Config en `vitest.config.mts` (con `.ts` Vite avisa por ESM en paquete CommonJS).
@@ -46,8 +50,8 @@ Conocimiento estable que no se deduce fácil del código. Leer antes de explorar
 - El registry de shadcn generó `import { cn } from "cn"`: al agregar componentes nuevos, corregir a `@/lib/utils`.
 - PDFs nuevos: usar `PdfBrandHeader` (`src/lib/pdf-brand.tsx`, logo leído con `fs` + `outputFileTracingIncludes` en `next.config.ts`) y `formatDocNumber` (`src/lib/doc-number.ts`). Un `page.tsx` solo exporta default/metadata: componentes auxiliares van en archivo aparte.
 - Probar lógica `server-only` contra la base sin la app: `npx tsx --conditions=react-server --env-file=.env.local <script>` (en Windows, imports dinámicos con `file:///C:/…/archivo.ts`).
-- `/login` estática en build: si cambian las variables de Google hay que redeployar.
-- Velocidad: en dev Next compila cada ruta la primera vez y el proyecto está en OneDrive (sincroniza `.next/`): medir con `npm run build && npm start` (prod: 140–430 ms por sección). `(app)/loading.tsx` da respuesta inmediata al navegar. Deploy en Vercel región `gru1` (`vercel.json`), junto a Neon sa-east-1.
+- Velocidad: en dev Next compila cada ruta la primera vez y el proyecto está en OneDrive (sincroniza `.next/`): medir con `npm run build && npm start`. `(app)/loading.tsx` da respuesta inmediata al navegar.
+- `pg_ctl start` con stdio heredado deja colgado a quien lanzó el script (postgres hereda el pipe): usar `stdio: "ignore"`. Las migraciones siembran `vehicle`/`driver`/`supplier`: una base "nueva" no está vacía. Scripts `tsx` sin top-level await (salen en CJS).
 - Fechas de `timestamp` (createdAt) a día: `dayInAR(d)` de `src/lib/format.ts`, nunca `toISOString()` (de noche en AR da el día siguiente).
 - Windows: cortar `npx next start` en background no mata el `node` hijo; liberar el puerto con `Stop-Process` sobre el PID que escucha.
 - Los clics de prueba en el navegador pueden fallar antes de la hidratación en dev: esperar y reintentar.

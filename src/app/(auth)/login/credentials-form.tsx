@@ -12,19 +12,8 @@ export function CredentialsForm() {
   return (
     <form action={action} className="grid gap-4">
       <div className="grid gap-2">
-        <Label htmlFor="username">Usuario</Label>
-        <Input
-          id="username"
-          name="username"
-          autoComplete="username"
-          defaultValue={state?.username}
-          key={state?.username}
-          required
-        />
-      </div>
-      <div className="grid gap-2">
-        <Label htmlFor="password">Contraseña</Label>
-        <Input id="password" name="password" type="password" autoComplete="current-password" required />
+        <Label htmlFor="password">Clave</Label>
+        <Input id="password" name="password" type="password" autoComplete="current-password" autoFocus required />
       </div>
       {state && (
         <Alert variant="destructive">

@@ -83,26 +83,23 @@ export async function updateClient(id: number, formData: FormData): Promise<Acti
   if (!stage.ok) return { ok: false, error: stage.error };
   const from = current.leadStage;
   const to = stage.leadStage;
-  const update = db
-    .update(clients)
-    .set({ ...nullify(parsed.data), leadStage: to })
-    .where(eq(clients.id, id));
   try {
-    if (to && to !== from) {
+    await db.transaction(async (tx) => {
+      await tx
+        .update(clients)
+        .set({ ...nullify(parsed.data), leadStage: to })
+        .where(eq(clients.id, id));
       // El cambio de etapa hecho desde el formulario también queda en el seguimiento.
-      await db.batch([
-        update,
-        db.insert(clientNotes).values({
+      if (to && to !== from) {
+        await tx.insert(clientNotes).values({
           clientId: id,
           date: today(),
           text: `Etapa: ${from ? LEAD_STAGE_LABELS[from] : "—"} → ${LEAD_STAGE_LABELS[to]}`,
           auto: true,
           userId: user.id,
-        }),
-      ]);
-    } else {
-      await update;
-    }
+        });
+      }
+    });
   } catch (e) {
     if (isUniqueViolation(e)) return { ok: false, error: "Ya existe un contacto con ese nombre." };
     throw e;

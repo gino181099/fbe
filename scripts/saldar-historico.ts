@@ -154,12 +154,13 @@ async function main() {
   if (!writes.length) return console.log("0 cambios");
   if (!aplicar) return console.log("Simulación: no se escribió nada.");
 
-  const statements = writes.map((w) =>
-    w.kind === "delete"
-      ? db
+  await db.transaction(async (tx) => {
+    for (const w of writes) {
+      await (w.kind === "delete"
+      ? tx
           .delete(collections)
           .where(and(eq(collections.clientId, w.clientId), eq(collections.source, SOURCE), eq(collections.period, w.period)))
-      : db
+      : tx
           .insert(collections)
           .values({
             clientId: w.clientId,
@@ -174,12 +175,9 @@ async function main() {
           .onConflictDoUpdate({
             target: [collections.clientId, collections.source, collections.period],
             set: { kind: "ajuste", amount: w.amount, date: lastDayOfMonth(w.period), notes: `Saldo histórico ${mmYYYY(w.period)}` },
-          }),
-  );
-  for (let i = 0; i < statements.length; i += 100) {
-    const [first, ...rest] = statements.slice(i, i + 100);
-    await db.batch([first, ...rest]);
-  }
+          }));
+    }
+  });
   console.log(`Listo: ${writes.length} cambio(s) aplicados.`);
 }
 

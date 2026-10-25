@@ -1,43 +1,33 @@
-import { DrizzleAdapter } from "@auth/drizzle-adapter";
-import bcrypt from "bcryptjs";
-import { eq } from "drizzle-orm";
 import NextAuth from "next-auth";
 import Credentials from "next-auth/providers/credentials";
-import Google from "next-auth/providers/google";
 import { z } from "zod";
 import { db } from "@/db";
-import { accounts, sessions, users, verificationTokens } from "@/db/schema";
+import { users } from "@/db/schema";
+import { ACCESS_PASSWORD, AUTH_SECRET } from "@/lib/config";
 
-const credentialsSchema = z.object({
-  username: z.string().trim().min(1),
-  password: z.string().min(1),
-});
+const credentialsSchema = z.object({ password: z.string().min(1) });
+
+/** Usuario compartido con el que entran todos (clave única, acceso total). */
+const SHARED_USERNAME = "frabel";
 
 export const { handlers, auth, signIn, signOut } = NextAuth({
-  adapter: DrizzleAdapter(db, {
-    usersTable: users,
-    accountsTable: accounts,
-    sessionsTable: sessions,
-    verificationTokensTable: verificationTokens,
-  }),
-  // JWT es obligatorio para usar el login con usuario y contraseña.
+  secret: AUTH_SECRET,
+  // JWT es obligatorio para usar el login con contraseña.
   session: { strategy: "jwt" },
   pages: { signIn: "/login" },
   trustHost: true,
   providers: [
-    Google,
     Credentials({
-      credentials: { username: {}, password: {} },
+      credentials: { password: {} },
       async authorize(raw) {
         const parsed = credentialsSchema.safeParse(raw);
-        if (!parsed.success) return null;
+        if (!parsed.success || parsed.data.password !== ACCESS_PASSWORD) return null;
+        // Se crea la primera vez (base nueva) y se mantiene activo y con acceso total.
         const [user] = await db
-          .select()
-          .from(users)
-          .where(eq(users.username, parsed.data.username.toLowerCase()));
-        if (!user?.passwordHash || user.status !== "active") return null;
-        const ok = await bcrypt.compare(parsed.data.password, user.passwordHash);
-        if (!ok) return null;
+          .insert(users)
+          .values({ username: SHARED_USERNAME, name: "Frabel", status: "active", isAdmin: true })
+          .onConflictDoUpdate({ target: users.username, set: { status: "active", isAdmin: true } })
+          .returning();
         return { id: user.id, name: user.name, email: user.email, image: user.image };
       },
     }),
