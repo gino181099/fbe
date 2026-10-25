@@ -21,6 +21,7 @@ Una entrada por tarea terminada, **la más nueva arriba**. Formato fijo y breve 
 - Datos: —
 - Verificación: tsc · lint · test · build · curl en `npm start` (gino 200 con 863 filas; gianella 403; sin sesión → login) · `db:backup` sigue andando · restauración de la copia en un Postgres aparte (`FRABEL_DATA_DIR` temporal, puerto 5434): 24 tablas OK.
 - Pendiente: —
+- Publicación: subido a Bitbucket (origin/main) el 2026-10-25.
 
 ## 2026-10-25 · T-030 · Diseño moderno (estilo Kanakku) y modo oscuro
 - Resultado: solo estilo, sin cambiar funciones ni estructura. Paleta violeta #7539FF en `globals.css` (claro y oscuro), letra Instrument Sans, fondo gris #EEF0F4 con tarjetas blancas (`surface`), encabezado de tabla gris, estados en pastillas suaves, campos blancos. Menú agrupado (Principal/Comercial/Operación/Administración), comprimible a íconos (botón o Ctrl+B, se recuerda en cookie), con logo color en claro y blanco y negro invertido en oscuro. Botón luna/sol (`next-themes`, se recuerda por navegador).
