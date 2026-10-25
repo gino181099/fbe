@@ -7,11 +7,14 @@ import { COMPANY } from "./company";
 
 let logo: Buffer | null | undefined;
 
-/** Logo color (`public/brand/frabel-logo.png`), leído una vez; null si no está en el deploy. */
+/**
+ * Logo color achicado a 256 px (`frabel-logo-pdf.png`, ~40 KB; el original pesa 750 KB y se incrustaba entero
+ * en cada PDF), leído una vez; null si no está en el deploy.
+ */
 function getLogo() {
   if (logo === undefined) {
     try {
-      logo = readFileSync(path.join(process.cwd(), "public", "brand", "frabel-logo.png"));
+      logo = readFileSync(path.join(process.cwd(), "public", "brand", "frabel-logo-pdf.png"));
     } catch {
       logo = null;
     }

@@ -1,13 +1,12 @@
 import { Document, Page, StyleSheet, Text, View } from "@react-pdf/renderer";
 import type { getStatement } from "./balances";
 import { formatDate, formatMoney } from "./format";
+import { PdfBrandHeader } from "./pdf-brand";
 
 type Statement = NonNullable<Awaited<ReturnType<typeof getStatement>>>;
 
 const s = StyleSheet.create({
   page: { padding: 36, fontSize: 9, fontFamily: "Helvetica", color: "#111" },
-  header: { flexDirection: "row", justifyContent: "space-between", marginBottom: 18 },
-  brand: { fontSize: 18, fontFamily: "Helvetica-Bold" },
   muted: { color: "#666" },
   title: { fontSize: 12, fontFamily: "Helvetica-Bold", marginBottom: 2 },
   box: { borderWidth: 1, borderColor: "#ddd", borderRadius: 4, padding: 10, marginBottom: 14 },
@@ -35,19 +34,13 @@ export function StatementPdf({ data, issuedAt }: { data: Statement; issuedAt: st
   return (
     <Document title={`Estado de cuenta ${client.name}`} author="Frabel">
       <Page size="A4" style={s.page}>
-        <View style={s.header}>
-          <View>
-            <Text style={s.brand}>Frabel</Text>
-            <Text style={s.muted}>Transporte de pasajeros</Text>
-          </View>
-          <View style={{ alignItems: "flex-end" }}>
-            <Text style={s.title}>Estado de cuenta</Text>
-            <Text style={s.muted}>
-              Período {formatDate(data.from)} al {formatDate(data.to)}
-            </Text>
-            <Text style={s.muted}>Emitido el {formatDate(issuedAt)}</Text>
-          </View>
-        </View>
+        <PdfBrandHeader>
+          <Text style={s.title}>Estado de cuenta</Text>
+          <Text style={s.muted}>
+            Período {formatDate(data.from)} al {formatDate(data.to)}
+          </Text>
+          <Text style={s.muted}>Emitido el {formatDate(issuedAt)}</Text>
+        </PdfBrandHeader>
 
         <View style={s.box}>
           <Text style={{ fontFamily: "Helvetica-Bold", fontSize: 11 }}>{client.name}</Text>

@@ -15,6 +15,13 @@ Una entrada por tarea terminada, **la más nueva arriba**. Formato fijo y breve 
 
 ---
 
+## 2026-10-25 · Auditoría · Peso de páginas y PDF de estado de cuenta
+- Resultado: auditoría sin errores (tsc, lint, tests, todas las rutas 200, consola limpia). Los campos de edición por fila de Gastos y de Tarifas pasaron a componentes cliente: las listas viajan una vez y no por fila (Gastos 3,5 MB → 1,1 MB de HTML; contacto 464 → 214 KB). El estado de cuenta usa `PdfBrandHeader` (logo + datos fiscales) y los PDFs incrustan un logo de 256 px (`frabel-logo-pdf.png`, 38 KB; antes 750 KB por PDF).
+- Archivos: `src/app/(app)/finanzas/fields.tsx`, `src/app/(app)/contactos/[id]/{page.tsx,rate-fields.tsx}`, `src/lib/{statement-pdf.tsx,pdf-brand.tsx}`, `public/brand/frabel-logo-pdf.png`.
+- Datos: —
+- Verificación: tsc · lint · test · build · medición con curl en `npm start` · PDF revisado.
+- Pendiente: carrera menor en `createReceipt` (validación de pendientes fuera de transacción), poco probable con 4 usuarios.
+
 ## 2026-10-25 · T-028 · Pago del cliente al cargar el recorrido
 - Resultado: "Nuevo recorrido" tiene dos casillas (arrancan desmarcadas, excluyentes): "El cliente ya pagó" (por el precio) y "El cliente hizo un pago parcial" (monto + medio de pago). Al guardar crea el recorrido y un recibo X con fecha de hoy imputado a ese recorrido, en una transacción. Solo en el alta; recorridos anteriores al corte no aceptan pago.
 - Archivos: `src/app/(app)/ventas/{actions.ts,trip-form.tsx,page.tsx}`.

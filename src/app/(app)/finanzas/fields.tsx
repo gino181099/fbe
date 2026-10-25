@@ -1,21 +1,20 @@
+"use client";
+
+// Componentes cliente a propósito: las listas (conceptos, flota, proveedores) viajan una sola vez aunque
+// haya un diálogo de edición por fila; renderizadas en el servidor se repetían enteras en cada fila.
 import { Field } from "@/components/page-header";
 import { Input } from "@/components/ui/input";
 import { NativeSelect, NativeSelectOption } from "@/components/ui/native-select";
 import { Textarea } from "@/components/ui/textarea";
+import type { expenses, fuelLoads, supplierPayments, suppliers } from "@/db/schema";
 import {
   DEFAULT_FUEL_SUPPLIER,
-  type expenses,
-  FUEL_SUPPLIERS,
-  type fuelLoads,
-  type supplierPayments,
-  type suppliers,
-} from "@/db/schema";
-import {
   EXPENSE_CATEGORIES,
   EXPENSE_CATEGORY_LABELS,
   EXPENSE_SCOPE_LABELS,
   EXPENSE_SCOPES,
   EXPENSE_SUBCATEGORIES,
+  FUEL_SUPPLIERS,
   PAYMENT_METHODS,
   SUPPLIER_CATEGORIES,
   VOUCHER_TYPE_LABELS,

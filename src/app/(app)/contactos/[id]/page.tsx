@@ -7,10 +7,8 @@ import { ArrowLeft, FileText, Pencil } from "lucide-react";
 import { ClientStatusBadge, ClientTypeBadge, OpportunityStageBadge } from "@/components/badges";
 import { ConfirmButton } from "@/components/confirm-button";
 import { FormDialog } from "@/components/form-dialog";
-import { EmptyState, Field, PageHeader, StatCard } from "@/components/page-header";
+import { EmptyState, PageHeader, StatCard } from "@/components/page-header";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { NativeSelect, NativeSelectOption } from "@/components/ui/native-select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { db } from "@/db";
@@ -34,6 +32,7 @@ import {
   updateRate,
 } from "../actions";
 import { ClientFields } from "../client-fields";
+import { RateFields } from "./rate-fields";
 import { RateVersionDialog } from "./rate-version-dialog";
 
 // Compartido entre generateMetadata y la página: una sola consulta por request.
@@ -353,29 +352,7 @@ export default async function ClientPage({ params, searchParams }: PageProps<"/c
                                   </Button>
                                 }
                               >
-                                <div className="grid gap-4 sm:grid-cols-2">
-                                  <Field label="Recorrido" htmlFor="routeId">
-                                    <NativeSelect id="routeId" name="routeId" defaultValue={r.routeId} className="w-full">
-                                      {routeList.map((x) => (
-                                        <NativeSelectOption key={x.id} value={x.id}>
-                                          {x.name}
-                                        </NativeSelectOption>
-                                      ))}
-                                    </NativeSelect>
-                                  </Field>
-                                  <Field label="Capacidad" htmlFor="capacity">
-                                    <Input id="capacity" name="capacity" type="number" defaultValue={r.capacity} />
-                                  </Field>
-                                  <Field label="Precio" htmlFor="price" className="sm:col-span-2">
-                                    <Input id="price" name="price" inputMode="decimal" defaultValue={r.price} />
-                                  </Field>
-                                  <Field label="Vigente desde" htmlFor="validFrom">
-                                    <Input id="validFrom" name="validFrom" type="date" defaultValue={r.validFrom} />
-                                  </Field>
-                                  <Field label="Hasta (vacío = sin fin)" htmlFor="validTo">
-                                    <Input id="validTo" name="validTo" type="date" defaultValue={r.validTo ?? ""} />
-                                  </Field>
-                                </div>
+                                <RateFields value={r} routes={routeList} />
                               </FormDialog>
                               <ConfirmButton action={deleteRate.bind(null, id, r.id)} title="¿Eliminar tarifa?" />
                             </div>
