@@ -15,6 +15,13 @@ Una entrada por tarea terminada, **la más nueva arriba**. Formato fijo y breve 
 
 ---
 
+## 2026-11-01 · T-033 · Vercel + Neon (fin del servidor local)
+- Resultado: la PC servidor de la oficina dejó de andar; el ERP pasa a Vercel con la base en Neon. Config por variables de entorno (`DATABASE_URL`, `ACCESS_PASSWORD`, `AUTH_SECRET` nuevo); se quitó todo lo de Postgres local (embedded-postgres, `scripts/db.ts`/`local.ts`, `.bat`, `datos-iniciales/`, guía de instalación). `vercel.json` con región `gru1`.
+- Archivos: `src/lib/{config,pg-connection}.ts`, `src/db/index.ts`, `src/app/api/copia-base/route.ts`, `scripts/datos.ts`, `drizzle.config.ts`, `package.json`, `vercel.json`, `.env.example`, README, CLAUDE.md, MEMORIA, TAREAS.
+- Datos: Neon migrada a 0013 y cargada con `frabel-2026-10-28-1805.json.gz` (24 tablas OK; 659 recorridos). Lo que tenía Neon antes quedó en `backups/frabel-2026-11-01-2035.json.gz`. El restore ahora inserta en orden de claves foráneas (Neon no deja usar `session_replication_role`).
+- Verificación: tsc · lint · test (167) · build · `next start` contra Neon: login gino, Inicio/Agenda/Contactos/Ventas/Finanzas/Flota/Leads 200, PDF de estado de cuenta 200, copia de la base 200.
+- Pendiente: crear el proyecto en Vercel y cargar las 3 variables (lo hace el usuario).
+
 ## 2026-10-25 · T-032 · Arreglo: "el volcado es de una versión más nueva" entre PCs
 - Resultado: `db:restore`/`db:inicializar` rechazaban volcados de la misma versión hechos en otra PC: el hash de Drizzle es el sha256 del .sql y git (`core.autocrlf=true`) los baja con CRLF en una PC clonada (esta los tiene LF). Ahora se compara por fecha de migración (`created_at`); los volcados guardan `migrationAt` y los viejos se fechan buscando su hash en `drizzle/` con LF y CRLF (`dumpMigrationAt`).
 - Archivos: `src/lib/db-dump.ts` (+ test), `scripts/datos.ts`.

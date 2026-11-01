@@ -1,6 +1,6 @@
 # Frabel ERP
 
-ERP de Frabel (transporte de pasajeros). Corre **100% local**: una PC de la oficina hace de servidor (base de datos + aplicación) y las demás PCs de la red entran por el navegador.
+ERP de Frabel (transporte de pasajeros). Corre en **Vercel** (aplicación) con la base en **Neon** (Postgres); se entra desde cualquier navegador.
 
 | Módulo | Qué hace |
 | --- | --- |
@@ -9,44 +9,37 @@ ERP de Frabel (transporte de pasajeros). Corre **100% local**: una PC de la ofic
 | **Ventas** | Recorridos realizados. Para clientes recurrentes el precio sale solo de la tarifa vigente en la fecha del viaje. |
 | **Finanzas** | Cuentas corrientes, cobros, recibos, comprobantes, gastos, combustible, proveedores y PDFs. |
 
-Stack: Next.js 16 · PostgreSQL 18 local (binarios por npm, `@embedded-postgres/windows-x64`) + Drizzle ORM · Auth.js v5 (clave única) · Tailwind + shadcn/ui · react-pdf.
+Stack: Next.js 16 · Postgres en Neon + Drizzle ORM (`node-postgres`) · Auth.js v5 (clave única) · Tailwind + shadcn/ui · react-pdf.
 
-## Acceso
+## Configuración
 
-Se entra con la clave única **`belinda2156`** (definida en `src/lib/config.ts`, junto con el resto de la configuración). No hay `.env` obligatorio.
+Tres variables de entorno (ver `.env.example`): `DATABASE_URL` (Neon, URL "-pooler"), `ACCESS_PASSWORD` (clave única para entrar) y `AUTH_SECRET` (firma de las sesiones). En esta PC van en `.env.local` (no se sube); en producción, en Vercel → Settings → Environment Variables.
 
-## Producción (PC de la oficina)
+## Producción (Vercel + Neon)
 
-> Guía paso a paso, con el tutorial para fijar la IP: **[GUIA-INSTALACION.md](GUIA-INSTALACION.md)**. Abajo, el resumen.
-
-- **Código y datos separados:** el código vive en `C:\FrabelERP` (repo, se actualiza con git) y los datos en `C:\FrabelERP-datos` (Postgres y backups; git nunca los toca).
-- **Instalar (un comando):** en tu PC, `npm run db:exportar-inicial` + commit + push. En la oficina:
-  `git clone https://gfs181099@bitbucket.org/gfs181099/frabel-erp.git C:\FrabelERP && C:\FrabelERP\instalar.bat`. Eso instala, crea la base, carga `datos-iniciales/` **solo si la base está vacía**, compila, abre el firewall, configura el arranque automático y desactiva la suspensión.
-- **Usar:** arranca solo con Windows (`iniciar-erp.bat`). `http://localhost:3000`, o `http://<IP>:3000` desde la red.
-- **Actualizar:** cerrar el ERP y correr `actualizar.bat` (backup → `git pull` → `npm ci` → migraciones → build). No toca los datos.
-- **Backups:** automáticos en cada arranque y antes de cada actualización, en `C:\FrabelERP-datos\backups\` (los últimos 60). Manual: `npm run db:backup`. Restaurar: `npm run db:restore -- "<archivo>"` (reemplaza todo; antes guarda backup).
+- El proyecto de Vercel está conectado al repo de Bitbucket: cada `git push` a `main` despliega solo. Región `gru1` (São Paulo, `vercel.json`), junto a la base de Neon (sa-east-1).
+- **Backups:** `npm run db:backup` guarda una copia en `backups/` (los últimos 60, fuera de git); también se descarga desde el menú (usuarios de `DB_DOWNLOAD_USERS`). Restaurar: `npm run db:restore -- "<archivo>"` (reemplaza todo; antes guarda backup). Neon además guarda historial propio (restauración a un momento dado desde su panel).
 
 ## Desarrollo (esta PC)
 
 ```bash
 npm install
-npm run db:setup     # primera vez: crea la base local y aplica migraciones
-npm run dev          # levanta Postgres si hace falta + next dev en http://localhost:3000
+npm run dev          # next dev en http://localhost:3000
 ```
 
-`npm run dev` es solo para programar; la PC de la oficina usa la versión compilada (`npm run build` + `npm start`), que es mucho más rápida.
+**Ojo:** `.env.local` apunta a la base real de Neon. Para probar sin tocar datos reales, crear un branch en Neon y poner su URL en `.env.local`.
 
-Otros comandos: `npm run db:start | db:stop | db:status` (Postgres en el puerto 5433, solo accesible desde la misma PC), `npm run db:studio` (explorador visual).
+Otros comandos: `npm run db:studio` (explorador visual).
 
 ### Cambios en la base de datos
 
 1. Editar `src/db/schema.ts`.
 2. `npm run db:generate -- --name descripcion-del-cambio` (genera el SQL en `drizzle/`).
-3. `npm run db:migrate`. En la PC servidor las aplica `actualizar.bat`.
+3. `npm run db:migrate` (aplica las migraciones en la base de `DATABASE_URL`, o sea Neon). Hacerlo **antes** del `git push` que despliega el código nuevo.
 
 ### Publicar cambios
 
-`git push` al repo de Bitbucket; en la PC servidor, `actualizar.bat`.
+`git push` al repo de Bitbucket: Vercel compila y publica.
 
 ## Importar la base anterior (SQLite)
 
@@ -64,9 +57,8 @@ src/
   app/(app)/           módulos + inicio
   app/api/             Auth.js y PDFs
   db/                  conexión (node-postgres) y schema.ts
-  lib/config.ts        clave, puerto y carpetas de la base
+  lib/config.ts        variables de entorno (base, clave, firma)
   lib/permissions.ts   usuario actual y permisos
-scripts/               db.ts (Postgres local), local.ts (arranque), datos.ts (backup/restore/copia de Neon), importaciones
+scripts/               datos.ts (backup/restore), importaciones
 drizzle/               migraciones SQL
-*.bat                  instalar / iniciar / actualizar en la PC servidor
 ```

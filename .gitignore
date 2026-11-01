@@ -47,3 +47,6 @@ frabel-database*
 
 # configuración local de Claude Code (permisos personales)
 .claude/settings.local.json
+
+# copias de la base hechas con npm run db:backup
+/backups

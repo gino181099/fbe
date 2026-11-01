@@ -13,16 +13,16 @@ Módulos: Agenda (actividades por usuario), Contactos (clientes + tarifarios ver
 
 ## Stack y comandos
 
-Next.js 16 App Router + Server Actions · **Postgres 18 local** (binarios por npm) + Drizzle `node-postgres` · Auth.js v5 (clave única, JWT) · Tailwind 4 + shadcn/ui (radix) · react-pdf.
-Corre 100% local: una PC de la oficina es el servidor (`instalar.bat` / `iniciar-erp.bat` / `actualizar.bat`, git pull desde Bitbucket).
+Next.js 16 App Router + Server Actions · **Postgres en Neon** + Drizzle `node-postgres` · Auth.js v5 (clave única, JWT) · Tailwind 4 + shadcn/ui (radix) · react-pdf.
+Desplegado en **Vercel** (push a `main` en Bitbucket despliega; región `gru1`, junto a Neon sa-east-1).
 
 ```
 npm run dev | build | start | lint  npx tsc --noEmit        npm test | npm run test:watch
-npm run db:start | db:stop | db:status | db:setup         npm run db:backup | db:restore -- <archivo>
+npm run db:backup | db:restore -- <archivo>
 npm run db:generate -- --name x     npm run db:migrate      npm run db:studio
 npm run db:import-legacy -- <archivo sqlite>
 ```
-`dev`/`start` levantan Postgres solos. Config fija en `src/lib/config.ts` (sin `.env` obligatorio). Tests con Vitest (`src/**/*.test.ts`) solo sobre lógica pura (sin `@/db` ni `server-only`); no usan la base.
+Config por variables de entorno (`src/lib/config.ts`): `DATABASE_URL`, `ACCESS_PASSWORD`, `AUTH_SECRET` en `.env.local` y en Vercel (ver `.env.example`). Tests con Vitest (`src/**/*.test.ts`) solo sobre lógica pura (sin `@/db` ni `server-only`); no usan la base.
 
 ## Mapa del código
 
@@ -38,11 +38,11 @@ src/app/(auth)/           login, pendiente, sin-acceso + actions (login/logout)
 src/app/(app)/<módulo>/   page.tsx (server) + actions.ts ("use server") + formularios cliente
 src/app/api/estado-cuenta/[clientId]/route.tsx   PDF
 src/proxy.ts              (ex middleware) solo redirige sin sesión a /login
-src/lib/config.ts         clave única, AUTH_SECRET, puerto/carpetas/URL de la base
+src/lib/config.ts         variables de entorno (base, clave única, AUTH_SECRET) · pg-connection.ts (SSL Neon)
 src/lib/audit.ts          created()/updated() para las acciones, getUsers/getUserNames   · components/audit-info.tsx
 src/lib/activities.ts     consultas de la agenda   · components/activity-{fields,list,calendar}.tsx, calendar-dnd.tsx, activities-panel.tsx
 src/lib/activity-bucket.ts  grupos y colores Odoo (rojo/amarillo/verde)   · calendar.ts (monthGrid, meses)
-scripts/                  db.ts (Postgres local) · local.ts (arranque) · datos.ts (backup/restore) · migrate-legacy.ts      drizzle/  migraciones SQL
+scripts/                  datos.ts (backup/restore) · migrate-legacy.ts      drizzle/  migraciones SQL
 ```
 
 ## Convenciones (seguirlas siempre)
@@ -61,7 +61,7 @@ scripts/                  db.ts (Postgres local) · local.ts (arranque) · datos
 - Varias escrituras juntas: `db.transaction(async (tx) => { ... })` (no hay `db.batch`, eso era de Neon).
 - `tsx` no puede cargar `@react-pdf/renderer` (ESM); probar el PDF desde la app.
 - En Windows, heredocs con comillas/backticks fallan en Bash: editar archivos con Edit/Write.
-- Nunca subir `frabel-database*` ni `.env*` (ya están en `.gitignore`). La base local de esta PC tiene datos reales copiados (la de producción es la de la PC de la oficina): datos de prueba se crean y se borran. Los datos de Postgres viven en `C:\FrabelERP-datos` (fuera del repo y de OneDrive). Los cambios de código **no** llevan datos: la base válida es la de producción. `datos-iniciales/` es solo para la primera instalación.
+- Nunca subir `frabel-database*`, `.env*` ni `backups/` (ya están en `.gitignore`). `.env.local` apunta a la base **real** de Neon: `dev`, `db:migrate` y `db:restore` tocan producción. Datos de prueba se crean y se borran (o usar un branch de Neon). Migrar Neon antes de pushear código que necesite la migración. Neon no permite `session_replication_role`.
 
 ## Uso eficiente de tokens
 

@@ -52,10 +52,7 @@ Prioridad: `Alta` · `Media` · `Baja`.
 ## 🔧 Acciones manuales del equipo (fuera del código)
 
 - [x] Repo privado en Bitbucket: `https://bitbucket.org/gfs181099/frabel-erp`, rama `main` (2026-10-25).
-- [ ] Al terminar de cargar datos acá: `npm run db:exportar-inicial` + commit + push.
-- [ ] Instalar en la PC de la oficina (`git clone … && instalar.bat`) y fijar la IP (GUIA-INSTALACION.md).
-- [ ] Con producción andando: quitar `datos-iniciales/` del repo (pedírselo a Claude).
-- [ ] Cuando la oficina ya trabaje en local: borrar `NEON_DATABASE_URL` de `.env.local` y dar de baja la base de Neon.
+- [ ] Crear el proyecto en Vercel desde Bitbucket y cargar `DATABASE_URL`, `ACCESS_PASSWORD`, `AUTH_SECRET` (valores en `.env.local`).
 - [ ] Cargar el tarifario de Huentata y marcar "recalcular" (2 viajes con precio $0).
 - [ ] Revisar el viaje City Tours de 8 plazas del 03/04/2026 (no existe esa tarifa).
 - [ ] Responder: ¿Shell Maza es cuenta corriente o pago en el momento?
