@@ -52,7 +52,8 @@ Prioridad: `Alta` · `Media` · `Baja`.
 ## 🔧 Acciones manuales del equipo (fuera del código)
 
 - [x] Repo privado en Bitbucket: `https://bitbucket.org/gfs181099/frabel-erp`, rama `main` (2026-10-25).
-- [ ] Crear el proyecto en Vercel desde Bitbucket y cargar `DATABASE_URL`, `ACCESS_PASSWORD`, `AUTH_SECRET` (valores en `.env.local`).
+- [ ] Crear el proyecto en Vercel desde Bitbucket y cargar las 6 variables de `.env.local` (`DATABASE_URL`, `ACCESS_PASSWORD`, `AUTH_SECRET`, `NEXT_PUBLIC_VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY`, `CRON_SECRET`).
+- [ ] Cada usuario activa la campana de notificaciones en su teléfono (iPhone: instalar primero).
 - [ ] Cargar el tarifario de Huentata y marcar "recalcular" (2 viajes con precio $0).
 - [ ] Revisar el viaje City Tours de 8 plazas del 03/04/2026 (no existe esa tarifa).
 - [ ] Responder: ¿Shell Maza es cuenta corriente o pago en el momento?

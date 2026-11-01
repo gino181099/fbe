@@ -5,6 +5,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { CalendarCheck, DatabaseBackup, LayoutDashboard, LogOut, type LucideIcon, Receipt, Route, Target, Truck, Users } from "lucide-react";
 import { logout } from "@/app/(auth)/actions";
+import { PushToggle } from "@/components/push-toggle";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
@@ -163,6 +164,7 @@ export function AppSidebar({ user, permissions, dueActivities }: Props) {
               <DatabaseBackup className="size-4" />
             </a>
           )}
+          <PushToggle />
           <ThemeToggle />
           <form action={logout}>
             <button

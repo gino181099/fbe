@@ -99,6 +99,13 @@
       "when": 1792939711677,
       "tag": "0013_agenda_y_auditoria",
       "breakpoints": true
+    },
+    {
+      "idx": 14,
+      "version": "7",
+      "when": 1793576617010,
+      "tag": "0014_notificaciones",
+      "breakpoints": true
     }
   ]
 }

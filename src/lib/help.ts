@@ -38,6 +38,10 @@ export const HELP = {
       { term: "Asignada a", text: "Quién tiene que hacerla. Podés cargarle actividades a otra persona." },
       { term: "Vence", text: "El día en que tiene que estar hecha." },
       { term: "Tipo", text: "Tarea, llamada, reunión, seguimiento, pago o mantenimiento." },
+      {
+        term: "Notificaciones",
+        text: "Tocá la campana del menú (abajo) para recibir todos los días a las 8:00 un resumen de tus actividades vencidas y de hoy. Se activa en cada dispositivo. En iPhone, antes hay que instalar el ERP: Safari → Compartir → \"Agregar a pantalla de inicio\", y abrirlo desde ese ícono.",
+      },
       { term: "Vínculo", text: "La ficha con la que se relaciona; la actividad aparece también en esa ficha." },
       { term: "Número del menú", text: "Tus actividades pendientes que vencen hoy o antes." },
     ],

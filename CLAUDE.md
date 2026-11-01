@@ -22,7 +22,7 @@ npm run db:backup | db:restore -- <archivo>
 npm run db:generate -- --name x     npm run db:migrate      npm run db:studio
 npm run db:import-legacy -- <archivo sqlite>
 ```
-Config por variables de entorno (`src/lib/config.ts`): `DATABASE_URL`, `ACCESS_PASSWORD`, `AUTH_SECRET` en `.env.local` y en Vercel (ver `.env.example`). Tests con Vitest (`src/**/*.test.ts`) solo sobre lógica pura (sin `@/db` ni `server-only`); no usan la base.
+Config por variables de entorno (`src/lib/config.ts`): `DATABASE_URL`, `ACCESS_PASSWORD`, `AUTH_SECRET` (+ VAPID y `CRON_SECRET` para notificaciones) en `.env.local` y en Vercel (ver `.env.example`). Tests con Vitest (`src/**/*.test.ts`) solo sobre lógica pura (sin `@/db` ni `server-only`); no usan la base.
 
 ## Mapa del código
 
@@ -42,6 +42,7 @@ src/lib/config.ts         variables de entorno (base, clave única, AUTH_SECRET)
 src/lib/audit.ts          created()/updated() para las acciones, getUsers/getUserNames   · components/audit-info.tsx
 src/lib/activities.ts     consultas de la agenda   · components/activity-{fields,list,calendar}.tsx, calendar-dnd.tsx, activities-panel.tsx
 src/lib/activity-bucket.ts  grupos y colores Odoo (rojo/amarillo/verde)   · calendar.ts (monthGrid, meses)
+src/lib/push.ts           notificaciones Web Push + resumen diario (cron /api/cron/resumen-agenda)   · components/push-toggle.tsx
 scripts/                  datos.ts (backup/restore) · migrate-legacy.ts      drizzle/  migraciones SQL
 ```
 

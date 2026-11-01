@@ -595,3 +595,19 @@ export const activities = pgTable(
     index("activity_supplier_idx").on(t.supplierId),
   ],
 );
+
+/** Dispositivos con notificaciones activadas (Web Push, T-034): el resumen diario de la agenda. */
+export const pushSubscriptions = pgTable(
+  "push_subscription",
+  {
+    id: integer("id").primaryKey().generatedAlwaysAsIdentity(),
+    userId: text("user_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    endpoint: text("endpoint").notNull(),
+    p256dh: text("p256dh").notNull(),
+    auth: text("auth").notNull(),
+    createdAt: timestamp("created_at", { mode: "date" }).notNull().defaultNow(),
+  },
+  (t) => [uniqueIndex("push_subscription_endpoint_idx").on(t.endpoint), index("push_subscription_user_idx").on(t.userId)],
+);

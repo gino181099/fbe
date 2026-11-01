@@ -18,6 +18,9 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   title: { default: "Frabel ERP", template: "%s · Frabel ERP" },
   description: "Gestión de clientes, recorridos y finanzas de Frabel",
+  // Instalable en iPhone ("Agregar a pantalla de inicio"): lo necesita para recibir notificaciones.
+  appleWebApp: { capable: true, title: "Frabel" },
+  icons: { apple: "/icons/apple-touch-icon.png" },
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {

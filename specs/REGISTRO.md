@@ -15,6 +15,13 @@ Una entrada por tarea terminada, **la más nueva arriba**. Formato fijo y breve 
 
 ---
 
+## 2026-11-01 · T-034 · Resumen diario de la agenda por notificación
+- Resultado: el ERP se puede instalar en el teléfono (PWA) y la campana del menú activa notificaciones push por dispositivo (manda una de prueba al activar). Todos los días a las 8:00 (cron de Vercel) cada usuario con actividades vencidas o de hoy recibe "Agenda: N vencidas y M para hoy" con hasta 3 títulos; tocarla abre la agenda.
+- Archivos: `src/lib/{push,agenda-digest}.ts` (+ test), `src/app/(app)/agenda/push-actions.ts`, `src/components/push-toggle.tsx`, `src/app/api/cron/resumen-agenda/route.ts`, `src/app/manifest.ts`, `public/sw.js`, `public/icons/`, `vercel.json`, `src/proxy.ts`, `src/app/layout.tsx`, `src/lib/help.ts`.
+- Datos: migración 0014 (`push_subscription`), aplicada en Neon.
+- Verificación: tsc · lint · test (171) · build · `next start`: manifest/sw/íconos sin sesión 200, cron 401 sin clave y 200 con clave, campana visible.
+- Pendiente: cargar en Vercel `NEXT_PUBLIC_VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY`, `CRON_SECRET`.
+
 ## 2026-11-01 · T-033 · Vercel + Neon (fin del servidor local)
 - Resultado: la PC servidor de la oficina dejó de andar; el ERP pasa a Vercel con la base en Neon. Config por variables de entorno (`DATABASE_URL`, `ACCESS_PASSWORD`, `AUTH_SECRET` nuevo); se quitó todo lo de Postgres local (embedded-postgres, `scripts/db.ts`/`local.ts`, `.bat`, `datos-iniciales/`, guía de instalación). `vercel.json` con región `gru1`.
 - Archivos: `src/lib/{config,pg-connection}.ts`, `src/db/index.ts`, `src/app/api/copia-base/route.ts`, `scripts/datos.ts`, `drizzle.config.ts`, `package.json`, `vercel.json`, `.env.example`, README, CLAUDE.md, MEMORIA, TAREAS.
