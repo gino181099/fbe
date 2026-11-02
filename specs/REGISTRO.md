@@ -15,6 +15,13 @@ Una entrada por tarea terminada, **la más nueva arriba**. Formato fijo y breve 
 
 ---
 
+## 2026-11-01 · Auditoría de seguridad: dependencias y headers
+- Resultado: `next` 16.3.6 → 16.4.3 (RCE en Image Optimization/`use cache`, DoS en Server Actions), `zod` → 4.6.7, `shadcn` (CLI) a devDependencies, `npm audit fix`: 0 vulnerabilidades en producción. Headers de seguridad en `next.config.ts` (CSP `frame-ancestors`/`form-action`/`base-uri`/`object-src`, X-Frame-Options, nosniff, Referrer/Permissions-Policy, HSTS) y sin `X-Powered-By`.
+- Archivos: `package.json`, `package-lock.json`, `next.config.ts`.
+- Datos: —
+- Verificación: tsc · lint · test (171) · build · `next start`: headers presentes en /login, sw.js 200, / sin sesión 307.
+- Pendiente (auditoría): límite de intentos en el login; desactivar usuario se revierte al loguear (`authorize`); sin forma de cortar sesiones salvo rotar `AUTH_SECRET`; `createReceipt` sin transacción; `sw.js` `navigate` en pestaña no controlada; exigir `https:` en endpoint push; `public/carpeta.docx` sin trackear.
+
 ## 2026-11-01 · T-034 · Resumen diario de la agenda por notificación
 - Resultado: el ERP se puede instalar en el teléfono (PWA) y la campana del menú activa notificaciones push por dispositivo (manda una de prueba al activar). Todos los días a las 8:00 (cron de Vercel) cada usuario con actividades vencidas o de hoy recibe "Agenda: N vencidas y M para hoy" con hasta 3 títulos; tocarla abre la agenda.
 - Archivos: `src/lib/{push,agenda-digest}.ts` (+ test), `src/app/(app)/agenda/push-actions.ts`, `src/components/push-toggle.tsx`, `src/app/api/cron/resumen-agenda/route.ts`, `src/app/manifest.ts`, `public/sw.js`, `public/icons/`, `vercel.json`, `src/proxy.ts`, `src/app/layout.tsx`, `src/lib/help.ts`.
