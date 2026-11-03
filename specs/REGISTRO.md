@@ -15,12 +15,19 @@ Una entrada por tarea terminada, **la más nueva arriba**. Formato fijo y breve 
 
 ---
 
+## 2026-11-03 · Límite de intentos en el login
+- Resultado: 5 claves incorrectas desde la misma IP en 15 min bloquean esa IP hasta que vence el 5.º fallo; el login muestra "Demasiados intentos fallidos. Probá de nuevo en N minutos." Un login correcto limpia los fallos de la IP; los de más de 1 día se borran solos.
+- Archivos: `src/auth.ts`, `src/lib/login-limit.ts` (+ test), `src/app/(auth)/actions.ts`, `src/db/schema.ts`.
+- Datos: migración 0015 (`login_failure`), aplicada en Neon.
+- Verificación: tsc · lint · test (179) · build · `next start` + curl a `/api/auth/callback/credentials`: fallos 1–5 `credentials`, 6–7 `bloqueado:15`, otra IP no afectada; filas de prueba borradas.
+- Pendiente: el mensaje en la pantalla de login (vía server action) no se probó con el navegador.
+
 ## 2026-11-01 · Auditoría de seguridad: dependencias y headers
 - Resultado: `next` 16.3.6 → 16.4.3 (RCE en Image Optimization/`use cache`, DoS en Server Actions), `zod` → 4.6.7, `shadcn` (CLI) a devDependencies, `npm audit fix`: 0 vulnerabilidades en producción. Headers de seguridad en `next.config.ts` (CSP `frame-ancestors`/`form-action`/`base-uri`/`object-src`, X-Frame-Options, nosniff, Referrer/Permissions-Policy, HSTS) y sin `X-Powered-By`.
 - Archivos: `package.json`, `package-lock.json`, `next.config.ts`.
 - Datos: —
 - Verificación: tsc · lint · test (171) · build · `next start`: headers presentes en /login, sw.js 200, / sin sesión 307.
-- Pendiente (auditoría): límite de intentos en el login; desactivar usuario se revierte al loguear (`authorize`); sin forma de cortar sesiones salvo rotar `AUTH_SECRET`; `createReceipt` sin transacción; `sw.js` `navigate` en pestaña no controlada; exigir `https:` en endpoint push; `public/carpeta.docx` sin trackear.
+- Pendiente (auditoría): desactivar usuario se revierte al loguear (`authorize`); sin forma de cortar sesiones salvo rotar `AUTH_SECRET`; `createReceipt` sin transacción; `sw.js` `navigate` en pestaña no controlada; exigir `https:` en endpoint push; `public/carpeta.docx` sin trackear.
 
 ## 2026-11-01 · T-034 · Resumen diario de la agenda por notificación
 - Resultado: el ERP se puede instalar en el teléfono (PWA) y la campana del menú activa notificaciones push por dispositivo (manda una de prueba al activar). Todos los días a las 8:00 (cron de Vercel) cada usuario con actividades vencidas o de hoy recibe "Agenda: N vencidas y M para hoy" con hasta 3 títulos; tocarla abre la agenda.

@@ -46,6 +46,7 @@ Conocimiento estable que no se deduce fácil del código. Leer antes de explorar
 - Escrituras múltiples con `db.transaction(async (tx) => …)` (ya no `db.batch`). Sin `pg_dump`: backup/restore/copia en `scripts/datos.ts` (JSON.gz, valores como texto, reajusta secuencias). Neon **no** permite `session_replication_role`: el restore inserta las tablas en orden de claves foráneas (`insertOrder`). Backups manuales en `backups/` (gitignored).
 - Despliegue: `git push` a Bitbucket → Vercel. drizzle-kit lee `.env.local` con dotenv en `drizzle.config.ts`; tsx con `--env-file-if-exists=.env.local`.
 - Auth.js v5 con JWT (requisito del provider Credentials).
+- **Límite de login**: 5 fallos por IP en 15 min → bloqueo (tabla `login_failure`, chequeo en `authorize` de `src/auth.ts` para cubrir también `/api/auth/callback/credentials`; reglas en `src/lib/login-limit.ts`). Error `LoginBlocked` (`CredentialsSignin` con `code="bloqueado:N"`) → mensaje en `(auth)/actions.ts`. Columnas `timestamp` sin zona: comparar con `now()` de la base, no con `Date` de JS (desfase de 3 h en una PC argentina).
 - Tablas server-rendered con filtros en la URL en vez de TanStack Table; formularios nativos + server actions en vez de react-hook-form.
 - `xlsx` se instala desde el CDN oficial de SheetJS (la versión de npm tiene vulnerabilidades).
 - Tests con Vitest sobre lógica pura extraída (`rates-plan.ts`, `statement.ts`); los archivos con `server-only`/`@/db` no se testean directo. Config en `vitest.config.mts` (con `.ts` Vite avisa por ESM en paquete CommonJS).

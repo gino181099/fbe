@@ -1,6 +1,6 @@
 "use server";
 
-import { AuthError } from "next-auth";
+import { AuthError, CredentialsSignin } from "next-auth";
 import { signIn, signOut } from "@/auth";
 
 type LoginState = { error: string } | null;
@@ -15,6 +15,11 @@ export async function loginWithCredentials(_prev: LoginState, formData: FormData
     });
     return null;
   } catch (error) {
+    const blocked = error instanceof CredentialsSignin && /^bloqueado:(\d+)$/.exec(error.code);
+    if (blocked) {
+      const m = Number(blocked[1]);
+      return { error: `Demasiados intentos fallidos. Probá de nuevo en ${m} minuto${m === 1 ? "" : "s"}.` };
+    }
     if (error instanceof AuthError) return { error: "Clave incorrecta." };
     throw error; // signIn redirige lanzando un error especial de Next
   }

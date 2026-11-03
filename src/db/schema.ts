@@ -611,3 +611,14 @@ export const pushSubscriptions = pgTable(
   },
   (t) => [uniqueIndex("push_subscription_endpoint_idx").on(t.endpoint), index("push_subscription_user_idx").on(t.userId)],
 );
+
+/** Intentos fallidos de login por IP: límite contra prueba de claves (`src/lib/login-limit.ts`). */
+export const loginFailures = pgTable(
+  "login_failure",
+  {
+    id: integer("id").primaryKey().generatedAlwaysAsIdentity(),
+    ip: text("ip").notNull(),
+    createdAt: timestamp("created_at", { mode: "date" }).notNull().defaultNow(),
+  },
+  (t) => [index("login_failure_ip_idx").on(t.ip, t.createdAt)],
+);
