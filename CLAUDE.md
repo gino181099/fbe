@@ -14,7 +14,7 @@ Módulos: Agenda (actividades por usuario), Contactos (clientes + tarifarios ver
 ## Stack y comandos
 
 Next.js 16 App Router + Server Actions · **Postgres en Neon** + Drizzle `node-postgres` · Auth.js v5 (clave única, JWT) · Tailwind 4 + shadcn/ui (radix) · react-pdf.
-Desplegado en **Vercel** (push a `main` en Bitbucket despliega; región `gru1`, junto a Neon sa-east-1).
+Desplegado en **Vercel** (push a `main` en GitHub `gino181099/fbe` = remoto `origin` despliega; región `gru1`, junto a Neon sa-east-1).
 
 ```
 npm run dev | build | start | lint  npx tsc --noEmit        npm test | npm run test:watch
