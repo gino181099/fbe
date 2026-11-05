@@ -15,6 +15,13 @@ Una entrada por tarea terminada, **la más nueva arriba**. Formato fijo y breve 
 
 ---
 
+## 2026-11-04 · Rendimiento: caché del router y medición en producción
+- Resultado: `staleTimes.dynamic: 30` en `next.config.ts`; volver a una pantalla vista hace menos de 30 s es instantáneo. Medido en producción (en caliente): Inicio 230–335 ms, Agenda/Contactos/Ventas/Finanzas/Flota/Leads 180–220 ms, Recibos y Comprobantes 130–150 ms. Gastos sigue en 1,1 MB porque la paginación todavía no está desplegada.
+- Archivos: `next.config.ts`, MEMORIA.
+- Datos: —
+- Verificación: tsc · lint · 181 tests · build. La caché del router no se probó en el navegador (local pide la clave real): verificar después del deploy (Inicio → Ventas → Inicio sin request RSC).
+- Pendiente: no se pudo medir el arranque en frío de Neon (la base ya estaba despierta). No hace falta tocar índices ni bundle.
+
 ## 2026-11-04 · Auditoría de errores y rendimiento
 - Resultado: pool de la base `max: 10` y conexiones vivas 5 min (abrir una costaba ~2 s); `error.tsx` en `(app)` con "Reintentar" y `not-found.tsx` en castellano; ids de la URL fuera de rango (`/contactos/99999999999`) daban error → `parseId`; Gastos paginado de a 50 (1,1 MB → 0,7 MB, total del pie sobre todas las páginas); botones de PDF muestran "Generando PDF…" (el primero tarda ~4,6 s en frío); pestañas de la ficha de contacto con scroll propio en celular; `ActivityFields` pasa a cliente (no repite listas por fila).
 - Archivos: `src/db/index.ts`, `src/app/(app)/error.tsx`, `src/app/not-found.tsx`, `src/lib/ids.ts`, `src/components/pdf-button.tsx`, `finanzas/gastos/page.tsx`, `contactos/[id]/page.tsx`, fichas `[id]` y rutas `api/*` de PDF.

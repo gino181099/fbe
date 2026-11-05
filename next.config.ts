@@ -8,6 +8,11 @@ const nextConfig: NextConfig = {
     "/api/**": ["./public/brand/**"],
   },
   poweredByHeader: false,
+  // Caché del router en el navegador: volver a una pantalla vista hace < 30 s no pide nada al servidor.
+  // Las acciones propias (revalidatePath) la invalidan; lo que carga otro usuario puede tardar hasta 30 s.
+  experimental: {
+    staleTimes: { dynamic: 30 },
+  },
   // Headers de seguridad: no se puede embeber en otro sitio (clickjacking), sin sniffing de tipos, HTTPS forzado.
   // Sin CSP de scripts: con App Router exige nonces por request (vuelve dinámico todo y complica el SW).
   async headers() {
