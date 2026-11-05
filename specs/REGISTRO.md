@@ -15,6 +15,13 @@ Una entrada por tarea terminada, **la más nueva arriba**. Formato fijo y breve 
 
 ---
 
+## 2026-11-04 · Auditoría de errores y rendimiento
+- Resultado: pool de la base `max: 10` y conexiones vivas 5 min (abrir una costaba ~2 s); `error.tsx` en `(app)` con "Reintentar" y `not-found.tsx` en castellano; ids de la URL fuera de rango (`/contactos/99999999999`) daban error → `parseId`; Gastos paginado de a 50 (1,1 MB → 0,7 MB, total del pie sobre todas las páginas); botones de PDF muestran "Generando PDF…" (el primero tarda ~4,6 s en frío); pestañas de la ficha de contacto con scroll propio en celular; `ActivityFields` pasa a cliente (no repite listas por fila).
+- Archivos: `src/db/index.ts`, `src/app/(app)/error.tsx`, `src/app/not-found.tsx`, `src/lib/ids.ts`, `src/components/pdf-button.tsx`, `finanzas/gastos/page.tsx`, `contactos/[id]/page.tsx`, fichas `[id]` y rutas `api/*` de PDF.
+- Datos: —
+- Verificación: tsc · lint · 181 tests · build · `next start` contra Neon (solo lectura): 20 pantallas sin errores de consola, 404 de ids inválidos, PDF con spinner, celular 375 px sin desbordes.
+- Pendiente: Comprobantes, Recibos, Contactos y Leads siguen sin paginar (hoy pocas filas).
+
 ## 2026-11-03 · Límite de intentos en el login
 - Resultado: 5 claves incorrectas desde la misma IP en 15 min bloquean esa IP hasta que vence el 5.º fallo; el login muestra "Demasiados intentos fallidos. Probá de nuevo en N minutos." Un login correcto limpia los fallos de la IP; los de más de 1 día se borran solos.
 - Archivos: `src/auth.ts`, `src/lib/login-limit.ts` (+ test), `src/app/(auth)/actions.ts`, `src/db/schema.ts`.

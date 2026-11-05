@@ -19,6 +19,7 @@ import { SUPPLIER_MOVEMENT_LABELS } from "@/lib/supplier-ledger";
 import { getSupplierStatement } from "@/lib/suppliers";
 import { deleteSupplierPayment, saveSupplierPayment } from "../../actions";
 import { SupplierPaymentFields } from "../../fields";
+import { parseId } from "@/lib/ids";
 
 export const metadata: Metadata = { title: "Cuenta del proveedor" };
 
@@ -26,8 +27,8 @@ const isDate = (v: unknown) => (typeof v === "string" && /^\d{4}-\d{2}-\d{2}$/.t
 
 export default async function SupplierPage({ params, searchParams }: PageProps<"/finanzas/proveedores/[id]">) {
   const user = await requirePermission("finanzas");
-  const id = Number((await params).id);
-  if (!Number.isInteger(id)) notFound();
+  const id = parseId((await params).id);
+  if (id === null) notFound();
   const sp = await searchParams;
   const desde = isDate(sp.desde);
   const hasta = isDate(sp.hasta);

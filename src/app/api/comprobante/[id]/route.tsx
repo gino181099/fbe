@@ -3,6 +3,7 @@ import { formatDocNumber } from "@/lib/doc-number";
 import { DocumentPdf } from "@/lib/document-pdf";
 import { getDocument } from "@/lib/documents";
 import { can, getCurrentUser } from "@/lib/permissions";
+import { parseId } from "@/lib/ids";
 
 /** PDF del comprobante interno (solo tipo `interno`). */
 export async function GET(_request: Request, { params }: RouteContext<"/api/comprobante/[id]">) {
@@ -10,8 +11,8 @@ export async function GET(_request: Request, { params }: RouteContext<"/api/comp
   if (!user || !can(user, "finanzas", "view")) {
     return new Response("No autorizado", { status: 403 });
   }
-  const id = Number((await params).id);
-  const doc = Number.isInteger(id) ? await getDocument(id) : null;
+  const id = parseId((await params).id);
+  const doc = id !== null ? await getDocument(id) : null;
   if (!doc || doc.type !== "interno") return new Response("Comprobante no encontrado", { status: 404 });
 
   const pdf = await renderToBuffer(<DocumentPdf doc={doc} />);

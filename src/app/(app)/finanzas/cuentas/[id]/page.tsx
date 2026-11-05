@@ -12,6 +12,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Input } from "@/components/ui/input";
+import { PdfButton } from "@/components/pdf-button";
 import { Table, TableBody, TableCell, TableFooter, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { getStatement } from "@/lib/balances";
 import { CC_START, DOCUMENT_TYPE_LABELS, DOCUMENT_TYPES, MOVEMENT_KIND_LABELS } from "@/lib/constants";
@@ -19,6 +20,7 @@ import { getUninvoicedTrips } from "@/lib/documents";
 import { formatDate, formatMoney, today } from "@/lib/format";
 import { tripDescription } from "@/lib/ledger";
 import { can, requirePermission } from "@/lib/permissions";
+import { parseId } from "@/lib/ids";
 
 export const metadata: Metadata = { title: "Estado de cuenta" };
 
@@ -26,8 +28,8 @@ const isDate = (v: unknown) => (typeof v === "string" && /^\d{4}-\d{2}-\d{2}$/.t
 
 export default async function StatementPage({ params, searchParams }: PageProps<"/finanzas/cuentas/[id]">) {
   const user = await requirePermission("finanzas");
-  const id = Number((await params).id);
-  if (!Number.isInteger(id)) notFound();
+  const id = parseId((await params).id);
+  if (id === null) notFound();
   const sp = await searchParams;
   const hasta = isDate(sp.hasta) ?? today();
   // Por defecto: desde el 1/1 del año, pero nunca antes del inicio de la cuenta corriente.
@@ -85,11 +87,9 @@ export default async function StatementPage({ params, searchParams }: PageProps<
                 </Link>
               </Button>
             )}
-            <Button asChild>
-              <a href={`/api/estado-cuenta/${id}?${query}`}>
-                <Download /> Descargar PDF
-              </a>
-            </Button>
+            <PdfButton href={`/api/estado-cuenta/${id}?${query}`}>
+              <Download /> Descargar PDF
+            </PdfButton>
           </>
         }
       />

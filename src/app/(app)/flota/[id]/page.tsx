@@ -20,6 +20,7 @@ import { firstDayOfMonth, formatDate, formatMoney } from "@/lib/format";
 import { can, requirePermission } from "@/lib/permissions";
 import { saveVehicle } from "../actions";
 import { VehicleFields } from "../vehicle-form";
+import { parseId } from "@/lib/ids";
 
 const getVehicle = cache(async (id: number) => {
   const [v] = await db.select().from(vehicles).where(eq(vehicles.id, id));
@@ -27,16 +28,16 @@ const getVehicle = cache(async (id: number) => {
 });
 
 export async function generateMetadata({ params }: PageProps<"/flota/[id]">): Promise<Metadata> {
-  const id = Number((await params).id);
-  const v = Number.isInteger(id) ? await getVehicle(id) : undefined;
+  const id = parseId((await params).id);
+  const v = id !== null ? await getVehicle(id) : undefined;
   return { title: v ? `${v.plate} · Flota` : "Vehículo" };
 }
 
 /** Ficha del vehículo: actividades (service, VTV, seguro…) y últimos gastos. */
 export default async function VehiclePage({ params }: PageProps<"/flota/[id]">) {
   const user = await requirePermission("ventas");
-  const id = Number((await params).id);
-  if (!Number.isInteger(id)) notFound();
+  const id = parseId((await params).id);
+  if (id === null) notFound();
   const monthStart = firstDayOfMonth();
 
   const [vehicle, [monthTrips], [monthExpenses], recentExpenses, names] = await Promise.all([

@@ -24,6 +24,7 @@ import { canDeleteNote } from "@/lib/prospects";
 import { addLeadNote, changeLeadStage, deleteLead, deleteLeadNote, updateLead } from "../actions";
 import { LeadFields } from "../lead-fields";
 import { StageControl } from "../stage-fields";
+import { parseId } from "@/lib/ids";
 
 // Compartido entre generateMetadata y la página: una sola consulta por request.
 const getLead = cache(async (id: number) => {
@@ -37,15 +38,15 @@ const getLead = cache(async (id: number) => {
 });
 
 export async function generateMetadata({ params }: PageProps<"/leads/[id]">): Promise<Metadata> {
-  const id = Number((await params).id);
-  const row = Number.isInteger(id) ? await getLead(id) : undefined;
+  const id = parseId((await params).id);
+  const row = id !== null ? await getLead(id) : undefined;
   return { title: row?.lead.title ?? "Oportunidad" };
 }
 
 export default async function LeadPage({ params }: PageProps<"/leads/[id]">) {
   const user = await requirePermission("leads");
-  const id = Number((await params).id);
-  if (!Number.isInteger(id)) notFound();
+  const id = parseId((await params).id);
+  if (id === null) notFound();
 
   const [row, notes, options, contactNotes, names] = await Promise.all([
     getLead(id),

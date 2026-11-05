@@ -3,6 +3,7 @@ import { formatReceiptNumber } from "@/lib/doc-number";
 import { can, getCurrentUser } from "@/lib/permissions";
 import { ReceiptPdf } from "@/lib/receipt-pdf";
 import { getReceipt } from "@/lib/receipts";
+import { parseId } from "@/lib/ids";
 
 /** PDF del recibo numerado (también de los anulados, con la marca "ANULADO"). */
 export async function GET(_request: Request, { params }: RouteContext<"/api/recibo/[id]">) {
@@ -10,8 +11,8 @@ export async function GET(_request: Request, { params }: RouteContext<"/api/reci
   if (!user || !can(user, "finanzas", "view")) {
     return new Response("No autorizado", { status: 403 });
   }
-  const id = Number((await params).id);
-  const receipt = Number.isInteger(id) ? await getReceipt(id) : null;
+  const id = parseId((await params).id);
+  const receipt = id !== null ? await getReceipt(id) : null;
   if (!receipt) return new Response("Recibo no encontrado", { status: 404 });
 
   const pdf = await renderToBuffer(<ReceiptPdf receipt={receipt} />);

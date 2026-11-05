@@ -1,3 +1,7 @@
+"use client";
+
+// Cliente a propósito: va en el diálogo de edición de cada fila; así React manda las listas de
+// vínculos (contactos, leads, vehículos, proveedores) una sola vez y no repetidas por actividad.
 import { Field } from "@/components/page-header";
 import { Input } from "@/components/ui/input";
 import { NativeSelect, NativeSelectOption } from "@/components/ui/native-select";

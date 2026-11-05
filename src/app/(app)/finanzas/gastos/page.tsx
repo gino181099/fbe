@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { and, asc, desc, eq, gte, isNotNull, lte, type SQL, sql } from "drizzle-orm";
-import { Pencil, Plus } from "lucide-react";
+import { and, asc, count, desc, eq, gte, isNotNull, lte, type SQL, sql } from "drizzle-orm";
+import { ChevronLeft, ChevronRight, Pencil, Plus } from "lucide-react";
 import { ConfirmButton } from "@/components/confirm-button";
 import { FormDialog } from "@/components/form-dialog";
 import { AuditInfo } from "@/components/audit-info";
@@ -32,6 +32,7 @@ export const metadata: Metadata = { title: "Gastos" };
 
 const str = (v: string | string[] | undefined) => (typeof v === "string" && v.trim() ? v.trim() : undefined);
 const isDate = (v?: string) => (v && /^\d{4}-\d{2}-\d{2}$/.test(v) ? v : undefined);
+const PAGE_SIZE = 50;
 const sumBy = (rows: { total: number }[]) => rows.reduce((s, r) => s + r.total, 0);
 
 export default async function ExpensesPage({ searchParams }: PageProps<"/finanzas/gastos">) {
@@ -44,6 +45,7 @@ export default async function ExpensesPage({ searchParams }: PageProps<"/finanza
   const estado = (["contado", "a_pagar"] as const).find((s) => s === sp.estado);
   const vehiculo = Number(str(sp.vehiculo)) || undefined;
   const proveedor = Number(str(sp.proveedor)) || undefined;
+  const page = Math.max(1, Number(str(sp.pagina)) || 1);
 
   const expFilters: SQL[] = [];
   const fuelFilters: SQL[] = [];
@@ -73,6 +75,7 @@ export default async function ExpensesPage({ searchParams }: PageProps<"/finanza
 
   const [
     expenseRows,
+    [rowTotals],
     byCategory,
     loads,
     tripFuel,
@@ -92,7 +95,13 @@ export default async function ExpensesPage({ searchParams }: PageProps<"/finanza
       .leftJoin(suppliers, eq(suppliers.id, expenses.supplierId))
       .where(and(...rowFilters))
       .orderBy(desc(expenses.date), desc(expenses.id))
-      .limit(500),
+      .limit(PAGE_SIZE)
+      .offset((page - 1) * PAGE_SIZE),
+    // Cantidad y total con los filtros (todas las páginas).
+    db
+      .select({ n: count(), total: sumOf(expenses.amount) })
+      .from(expenses)
+      .where(and(...rowFilters)),
     db
       .select({ category: expenses.category, paid: expenses.paid, total: sumOf(expenses.amount) })
       .from(expenses)
@@ -146,6 +155,15 @@ export default async function ExpensesPage({ searchParams }: PageProps<"/finanza
   const totalExpenses = sumBy(byCategory);
   const toPay = sumBy(byCategory.filter((b) => !b.paid));
   const formProps = { defaultDate: date, concepts, subcategories, fleet, supplierOptions: supplierList };
+  const pages = Math.max(1, Math.ceil(rowTotals.n / PAGE_SIZE));
+  const pageHref = (p: number) => {
+    const params = new URLSearchParams();
+    for (const [k, v] of Object.entries({ desde, hasta, categoria, alcance, vehiculo, proveedor, estado })) {
+      if (v) params.set(k, String(v));
+    }
+    params.set("pagina", String(p));
+    return `/finanzas/gastos?${params}`;
+  };
 
   // Combustible por estación: consumo (gasoil de recorridos + cargas extras) contra pagos. Se agrupa por
   // nombre sin mayúsculas ni espacios extremos (mismo criterio que la cuenta del proveedor).
@@ -356,14 +374,31 @@ export default async function ExpensesPage({ searchParams }: PageProps<"/finanza
                 </TableBody>
                 <TableFooter>
                   <TableRow>
-                    <TableCell colSpan={7}>Total</TableCell>
-                    <TableCell className="text-right tabular-nums">
-                      {formatMoney(expenseRows.reduce((s, r) => s + r.expense.amount, 0))}
+                    <TableCell colSpan={7}>
+                      Total ({rowTotals.n} {rowTotals.n === 1 ? "gasto" : "gastos"})
                     </TableCell>
+                    <TableCell className="text-right tabular-nums">{formatMoney(rowTotals.total)}</TableCell>
                     {canEdit && <TableCell />}
                   </TableRow>
                 </TableFooter>
               </Table>
+            </div>
+          )}
+          {pages > 1 && (
+            <div className="flex items-center justify-end gap-2 text-sm">
+              <span className="text-muted-foreground">
+                Página {page} de {pages}
+              </span>
+              <Button variant="outline" size="icon-sm" asChild disabled={page <= 1}>
+                <Link href={pageHref(Math.max(1, page - 1))} aria-label="Anterior">
+                  <ChevronLeft />
+                </Link>
+              </Button>
+              <Button variant="outline" size="icon-sm" asChild disabled={page >= pages}>
+                <Link href={pageHref(Math.min(pages, page + 1))} aria-label="Siguiente">
+                  <ChevronRight />
+                </Link>
+              </Button>
             </div>
           )}
         </TabsContent>

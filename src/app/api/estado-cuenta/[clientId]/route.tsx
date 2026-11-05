@@ -3,6 +3,7 @@ import { getStatement } from "@/lib/balances";
 import { today } from "@/lib/format";
 import { can, getCurrentUser } from "@/lib/permissions";
 import { StatementPdf } from "@/lib/statement-pdf";
+import { parseId } from "@/lib/ids";
 
 const isDate = (v: string | null) => (v && /^\d{4}-\d{2}-\d{2}$/.test(v) ? v : null);
 
@@ -11,11 +12,11 @@ export async function GET(request: Request, { params }: RouteContext<"/api/estad
   if (!user || !can(user, "finanzas", "view")) {
     return new Response("No autorizado", { status: 403 });
   }
-  const clientId = Number((await params).clientId);
+  const clientId = parseId((await params).clientId);
   const url = new URL(request.url);
   const to = isDate(url.searchParams.get("hasta")) ?? today();
   const from = isDate(url.searchParams.get("desde")) ?? `${to.slice(0, 4)}-01-01`;
-  const data = Number.isInteger(clientId) ? await getStatement(clientId, from, to) : null;
+  const data = clientId !== null ? await getStatement(clientId, from, to) : null;
   if (!data) return new Response("Cliente no encontrado", { status: 404 });
 
   const pdf = await renderToBuffer(<StatementPdf data={data} issuedAt={today()} />);

@@ -7,6 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { NativeSelect, NativeSelectOption } from "@/components/ui/native-select";
+import { PdfButton } from "@/components/pdf-button";
 import { Table, TableBody, TableCell, TableFooter, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { db } from "@/db";
 import { clients } from "@/db/schema";
@@ -153,11 +154,9 @@ export default async function DocumentsPage({ searchParams }: PageProps<"/finanz
                     <TableCell>
                       <div className="flex justify-end">
                         {d.type === "interno" && (
-                          <Button variant="ghost" size="icon-sm" asChild aria-label="Descargar PDF">
-                            <a href={`/api/comprobante/${d.id}`}>
-                              <FileDown className="text-muted-foreground" />
-                            </a>
-                          </Button>
+                          <PdfButton variant="ghost" size="icon-sm" iconOnly href={`/api/comprobante/${d.id}`}>
+                            <FileDown className="text-muted-foreground" />
+                          </PdfButton>
                         )}
                         {canEdit && !voided && (
                           <VoidDialog id={d.id} label={`${DOCUMENT_TYPE_LABELS[d.type]} ${number}`.trim()}>

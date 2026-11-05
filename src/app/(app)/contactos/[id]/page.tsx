@@ -34,6 +34,7 @@ import {
 import { ClientFields } from "../client-fields";
 import { RateFields } from "./rate-fields";
 import { RateVersionDialog } from "./rate-version-dialog";
+import { parseId } from "@/lib/ids";
 
 // Compartido entre generateMetadata y la página: una sola consulta por request.
 const getClient = cache(async (id: number) => {
@@ -42,15 +43,15 @@ const getClient = cache(async (id: number) => {
 });
 
 export async function generateMetadata({ params }: PageProps<"/contactos/[id]">): Promise<Metadata> {
-  const id = Number((await params).id);
-  const c = Number.isInteger(id) ? await getClient(id) : undefined;
+  const id = parseId((await params).id);
+  const c = id !== null ? await getClient(id) : undefined;
   return { title: c?.name ?? "Contacto" };
 }
 
 export default async function ClientPage({ params, searchParams }: PageProps<"/contactos/[id]">) {
   const user = await requirePermission("contactos");
-  const id = Number((await params).id);
-  if (!Number.isInteger(id)) notFound();
+  const id = parseId((await params).id);
+  if (id === null) notFound();
   const sp = await searchParams;
 
   const date = today();
@@ -223,7 +224,8 @@ export default async function ClientPage({ params, searchParams }: PageProps<"/c
       </div>
 
       <Tabs defaultValue={defaultTab}>
-        <TabsList>
+        {/* En celular las pestañas no entran: scroll horizontal propio en vez de desbordar la página. */}
+        <TabsList className="max-w-full justify-start overflow-x-auto">
           <TabsTrigger value="tarifario">Tarifario</TabsTrigger>
           <TabsTrigger value="historial">Historial de tarifas</TabsTrigger>
           <TabsTrigger value="recorridos">Recorridos</TabsTrigger>
